@@ -1,0 +1,43 @@
+# Routine: flaky-triage — nightly scan of recent CI failures; files an issue for flakes.
+# Read-only on code; issues:write only. NEVER edits code or merges. Opt-in.
+name: "routine · flaky-triage"
+
+on:
+  schedule:
+    - cron: "0 3 * * *"     # nightly 03:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read             # read recent workflow runs/logs
+  issues: write
+
+concurrency:
+  group: routine-flaky-triage
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Cluster recent failures
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          prompt: |
+            You are **Flaky Triage** (a scheduled maintenance agent). Using `gh`:
+            - Look at failed workflow runs from the last 24h (`gh run list --status failure`).
+            - Read the failing step logs; cluster failures that look NON-deterministic
+              (timeouts, ordering, races, network) vs real regressions.
+            - For genuine flakes, open OR update a single tracking issue titled
+              "Flaky tests — <date>" with the cluster, the suspected cause, and the runs.
+              De-dupe against existing open "Flaky tests" issues; don't spam.
+            - Do NOT edit code, do NOT open PRs, do NOT touch deterministic real failures
+              (those are the SDLC's job, not flake triage). Be concise.
+          claude_args: |
+            --model sonnet
+            --max-turns 20
+            --max-budget-usd 2.00
+            --allowedTools "Read,Grep,Glob,Bash(gh run:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh api:*)"

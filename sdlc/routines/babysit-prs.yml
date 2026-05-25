@@ -1,0 +1,44 @@
+# Routine: babysit-prs — scheduled agent that keeps the PR queue healthy.
+# Runs on cron (not per-PR). Read-mostly: summarizes stuck PRs and nudges. NEVER merges.
+# Opt-in: copy to .github/workflows/ (or `setup.sh --routines`). Needs the same secrets
+# as the SDLC pipeline. The local equivalent is the `/schedule` skill + `claude -p`.
+name: "routine · babysit-prs"
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # every 6 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: routine-babysit-prs
+  cancel-in-progress: true
+
+jobs:
+  babysit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Triage the PR queue
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          prompt: |
+            You are **PR Babysitter** (a scheduled maintenance agent). Using `gh`:
+            - List open PRs. For any labeled `sdlc:needs-human` (the auto-fix loop gave up),
+              post ONE concise nudge comment summarizing the remaining Blocking findings and
+              what a human needs to decide — but only if you haven't already nudged in the
+              last day (check recent comments to avoid spam).
+            - For PRs with failing required checks (`review`/`qa`) stuck >24h with no new
+              commits, post a short "still red, here's why" summary.
+            - Do NOT merge, close, push code, or change labels. Comment only. Be terse.
+          claude_args: |
+            --model haiku
+            --max-turns 15
+            --max-budget-usd 1.00
+            --allowedTools "Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh api:*)"

@@ -14,6 +14,7 @@
 #   SDLC_YOLO=1      Builder runs --permission-mode bypassPermissions (fully unattended)
 #   SDLC_BUDGET=8    total USD budget hint; per-Claude-step cap is BUDGET/4
 #   SDLC_BASE=main   base branch for the PR (default: current branch)
+#   SDLC_CONVERGE=1  after review, loop fix→re-review until CLEAN or SDLC_MAX_FIX_ROUNDS (default 3)
 set -uo pipefail
 
 TASK="${1:-}"; [ -n "$TASK" ] || { echo "usage: orchestrate.sh \"<task description>\""; exit 2; }
@@ -57,9 +58,13 @@ claude_step plan planner.md opus plan \
   "Task: $TASK
 Produce a concrete, minimal implementation plan for this repo. Write nothing but the plan."
 
+# tools the Builder may use (reused by the converge loop below)
+BUILD_TOOLS="Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(go build:*),Bash(go test:*),Bash(go vet:*),Bash(cargo build:*),Bash(cargo test:*),Bash(npm:*),Bash(pnpm:*),Bash(npx tsc:*),Bash(pytest:*),Bash(ruff:*),Bash(make:*)"
+REVIEW_TOOLS="Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)"
+REVIEW_PROMPT="Review the diff of branch $BRANCH against $BASE: run 'git diff $BASE...HEAD'. Report findings grouped Blocking / Should-fix / Nit. End with EXACTLY one line: 'SDLC-VERDICT: BLOCKING' if there is any Blocking finding, else 'SDLC-VERDICT: CLEAN'."
+
 # 2 · BUILD (edits + commits on the feature branch)
-claude_step build builder.md sonnet "$BUILD_PERM" \
-  "Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(go build:*),Bash(go test:*),Bash(go vet:*),Bash(cargo build:*),Bash(cargo test:*),Bash(npm:*),Bash(pnpm:*),Bash(npx tsc:*),Bash(pytest:*),Bash(ruff:*),Bash(make:*)" \
+claude_step build builder.md sonnet "$BUILD_PERM" "$BUILD_TOOLS" \
   "Implement the plan in .sdlc/run-$TS/plan.md for this task: $TASK
 Stay on branch $BRANCH. Add tests. Build/test what you touch. Commit your work. Do not push or merge."
 # safety net: capture any uncommitted work so the diff/PR is complete
@@ -68,9 +73,29 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 
 # 3 · REVIEW (Claude, read-only)
-claude_step review reviewer.md sonnet plan \
-  "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)" \
-  "Review the diff of branch $BRANCH against $BASE: run 'git diff $BASE...HEAD'. Report findings."
+claude_step review reviewer.md sonnet plan "$REVIEW_TOOLS" "$REVIEW_PROMPT"
+
+# 3b · CONVERGE (opt-in: SDLC_CONVERGE=1) — address findings and re-review until clean or cap.
+# The local mirror of the cloud loop's "review ⇄ fix until green." Humans still merge.
+if [ "${SDLC_CONVERGE:-0}" = 1 ]; then
+  MAXR="${SDLC_MAX_FIX_ROUNDS:-3}"; r=1
+  while grep -qiE '^SDLC-VERDICT: BLOCKING' "$RUN/review.md" 2>/dev/null && [ "$r" -le "$MAXR" ]; do
+    log "converge round $r/$MAXR  (fix → re-review)"
+    claude_step "fix-$r" builder.md sonnet "$BUILD_PERM" "$BUILD_TOOLS" \
+      "Address every Blocking and Should-fix item in .sdlc/run-$TS/review.md on branch $BRANCH for task: $TASK.
+Edit the code, add/adjust tests, build/test what you touch, commit. Do not push or merge."
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      git add -A && git commit -q -m "sdlc(converge $r): $TASK"
+    fi
+    claude_step review reviewer.md sonnet plan "$REVIEW_TOOLS" "$REVIEW_PROMPT"
+    r=$((r + 1))
+  done
+  if grep -qiE '^SDLC-VERDICT: BLOCKING' "$RUN/review.md" 2>/dev/null; then
+    note "converge hit cap ($MAXR) — review still BLOCKING; a human is needed."
+  else
+    note "converge: review is CLEAN."
+  fi
+fi
 
 # 4 · AUDIT (Codex cross-tool, read-only) — independent second opinion
 log "audit  (codex · cross-tool)"

@@ -1,0 +1,48 @@
+# Routine: dep-refresh — weekly dependency bump that opens a PR if tests pass.
+# Opens into the normal SDLC loop (review/qa run on the PR). NEVER merges. Opt-in.
+# (Dependabot covers version bumps too; this is the agent variant that also runs the suite
+# and writes a human-readable summary. Use whichever fits — or both.)
+name: "routine · dep-refresh"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"     # Mondays 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write           # push a dep-bump branch (never a protected branch)
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: routine-dep-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      - name: Bump deps + test + open PR
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          branch_prefix: "routine/dep-refresh-"
+          prompt: |
+            You are **Dep Refresh** (a scheduled maintenance agent). For this repo's
+            ecosystem (detect: go.mod / package.json / Cargo.toml / pyproject.toml):
+            1. Update dependencies to the latest compatible minor/patch (NOT major) versions.
+            2. Build and run the test suite. If anything fails, revert that dependency.
+            3. Commit only the updates that keep the build+tests green; write a PR body
+               listing each bump (old → new) and the test result.
+            Open a PR with the changes — the SDLC reviewers will run on it. Do NOT bump major
+            versions, do NOT edit application code beyond lockfile/manifest, do NOT merge.
+          claude_args: |
+            --model sonnet
+            --max-turns 30
+            --max-budget-usd 4.00
+            --allowedTools "Read,Edit,Grep,Glob,Bash(go:*),Bash(npm:*),Bash(pnpm:*),Bash(cargo:*),Bash(uv:*),Bash(pip:*),Bash(make:*),Bash(git add:*),Bash(git commit:*)"
