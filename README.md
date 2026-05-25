@@ -233,6 +233,9 @@ A pipeline of **named, governed agents** — Planner · Builder · Reviewer · *
 export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — your subscription, no API credits (or use ANTHROPIC_API_KEY)
 export OPENAI_API_KEY=…            # Codex cloud audit
 ~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
+
+# …or fully KEYLESS — claude -p / codex exec on a self-hosted runner (your subscription):
+~/compass/sdlc/setup.sh --self-hosted --commit --protect   # see docs/09 + sdlc/selfhosted/README.md
 ```
 
 Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, setup, and the security posture (least-privilege tokens, no `pull_request_target` footgun, prompt-injection hardening, human gate via branch protection): [`docs/09-sdlc.md`](docs/09-sdlc.md).

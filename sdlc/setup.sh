@@ -15,9 +15,10 @@
 # Secrets: export them first for zero prompts:  export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…
 set -euo pipefail
 SDLC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WF=0 COMMIT=0 SECRETS=0 PROTECT=0
+WF=0 COMMIT=0 SECRETS=0 PROTECT=0 SELF=0
 for a in "$@"; do case "$a" in
   --workflows) WF=1 ;; --commit) COMMIT=1 ;; --secrets) SECRETS=1 ;; --protect) PROTECT=1 ;;
+  --self-hosted) WF=1; SELF=1 ;;          # keyless: claude -p / codex exec on a self-hosted runner
   --all) WF=1; COMMIT=1; SECRETS=1; PROTECT=1 ;;
   *) echo "unknown flag: $a"; exit 2 ;;
 esac; done
@@ -40,10 +41,12 @@ PY
 done
 
 if [ "$WF" = 1 ]; then
-  echo "==> Workflows + CODEOWNERS"
+  SRC_WF="$SDLC_DIR/workflows"; [ "$SELF" = 1 ] && SRC_WF="$SDLC_DIR/selfhosted"
+  echo "==> Workflows + CODEOWNERS  ($([ "$SELF" = 1 ] && echo 'self-hosted · keyless (claude -p / codex exec)' || echo 'hosted · Action'))"
   mkdir -p .github/workflows
-  cp "$SDLC_DIR"/workflows/*.yml .github/workflows/ && echo "  ✓ .github/workflows/sdlc-*.yml"
+  cp "$SRC_WF"/*.yml .github/workflows/ && echo "  ✓ .github/workflows/sdlc-*.yml"
   [ -f .github/CODEOWNERS ] || { cp "$SDLC_DIR/CODEOWNERS.sample" .github/CODEOWNERS && echo "  ✓ .github/CODEOWNERS (edit owners)"; }
+  [ "$SELF" = 1 ] && echo "  → register a runner with label 'compass' (see sdlc/selfhosted/README.md); no secrets needed."
 fi
 
 if [ "$COMMIT" = 1 ]; then

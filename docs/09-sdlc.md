@@ -49,6 +49,19 @@ either **`CLAUDE_CODE_OAUTH_TOKEN`** (`claude setup-token`, uses your **subscrip
 credits) **or** `ANTHROPIC_API_KEY` (pay-per-use) — and `OPENAI_API_KEY` for the Codex audit.
 The **local** `orchestrate.sh` already uses your `claude`/`codex` CLI logins, so it needs no keys.
 
+### B2 · GitHub-native, **keyless** (`claude -p` on a self-hosted runner)
+Want the cloud agents on your **subscription** with *no API key and no token*? Run a
+self-hosted runner (labelled `compass`) on a machine where `claude`/`codex` are logged in,
+then install the keyless workflows (they shell out to `claude -p` / `codex exec` — the same
+approach as the local pipeline):
+```bash
+cd /path/to/your/repo
+~/compass/sdlc/setup.sh --self-hosted --commit --protect    # no --secrets needed
+```
+**⚠️ Security:** a self-hosted runner executes workflow code on your machine — use on
+**private repos / trusted collaborators only**, never with fork PRs. Full setup + warnings:
+[`sdlc/selfhosted/README.md`](../sdlc/selfhosted/README.md).
+
 ## The human gate (non-negotiable, enforced by GitHub — not trust)
 `setup.sh` prints these; do them once per repo:
 1. **Branch protection** on the default branch: require a PR, ≥1 approval, **review from
