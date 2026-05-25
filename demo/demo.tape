@@ -2,7 +2,7 @@
 # Punchy, error-free, repo-local. Short helper commands (see demo/_demo.sh) keep
 # the screen clean; narration uses shell comments enabled in a hidden setup block.
 
-Output demo/compass.gif
+Output demo/preview.gif
 
 Set Shell "zsh"
 Set FontSize 22

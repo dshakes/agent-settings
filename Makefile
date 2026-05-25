@@ -29,9 +29,9 @@ mcp-dry: ## Preview MCP registration, change nothing
 doctor: ## Validate JSON, TOML, hook executability, and schema sanity
 	@./scripts/doctor.sh
 
-demo: ## Render the terminal demo GIF -> demo/compass.gif (needs vhs)
+demo: ## Render the terminal demo GIF -> demo/preview.gif (needs vhs)
 	@command -v vhs >/dev/null || { echo "install vhs first:  brew install vhs"; exit 1; }
-	@vhs demo/demo.tape && echo "wrote demo/compass.gif"
+	@vhs demo/demo.tape && echo "wrote demo/preview.gif"
 
 new-repo: ## Scaffold agent config into DIR (usage: make new-repo DIR=./path [TEAM=1])
 	@./scripts/new-repo.sh $(DIR) $(if $(TEAM),--team,)

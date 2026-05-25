@@ -13,7 +13,7 @@
 </div>
 
 <p align="center">
-  <img src="demo/compass.gif" alt="compass demo — make doctor, status line, guardrail, subagents and commands" width="900">
+  <img src="demo/preview.gif" alt="compass demo — make doctor, status line, guardrail, subagents and commands" width="900">
 </p>
 
 <sub>Recorded with <a href="https://github.com/charmbracelet/vhs">vhs</a> from <a href="demo/demo.tape"><code>demo/demo.tape</code></a> — run <code>make demo</code> to re-render. Static version: <a href="assets/hero.svg"><code>assets/hero.svg</code></a>.</sub>
