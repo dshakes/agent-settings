@@ -68,6 +68,11 @@ No agent has merge or deploy authority. They open PRs; you merge.
   pin third-party actions to a full commit SHA (GitHub's recommendation).
 - **Audit trail**: every action is a commit, review, or labeled comment.
 
+## Troubleshooting (gotchas a real dry run surfaced)
+- **`Could not fetch an OIDC token`** → the workflow needs `id-token: write` (already set in the shipped workflows).
+- **`Workflow validation failed … identical content to the default branch`** → the Claude App requires the review workflow to exist *unchanged* on the default branch (so a PR can't inject a rogue reviewer). `setup.sh --all` commits the workflows to the default branch first, which satisfies this; don't hand-edit the workflow only on a feature branch.
+- **`Credit balance is too low`** → auth is fine; the **Anthropic API key has no credits**. Add them at console.anthropic.com → Billing. (Your local `claude` CLI uses your subscription, not the API key, so the headless pipeline is unaffected.)
+
 ## Customize
 Edit the registry (names/tags/models/gates), the role prompts in `sdlc/roles/`, the
 workflow prompts, and `labels.yml`. `git add .sdlc/` is **not** wanted — add `.sdlc/` to
