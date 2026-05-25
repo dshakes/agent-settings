@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.3.0] — 2026-05-25
+
+### Added
+- **Cited best practices** (`docs/07-practices.md`) — adopted verifiable guidance
+  from Anthropic's best-practices page, agents.md, Karpathy, and `gstack`, mapped
+  to where each lives here. Tightened `CLAUDE.md` with context hygiene,
+  verify-as-highest-leverage, explore→plan→code→commit, and self-improving memory.
+- **New-repo defaults** (`scripts/new-repo.sh`, `docs/08-defaults.md`) — global
+  auto-apply, a per-repo scaffolder, a `newrepo` shell function, and the git
+  `init.templateDir` note for hooks.
+
+### Changed
+- **CLAUDE.md ↔ AGENTS.md unified to one source** — `AGENTS.md` is now a symlink to
+  `CLAUDE.md` (global + per-repo), so Claude and Codex read identical instructions.
+
 ## [0.2.0] — 2026-05-25
 
 ### Added
@@ -44,5 +59,6 @@ First public release.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
+[0.3.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.2.0
 [0.1.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.1.0

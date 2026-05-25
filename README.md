@@ -174,6 +174,35 @@ to avoid double-firing hooks. This is live in the **lantern** repo. Details:
 
 ---
 
+## Grounded in published practice
+
+The defaults aren't invented — they adopt **cited, verifiable** guidance from
+Anthropic's [Claude Code best practices](https://code.claude.com/docs/en/best-practices),
+the [agents.md](https://agents.md/) standard, Karpathy's public principles, and
+Garry Tan's [`gstack`](https://github.com/garrytan/gstack). The mapping (and an
+honest note on what we did *not* fabricate) is in [`docs/07-practices.md`](docs/07-practices.md).
+
+## Defaults for new repos
+
+After `make install`, the operating manual + hooks + subagents + MCP apply to
+**every** repo automatically (they're global). For a committed, per-repo
+`CLAUDE.md`:
+
+```bash
+scripts/new-repo.sh ./my-service          # starter CLAUDE.md + AGENTS.md symlink
+scripts/new-repo.sh ./my-service --team   # also pins core@agent-settings
+# add `newrepo(){ ~/agent-settings/scripts/new-repo.sh "$@"; }` to your shell
+```
+
+`git init.templateDir` only seeds `.git/` (hooks), not working-tree files — so a
+`CLAUDE.md` needs the scaffolder. Full guide: [`docs/08-defaults.md`](docs/08-defaults.md).
+
+## One source for Claude + Codex
+
+`AGENTS.md` (the open standard Codex and 20+ agents read) is a **symlink to
+`CLAUDE.md`** — globally (`~/.codex/AGENTS.md` → `~/.claude/CLAUDE.md`, byte-identical)
+and per-repo. Edit the manual once; both tools read the same instructions, no drift.
+
 ## Customizing
 
 This is a starting point, not scripture. Fork it. The global `CLAUDE.md` has a
