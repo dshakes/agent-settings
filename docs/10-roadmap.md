@@ -1,9 +1,25 @@
 # Roadmap — agentic directions
 
-Forward-looking, **not yet shipped.** This doc specs where compass goes next, grounded in
-**real Claude Code harness primitives** (no invented features — same rule as the rest of
-the repo). Each item names the mechanism it would use, the design, the tradeoffs, and an
-honest maturity tag. Nothing here is enabled by default until it graduates into the core.
+Grounded in **real Claude Code harness primitives** (no invented features — same rule as the
+rest of the repo). **Most of this is now built and shipped as opt-in** (off by default; the
+human merge/deploy gate is untouched). Per-item status:
+
+| # | Capability | Status | Where |
+|---|---|---|---|
+| 1 | Work-type review routing | ✅ shipped | `sdlc-classify.yml` + `sdlc-design-review.yml` + `route` skill |
+| 2 | Scheduled maintenance agents | ✅ shipped (opt-in) | `sdlc/routines/` · `setup.sh --routines` |
+| 3 | Agent-team review | ✅ shipped (experimental) | `/team-review` |
+| 4 | Goal-oriented convergence | ✅ shipped (opt-in) | `orchestrate.sh` `SDLC_CONVERGE=1` |
+| 5 | Forked-subagent triage | ✅ shipped (opt-in) | `debugger` + `CLAUDE_CODE_FORK_SUBAGENT=1` |
+| 6 | Cross-repo memory | 🔵 ADR + reference scaffold (not enabled) | `docs/adr/0001` · `mcp/compass-memory/` |
+| 7 | WIP checkpointing | ✅ shipped (opt-in hook) | `claude/hooks/checkpoint-wip.sh` |
+| 8 | Hooks-as-policy | ✅ shipped (opt-in hook) | `claude/hooks/route-intent.sh` |
+| + | Spec/intent-driven mode | ✅ shipped | `/spec` + `orchestrate.sh` `SDLC_SPEC=` |
+| + | Browser agent | ✅ shipped (opt-in MCP) | `mcp/servers.json` → `browser` |
+| + | Human-gated auto-merge | ✅ shipped (opt-in) | `setup.sh --protect` → `gh pr merge --auto` |
+
+The detail below is the design rationale + how to enable each. Each was validated like the
+rest of the pipeline (lint, shellcheck, selftest, CI). Cross-repo memory stays ADR-gated.
 
 **Maturity legend:** 🟢 stable primitive · 🟡 experimental primitive · 🔵 needs external infra (MCP/runner).
 **Version note:** some primitives below require a recent Claude Code (`/schedule`, `/goal`,

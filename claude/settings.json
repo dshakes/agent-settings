@@ -7,7 +7,7 @@
     "BASH_MAX_TIMEOUT_MS": "600000",
     "MAX_MCP_OUTPUT_TOKENS": "25000"
   },
-  "includeCoAuthoredBy": true,
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Read",

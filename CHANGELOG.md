@@ -5,6 +5,34 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Agentic capabilities (roadmap built — opt-in; human merge/deploy gate unchanged)
+- **Work-type review routing** — `sdlc-classify.yml` labels each PR `domain:*` (haiku);
+  `sdlc-design-review.yml` fires only on `domain:ui`; `route` skill mirrors it locally.
+  Reviewer/Security/QA/Auditor stay always-on (routing only *adds* targeted review).
+- **Scheduled maintenance agents** (`sdlc/routines/`, `setup.sh --routines`) — cron agents
+  (babysit-prs, dep-refresh, flaky-triage, doc-freshness) that open PRs/issues into the loop
+  and never merge.
+- **Goal-oriented convergence** — `orchestrate.sh SDLC_CONVERGE=1` loops fix→re-review until
+  CLEAN or `SDLC_MAX_FIX_ROUNDS` (local mirror of the cloud loop).
+- **Spec/intent-driven mode** — `/spec` writes a committed spec; `orchestrate.sh SDLC_SPEC=`
+  makes the build implement it and the review verify against its acceptance criteria.
+- **Agent-team review** (`/team-review`, experimental) and **forked-subagent triage**
+  (`debugger` + `CLAUDE_CODE_FORK_SUBAGENT=1`).
+- **Opt-in hooks** — `route-intent.sh` (UserPromptSubmit: nudge ADR/security/spec on
+  load-bearing prompts) and `checkpoint-wip.sh` (Stop: non-intrusive WIP snapshot). Not wired
+  by default.
+- **Browser agent** — opt-in Playwright `browser` MCP in `mcp/servers.json`.
+- **Human-gated auto-merge** — `setup.sh --protect` enables GitHub auto-merge as an option
+  (a human approves; the PR then merges when checks are green). Unattended merge-to-prod
+  deliberately NOT built.
+- **Cross-repo memory** — `docs/adr/0001` + reference scaffold `mcp/compass-memory/`
+  (experimental, not enabled; production blocked on ADR approval + security review).
+- `docs/10-roadmap.md` tracks all of the above with maturity tags; `docs/07-practices.md`
+  records the adopted gstack techniques.
+
+### Changed
+- `claude/settings.json`: `includeCoAuthoredBy` → `false` (no Claude co-author trailer on commits).
+
 ### Added
 - **Closed auto-fix loop** (`sdlc-fix.yml`) — when the Reviewer emits a `BLOCKING` verdict
   it labels the PR `agent:needs-fix`, which triggers the Builder to read all PR review
