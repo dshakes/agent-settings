@@ -91,6 +91,12 @@ if [ "$PROTECT" = 1 ]; then
   "required_pull_request_reviews": { "required_approving_review_count": 1, "require_code_owner_reviews": true },
   "restrictions": null }
 JSON
+  # Enable GitHub auto-merge as an OPTION (not on by default for any PR). A human still
+  # approves; once required checks + approval are green the PR merges itself — mechanical,
+  # never unattended-without-a-human. Use per-PR: `gh pr merge <n> --auto --squash`.
+  gh api -X PATCH "repos/$REPO" -F allow_auto_merge=true >/dev/null 2>&1 \
+    && echo "  ✓ auto-merge available (human approves → merges when green): gh pr merge <n> --auto --squash" \
+    || echo "  · could not enable auto-merge option (need admin?)"
 fi
 
 cat <<NEXT

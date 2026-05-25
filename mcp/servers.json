@@ -53,6 +53,18 @@
       "args": ["-y", "@modelcontextprotocol/server-postgres", "${LANTERN_DATABASE_URL}"],
       "env": {},
       "note": "Point at a read-replica or a read-only role. Never a write-capable prod credential."
+    },
+    "browser": {
+      "autoRegister": false,
+      "claude": true,
+      "codex": true,
+      "description": "Drive a real browser (navigate, click, type, screenshot, extract) via Playwright. The sanctioned 'browser agent' — opt-in, for UI verification / scraping / repro of web bugs.",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {},
+      "setup": "npx playwright install chromium   # one-time browser download, then enable in scripts/setup-mcp.sh",
+      "note": "Off by default — it can act on live sites. Use deliberately; scope to trusted pages. The agent that drives it still follows the same guardrails."
     }
   }
 }
