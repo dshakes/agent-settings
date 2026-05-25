@@ -27,10 +27,10 @@ jobs:
       - name: Claude review
         uses: anthropics/claude-code-action@v1
         with:
-          # Prefer your Claude SUBSCRIPTION (no API credits): set CLAUDE_CODE_OAUTH_TOKEN
-          # via `claude setup-token`. Falls back to ANTHROPIC_API_KEY (pay-per-use) if set.
+          # Uses your Claude SUBSCRIPTION (no API credits) via `claude setup-token`.
+          # To use a pay-per-use API key instead, replace the line below with:
+          #   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             You are **Reviewer** (agent:review) in an autonomous SDLC pipeline.
             Review ONLY the changes in this pull request for correctness, security,
