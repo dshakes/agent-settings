@@ -69,19 +69,13 @@ make doctor      # validate everything
 
 ## Why compass
 
-The gap between a default agent and a great one isn't the model — it's the **configuration around it**: what it knows, what it's allowed to do, what it does automatically, and which model does which job. compass encodes that once so you don't rebuild it per machine or per teammate.
+Everyone has the same models. The edge is the **configuration around them** — and most people rebuild it from scratch in every repo. compass ships it once:
 
-<details>
-<summary><strong>What you get on the first task →</strong></summary>
-
-- **It already knows how to behave** — a tight operating manual loads every session: understand-before-changing, stay in scope, verify, report faithfully.
-- **It can't do the catastrophic thing** — a `PreToolUse` hook blocks secret writes, `rm -rf /`, `curl|sh`, and force-push/hard-reset on protected branches.
-- **It cleans up after itself** — edits are auto-formatted (gofmt, rustfmt, prettier/biome, ruff, …).
-- **It costs less** — fan-out goes to Haiku/Sonnet subagents; Opus is reserved for hard reasoning; a status line shows live cost.
-- **It has specialists** — code-reviewer, security-auditor, debugger, architect, go/rust-engineer, k8s-operator, test-runner, docs-writer.
-- **It has workflows** — `/ship` `/review` `/tdd` `/pr` `/adr` `/triage` `/scaffold` `/cost`.
-
-</details>
+- **It knows how to act** — one tight manual loads every session: understand first, stay in scope, verify before "done."
+- **It stops the disaster** — hard-blocks `rm -rf /`, secret writes, `curl\|sh`, force-push to `main`; waves `rm -rf ./build` straight through.
+- **It cleans up silently** — every file it edits is auto-formatted.
+- **It costs less** — grunt work goes to Haiku/Sonnet; Opus is saved for the hard calls; the status line shows live `$` spend.
+- **It brings a crew** — 9 specialists and 8 commands (`/ship` `/review` `/tdd` …), each on the right model.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
