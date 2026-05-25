@@ -45,6 +45,18 @@ All notable changes to this project are documented here. Format loosely follows
   re-run the gate on returned work. `claude/settings.json` pre-approves the safe validators
   (`actionlint`, `shellcheck`, `yamllint`, `bash -n`) so background subagents can self-verify.
 
+### Fixed (found by live smoke test on a real repo)
+- **Reviewer exhausted its turn budget** (`error_max_turns`) by posting per-line inline
+  comments via the action — switched to a single summary comment + structured verdict
+  (matches the reliable self-hosted reviewer); raised `--max-turns` and added the missing
+  `--max-budget-usd`.
+- **Builder fix never landed** — `claude-code-action` does not auto-push on a
+  `pull_request: labeled` event; added an explicit PAT-authed commit+push step to
+  `sdlc-fix.yml` so the fix reaches the PR branch and re-triggers the Reviewer.
+- Verified the full loop on a live private repo: buggy PR → review BLOCKING + qa red →
+  `agent:needs-fix` → Builder auto-fixed + pushed → qa green → re-review CLEAN → gated on
+  human merge. (Note: workflow updates must reach the PR head branch, not only `main`.)
+
 ### Validation / testing
 - **`sdlc/selftest.sh`** — runnable unit tests for the loop's control logic (round-cap from
   labels, verdict parsing for both the hosted `structured_output`/jq path and the self-hosted
