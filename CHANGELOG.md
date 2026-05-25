@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.6.1] — 2026-05-25
+
+### Security / hardening
+- SHA-pin all GitHub Actions (`actions/checkout`, `claude-code-action`, `codex-action`) and add Dependabot to keep them current.
+- Add `docs/alpha.md` (alpha onboarding); bump lantern + default marketplace pins to v0.6.0.
+
 ## [0.6.0] — 2026-05-25
 
 ### Added
@@ -97,6 +103,7 @@ First public release.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
+[0.6.1]: https://github.com/dshakes/compass/releases/tag/v0.6.1
 [0.6.0]: https://github.com/dshakes/compass/releases/tag/v0.6.0
 [0.5.0]: https://github.com/dshakes/compass/releases/tag/v0.5.0
 [0.4.0]: https://github.com/dshakes/compass/releases/tag/v0.4.0

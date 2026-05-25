@@ -318,6 +318,7 @@ early. Known limits, by design:
 | [07 · Practices](docs/07-practices.md) | cited best practices (and what's folklore) |
 | [08 · Defaults](docs/08-defaults.md) | making it the default for new repos |
 | [09 · SDLC](docs/09-sdlc.md) | autonomous governed agents (plan→build→review→audit→QA), human-gated |
+| [Alpha](docs/alpha.md) | onboarding guide for alpha users |
 | [Demo](demo/README.md) | render the terminal GIF with vhs |
 
 <div align="center"><sub>MIT · built to be shared</sub></div>

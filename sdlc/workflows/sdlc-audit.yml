@@ -15,14 +15,14 @@ jobs:
     if: github.event.label.name == 'agent:audit'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           # Review the merge result of an untrusted PR safely.
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
       - name: Codex cross-audit
         id: codex
-        uses: openai/codex-action@v1
+        uses: openai/codex-action@e0fdf01220eb9a88167c4898839d273e3f2609d1 # v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           sandbox: read-only
