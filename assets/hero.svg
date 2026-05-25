@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <!-- window -->
+  <rect x="1" y="1" width="1198" height="598" rx="16" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+  <rect x="1" y="1" width="1198" height="54" rx="16" fill="#161b22"/>
+  <rect x="1" y="38" width="1198" height="17" fill="#161b22"/>
+  <circle cx="32" cy="28" r="7" fill="#ff5f56"/>
+  <circle cx="58" cy="28" r="7" fill="#ffbd2e"/>
+  <circle cx="84" cy="28" r="7" fill="#27c93f"/>
+
+  <!-- compass mark -->
+  <g transform="translate(536,28)">
+    <circle r="13" fill="none" stroke="#79c0ff" stroke-width="2"/>
+    <polygon points="0,-8 3,0 0,8 -3,0" fill="#ff7b72"/>
+    <circle r="1.6" fill="#e6edf3"/>
+  </g>
+  <text x="560" y="34" font-size="20" font-weight="700" fill="#e6edf3">compass</text>
+  <text x="676" y="34" font-size="18" fill="#6e7681">— Claude Code + Codex, one config</text>
+
+  <g font-size="23">
+    <!-- doctor -->
+    <text x="36" y="104"><tspan fill="#7ee787">$</tspan><tspan fill="#c9d1d9"> make doctor</tspan></text>
+    <text x="36" y="144"><tspan fill="#56d364">  ✓</tspan><tspan fill="#8b949e"> 47 ok · 0 errors</tspan><tspan x="430" fill="#56d364">✓</tspan><tspan fill="#8b949e"> plugin in sync with claude/</tspan></text>
+
+    <!-- status line -->
+    <text y="208">
+      <tspan x="36" fill="#6e7681">status</tspan>
+      <tspan x="190" fill="#d2a8ff">Claude Opus 4.7</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#79c0ff">compass</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#56d364">main</tspan><tspan fill="#e3b341">*</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#8b949e">42k ctx</tspan><tspan fill="#6e7681"> · </tspan><tspan fill="#7ee787">$0.37</tspan><tspan fill="#6e7681"> · [edits]</tspan>
+    </text>
+
+    <!-- guardrail -->
+    <text y="268"><tspan x="36" fill="#6e7681">guard</tspan><tspan x="190" fill="#c9d1d9">rm -rf /</tspan><tspan fill="#6e7681">         → </tspan><tspan fill="#ff7b72" font-weight="700">BLOCKED</tspan><tspan fill="#6e7681"> (exit 2)</tspan></text>
+    <text y="306"><tspan x="190" fill="#c9d1d9">rm -rf ./build</tspan><tspan fill="#6e7681">   → </tspan><tspan fill="#56d364" font-weight="700">allowed</tspan><tspan fill="#6e7681"> (exit 0)</tspan></text>
+
+    <!-- roster -->
+    <text y="370"><tspan x="36" fill="#6e7681">agents</tspan><tspan x="190" fill="#e6edf3">architect · code-reviewer · security-auditor · debugger</tspan></text>
+    <text y="408"><tspan x="190" fill="#e6edf3">go-engineer · rust-engineer · k8s-operator · test-runner · docs-writer</tspan></text>
+
+    <!-- commands -->
+    <text y="468"><tspan x="36" fill="#6e7681">cmds</tspan><tspan x="190" fill="#79c0ff">/ship  /review  /tdd  /pr  /adr  /triage  /scaffold  /cost</tspan></text>
+
+    <!-- prompt + blinking cursor -->
+    <text x="36" y="528"><tspan fill="#7ee787">$</tspan><tspan fill="#c9d1d9"> _</tspan>
+      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- footer tagline -->
+  <text x="36" y="572" font-size="17" fill="#484f58">install once → every repo gets the manual, guardrails, specialists, and cost-aware routing</text>
+</svg>

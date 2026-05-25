@@ -12,23 +12,11 @@
 
 </div>
 
-```console
-$ make doctor
-  ✓ valid JSON: claude/settings.json        ✓ plugin in sync with claude/
-  ✓ linked: ~/.claude/CLAUDE.md -> ~/compass/claude/CLAUDE.md
-  Result: 47 ok · 1 warn · 0 error
+<p align="center">
+  <img src="assets/hero.svg" alt="compass — make doctor, status line, guardrail, subagents and commands at a glance" width="900">
+</p>
 
-  status line   Claude Opus 4.7 · compass · main* · 42k ctx · $0.37 · [edits]
-
-  guardrail     rm -rf /        → BLOCKED (exit 2)
-                rm -rf ./build  → allowed (exit 0)
-
-  subagents     architect · code-reviewer · security-auditor · debugger
-                go-engineer · rust-engineer · k8s-operator · test-runner · docs-writer
-  commands      /ship  /review  /tdd  /pr  /adr  /triage  /scaffold  /cost
-```
-
-<sub>▶ Prefer it animated? `make demo` renders `demo/compass.gif` (needs [vhs](https://github.com/charmbracelet/vhs)) — then drop `![demo](demo/compass.gif)` here.</sub>
+<sub>▶ Want a live recording instead? `make demo` renders an animated `demo/compass.gif` (needs [vhs](https://github.com/charmbracelet/vhs)).</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
