@@ -4,6 +4,9 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)](docs/05-plugin.md)
 
+![compass demo](demo/compass.gif)
+<!-- Generate this GIF with `make demo` (needs vhs). See demo/README.md. -->
+
 A production-grade, **cloneable** configuration for [Claude Code](https://claude.com/claude-code)
 and [Codex](https://openai.com/codex) — tuned for serious, polyglot software work
 and kept honest. Clone it, run `make install`, and your agents pick up a
@@ -32,6 +35,26 @@ make doctor      # validate everything
 ```
 
 See [`docs/05-plugin.md`](docs/05-plugin.md) for what each method can and can't ship.
+
+## Setup — new or existing repo
+
+```bash
+# Your machine (once): everything below applies to EVERY repo automatically.
+git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
+make install        # symlinks into ~/.claude + ~/.codex (backs up first)
+make mcp            # optional: register context7 / fetch / git
+
+# An EXISTING repo — give it project context (+ optional team rollout):
+make new-repo DIR=/path/to/repo            # adds starter CLAUDE.md + AGENTS.md symlink
+make new-repo DIR=/path/to/repo TEAM=1     # also pins core@compass for the whole team
+#   then run Claude's /init or the bootstrap-agent-config skill to fill CLAUDE.md
+
+# A BRAND-NEW repo:
+make new-repo DIR=./my-thing TEAM=1        # git init + CLAUDE.md + AGENTS.md + pinned settings
+```
+
+Full guide: [`docs/08-defaults.md`](docs/08-defaults.md). Tip: add
+`newrepo(){ ~/compass/scripts/new-repo.sh "$@"; }` to your shell for a one-word command.
 
 ---
 

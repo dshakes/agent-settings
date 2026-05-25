@@ -29,7 +29,14 @@ mcp-dry: ## Preview MCP registration, change nothing
 doctor: ## Validate JSON, TOML, hook executability, and schema sanity
 	@./scripts/doctor.sh
 
+demo: ## Render the terminal demo GIF -> demo/compass.gif (needs vhs)
+	@command -v vhs >/dev/null || { echo "install vhs first:  brew install vhs"; exit 1; }
+	@vhs demo/demo.tape && echo "wrote demo/compass.gif"
+
+new-repo: ## Scaffold agent config into DIR (usage: make new-repo DIR=./path [TEAM=1])
+	@./scripts/new-repo.sh $(DIR) $(if $(TEAM),--team,)
+
 update: ## Pull latest and re-run install (for symlink installs this is just a pull)
 	@git pull --ff-only && ./install.sh
 
-.PHONY: help install install-copy dry-run uninstall doctor update mcp mcp-dry sync-plugin
+.PHONY: help install install-copy dry-run uninstall doctor demo new-repo update mcp mcp-dry sync-plugin
