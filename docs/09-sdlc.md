@@ -33,7 +33,8 @@ prior outputs from `.sdlc/run-*`, then **opens a PR and stops**. Knobs:
 ### B · GitHub-native — agents on your PRs
 ```bash
 cd /path/to/your/repo
-~/compass/sdlc/setup.sh --workflows     # labels + workflows + CODEOWNERS, then prints the gate steps
+export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…   # zero-prompt secret setup
+~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 ```
 Installs three workflows:
 | Workflow | Trigger | Agent | Token |

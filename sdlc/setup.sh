@@ -1,48 +1,83 @@
 #!/usr/bin/env bash
-# setup.sh — one-time SDLC setup for a target repo (run from the repo root).
-# Creates governance labels, drops in the workflows + CODEOWNERS, and prints the
-# branch-protection steps that form the human merge gate.
+# setup.sh — onboard a repo to the compass SDLC pipeline. Run from the repo root.
 #
-#   ~/compass/sdlc/setup.sh            # interactive summary + label creation
-#   ~/compass/sdlc/setup.sh --workflows  # also copy workflows + CODEOWNERS into .github/
+# Most automated (one command does everything):
+#   ~/compass/sdlc/setup.sh --all
+#     → labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
+#
+# Composable flags (pick what you want):
+#   --workflows   copy sdlc workflows + CODEOWNERS into .github/
+#   --commit      git add .github && commit && push
+#   --secrets     set ANTHROPIC_API_KEY / OPENAI_API_KEY (from env if exported, else prompt)
+#   --protect     apply branch protection on the default branch (the human merge gate)
+#   --all         all of the above
+#
+# Secrets: export them first for zero prompts:  export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…
 set -euo pipefail
 SDLC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WANT_WF=0; [ "${1:-}" = "--workflows" ] && WANT_WF=1
+WF=0 COMMIT=0 SECRETS=0 PROTECT=0
+for a in "$@"; do case "$a" in
+  --workflows) WF=1 ;; --commit) COMMIT=1 ;; --secrets) SECRETS=1 ;; --protect) PROTECT=1 ;;
+  --all) WF=1; COMMIT=1; SECRETS=1; PROTECT=1 ;;
+  *) echo "unknown flag: $a"; exit 2 ;;
+esac; done
 
 command -v gh >/dev/null || { echo "gh CLI required"; exit 1; }
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "run inside the target repo"; exit 1; }
+REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+BRANCH="$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)"
+echo "==> $REPO  (default branch: $BRANCH)"
 
-echo "==> Creating governance labels"
+echo "==> Labels"
 python3 - "$SDLC_DIR/labels.yml" <<'PY' | while IFS=$'\t' read -r name color desc; do
 import sys, re
 for blk in open(sys.argv[1]).read().split("- name:")[1:]:
-    name=re.search(r'"([^"]+)"', blk).group(1)
-    color=re.search(r'color:\s*"([^"]+)"', blk).group(1)
-    desc=re.search(r'description:\s*"([^"]+)"', blk).group(1)
-    print(f"{name}\t{color}\t{desc}")
+    print("\t".join([re.search(r'"([^"]+)"',blk).group(1),
+                     re.search(r'color:\s*"([^"]+)"',blk).group(1),
+                     re.search(r'description:\s*"([^"]+)"',blk).group(1)]))
 PY
   gh label create "$name" --color "$color" --description "$desc" --force >/dev/null && echo "  ✓ $name"
 done
 
-if [ "$WANT_WF" = 1 ]; then
-  echo "==> Installing workflows + CODEOWNERS"
+if [ "$WF" = 1 ]; then
+  echo "==> Workflows + CODEOWNERS"
   mkdir -p .github/workflows
   cp "$SDLC_DIR"/workflows/*.yml .github/workflows/ && echo "  ✓ .github/workflows/sdlc-*.yml"
-  [ -f .github/CODEOWNERS ] || { cp "$SDLC_DIR/CODEOWNERS.sample" .github/CODEOWNERS && echo "  ✓ .github/CODEOWNERS (edit owners!)"; }
+  [ -f .github/CODEOWNERS ] || { cp "$SDLC_DIR/CODEOWNERS.sample" .github/CODEOWNERS && echo "  ✓ .github/CODEOWNERS (edit owners)"; }
 fi
 
-cat <<'NEXT'
+if [ "$COMMIT" = 1 ]; then
+  echo "==> Commit + push wiring"
+  git add .github 2>/dev/null || true
+  if git diff --cached --quiet; then echo "  · nothing to commit"
+  else git commit -q -m "ci: install compass SDLC workflows + CODEOWNERS" && git push -q && echo "  ✓ pushed"; fi
+fi
 
-==> Finish the HUMAN GATE (do this in GitHub settings — agents cannot bypass it):
-  1. Settings → Branches → add a rule for your default branch:
-       ✓ Require a pull request before merging
-       ✓ Require approvals (≥1)  +  ✓ Require review from Code Owners
-       ✓ Require status checks to pass  (add the CI + review jobs)
-       ✓ Do not allow bypassing the above settings
-  2. Settings → Secrets and variables → Actions: add ANTHROPIC_API_KEY and OPENAI_API_KEY.
-  3. (Deploy gate) Settings → Environments → 'production' → Required reviewers.
+if [ "$SECRETS" = 1 ]; then
+  echo "==> Secrets"
+  set_secret(){ local n="$1" v="${!1:-}"
+    if [ -n "$v" ]; then printf '%s' "$v" | gh secret set "$n" >/dev/null && echo "  ✓ $n (from \$$n)"
+    else echo "  → paste value for $n:"; gh secret set "$n"; fi; }
+  set_secret ANTHROPIC_API_KEY
+  set_secret OPENAI_API_KEY
+fi
 
-Then: open a PR → Reviewer (Claude) runs automatically; add the `agent:audit` label to
-get the Codex cross-audit; comment `@claude <task>` to have Builder implement + open a PR.
-Local pipeline:  ~/compass/sdlc/orchestrate.sh "your task"
+if [ "$PROTECT" = 1 ]; then
+  echo "==> Branch protection on '$BRANCH' (the human merge gate)"
+  gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --input - >/dev/null <<JSON && echo "  ✓ require PR + 1 approval + code-owner review; no bypass" || echo "  ! protection failed (need admin?)"
+{ "required_status_checks": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 1, "require_code_owner_reviews": true },
+  "restrictions": null }
+JSON
+fi
+
+cat <<NEXT
+
+==> Ready. Remaining (one-time, manual — deploy gate):
+  Settings → Environments → 'production' → Required reviewers (gates deploy).
+Use it:
+  open a PR → Reviewer (Claude) runs · add label 'agent:audit' → Codex cross-audit ·
+  comment '@claude <task>' → Builder implements + opens a PR.
+Local headless run:  ~/compass/sdlc/orchestrate.sh "your task"
 NEXT

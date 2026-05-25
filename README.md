@@ -230,7 +230,8 @@ A pipeline of **named, governed agents** — Planner · Builder · Reviewer · *
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 
 # GitHub-native agents on your PRs (Claude review + Codex audit + @claude implement):
-~/compass/sdlc/setup.sh --workflows     # labels + workflows + CODEOWNERS, then prints the gate steps
+export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…   # zero-prompt secret setup
+~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 ```
 
 Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, setup, and the security posture (least-privilege tokens, no `pull_request_target` footgun, prompt-injection hardening, human gate via branch protection): [`docs/09-sdlc.md`](docs/09-sdlc.md).
