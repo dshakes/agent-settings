@@ -15,6 +15,7 @@
 #   SDLC_BUDGET=8    total USD budget hint; per-Claude-step cap is BUDGET/4
 #   SDLC_BASE=main   base branch for the PR (default: current branch)
 #   SDLC_CONVERGE=1  after review, loop fix→re-review until CLEAN or SDLC_MAX_FIX_ROUNDS (default 3)
+#   SDLC_SPEC=path   spec-driven: plan/build to this spec; review verifies vs its acceptance criteria
 set -uo pipefail
 
 TASK="${1:-}"; [ -n "$TASK" ] || { echo "usage: orchestrate.sh \"<task description>\""; exit 2; }
@@ -29,6 +30,14 @@ SLUG="$(printf '%s' "$TASK" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | 
 BRANCH="sdlc/${SLUG:-task}-$TS"
 BUDGET="${SDLC_BUDGET:-8}"; STEP_BUDGET="$(awk "BEGIN{printf \"%.2f\", $BUDGET/4}")"
 BUILD_PERM="acceptEdits"; [ "${SDLC_YOLO:-0}" = 1 ] && BUILD_PERM="bypassPermissions"
+
+# Spec-driven (opt-in): if SDLC_SPEC points at a spec file, plan/build to it and review vs it.
+SPEC_CLAUSE=""
+if [ -n "${SDLC_SPEC:-}" ] && [ -f "$SDLC_SPEC" ]; then
+  SPEC_CLAUSE="
+
+This work has a SPEC at $SDLC_SPEC — read it and treat its Acceptance Criteria as the contract; respect its Non-goals."
+fi
 
 log(){ printf '\n\033[1;36m▶ %s\033[0m\n' "$*"; }
 note(){ printf '  %s\n' "$*"; }
@@ -56,17 +65,17 @@ git checkout -b "$BRANCH" >/dev/null 2>&1 || { echo "could not create branch $BR
 claude_step plan planner.md opus plan \
   "Read,Grep,Glob,Bash(git log:*),Bash(git diff:*)" \
   "Task: $TASK
-Produce a concrete, minimal implementation plan for this repo. Write nothing but the plan."
+Produce a concrete, minimal implementation plan for this repo. Write nothing but the plan.$SPEC_CLAUSE"
 
 # tools the Builder may use (reused by the converge loop below)
 BUILD_TOOLS="Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(go build:*),Bash(go test:*),Bash(go vet:*),Bash(cargo build:*),Bash(cargo test:*),Bash(npm:*),Bash(pnpm:*),Bash(npx tsc:*),Bash(pytest:*),Bash(ruff:*),Bash(make:*)"
 REVIEW_TOOLS="Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)"
-REVIEW_PROMPT="Review the diff of branch $BRANCH against $BASE: run 'git diff $BASE...HEAD'. Report findings grouped Blocking / Should-fix / Nit. End with EXACTLY one line: 'SDLC-VERDICT: BLOCKING' if there is any Blocking finding, else 'SDLC-VERDICT: CLEAN'."
+REVIEW_PROMPT="Review the diff of branch $BRANCH against $BASE: run 'git diff $BASE...HEAD'. Report findings grouped Blocking / Should-fix / Nit. ${SDLC_SPEC:+Also read the spec at $SDLC_SPEC and verify the diff satisfies its Acceptance Criteria — treat any unmet criterion or out-of-scope change as Blocking. }End with EXACTLY one line: 'SDLC-VERDICT: BLOCKING' if there is any Blocking finding, else 'SDLC-VERDICT: CLEAN'."
 
 # 2 · BUILD (edits + commits on the feature branch)
 claude_step build builder.md sonnet "$BUILD_PERM" "$BUILD_TOOLS" \
   "Implement the plan in .sdlc/run-$TS/plan.md for this task: $TASK
-Stay on branch $BRANCH. Add tests. Build/test what you touch. Commit your work. Do not push or merge."
+Stay on branch $BRANCH. Add tests. Build/test what you touch. Commit your work. Do not push or merge.$SPEC_CLAUSE"
 # safety net: capture any uncommitted work so the diff/PR is complete
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git add -A && git commit -q -m "sdlc(builder): $TASK" && note "committed builder leftovers"
