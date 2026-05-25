@@ -45,8 +45,9 @@ jobs:
             You are **Reviewer** (agent:review) in an autonomous SDLC pipeline.
             Review ONLY the changes in this pull request for correctness, security,
             and adherence to the repo's CLAUDE.md / AGENTS.md conventions.
-            Post inline comments on the offending lines and one summary verdict
-            grouped Blocking / Should-fix / Nit. Do NOT modify files.
+            Post a SINGLE summary comment grouped Blocking / Should-fix / Nit, each as
+            `path:line — issue — fix`. Do NOT post per-line inline review comments
+            (they are turn-expensive and can exhaust the turn budget) and do NOT modify files.
 
             Then RETURN a structured verdict: set "verdict" to "BLOCKING" if there is at
             least one Blocking finding, otherwise "CLEAN"; set "summary" to one line.
