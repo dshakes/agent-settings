@@ -3,6 +3,48 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Closed auto-fix loop** (`sdlc-fix.yml`) — when the Reviewer emits a `BLOCKING` verdict
+  it labels the PR `agent:needs-fix`, which triggers the Builder to read all PR review
+  comments, fix on the PR's own branch, and push. The push (via `SDLC_BOT_TOKEN`) re-runs
+  the Reviewer. Repeats until the Reviewer is clean or the round cap is hit.
+- **Verdict-driven labels + round cap** — Reviewer sets `agent:needs-fix` or
+  `agent:reviewed-clean` based on a structured JSON verdict (`BLOCKING`/`CLEAN`). Builder
+  tracks rounds with `sdlc:round-N` and `sdlc:fixing` labels; hitting `SDLC_MAX_FIX_ROUNDS`
+  (default 3, configurable as a repo variable) labels `sdlc:needs-human` and posts a comment.
+- **Five new workflows** — `sdlc-fix.yml` (Builder fix loop), `sdlc-security.yml` (Claude
+  opus deep security pass, advisory), `sdlc-qa.yml` (test suite, required check),
+  `sdlc-plan.yml` (Planner on `agent:plan` issue label), `sdlc-release.yml` (CHANGELOG +
+  version bump on branch; never tags/publishes/merges).
+- **Auditor auto-on-open** — `sdlc-audit.yml` now fires on `opened`/`reopened` in addition
+  to the `agent:audit` label, so every new PR gets a Codex cross-audit automatically.
+- **`SDLC_BOT_TOKEN` chaining** — all write-capable workflows use a fine-grained PAT
+  (Contents+PRs write) so that pushes and labels re-trigger the Reviewer. `setup.sh
+  --secrets` sets it and prints creation guidance if unset.
+- **Required-status-check merge gate** — `setup.sh --protect` now sets `review` and `qa` as
+  required status checks (plus 1 code-owner approval). The Reviewer check goes red on
+  `BLOCKING`; QA goes red on test failure. A PR cannot merge while either is red.
+- **Self-hosted closed loop** — `sdlc/selfhosted/` variants of all new workflows run the
+  same label-driven loop via `claude -p` / `codex exec` on a self-hosted runner. `SDLC_BOT_TOKEN`
+  is still required for the loop to chain on self-hosted (model auth is keyless; workflow
+  chaining is not).
+
+### Changed
+- `sdlc/agents.registry.md` — updated agent table (7 real agents, all now backed by
+  workflows), loop diagram, label state machine, and governance invariants (`SDLC_BOT_TOKEN`
+  + `SDLC_MAX_FIX_ROUNDS`).
+- `docs/09-sdlc.md` — added "The closed loop" section with ASCII diagram, new 8-workflow
+  table, `SDLC_BOT_TOKEN` setup guide, required-status-check details, round-cap behavior,
+  fork-PR gating, and expanded troubleshooting.
+- `README.md` Autonomous SDLC section — describes the closed loop and `SDLC_BOT_TOKEN`
+  requirement; Status known-limits updated to match reality.
+- **Verification honesty** — operating manual + engineer subagents now forbid claiming a
+  check passed without running it (label **UNVERIFIED** instead), and make the delegator
+  re-run the gate on returned work. `claude/settings.json` pre-approves the safe validators
+  (`actionlint`, `shellcheck`, `yamllint`, `bash -n`) so background subagents can self-verify.
+
 ## [0.6.1] — 2026-05-25
 
 ### Security / hardening
