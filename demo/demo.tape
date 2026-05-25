@@ -1,53 +1,54 @@
-# compass demo tape — renders a terminal GIF showing the config in action.
-#
-# Render it (one command, after `brew install vhs`):
-#     vhs demo/demo.tape          # or: make demo
-# Produces demo/compass.gif. Commit that gif and it shows at the top of the README.
-#
-# Every command here is repo-local and deterministic — no plugin install or
-# network needed, so the recording is reproducible.
+# compass demo — render with:  vhs demo/demo.tape   (or: make demo)
+# Punchy, error-free, repo-local. Short helper commands (see demo/_demo.sh) keep
+# the screen clean; narration uses shell comments enabled in a hidden setup block.
 
 Output demo/compass.gif
 
 Set Shell "zsh"
-Set FontSize 16
-Set Width 1280
-Set Height 800
-Set Padding 20
+Set FontSize 22
+Set Width 1120
+Set Height 600
+Set Padding 28
 Set Theme "Catppuccin Mocha"
-Set TypingSpeed 35ms
+Set TypingSpeed 22ms
 
-Type "# compass — one config, both agents (Claude Code + Codex)"
+Hide
+Type "source demo/_demo.sh; setopt interactive_comments 2>/dev/null; PROMPT='%F{42}❯%f '; clear"
 Enter
-Sleep 700ms
+Sleep 400ms
+Show
 
-Type "# 1) validate the whole setup"
+Type "# compass — one config, both agents: Claude Code + Codex"
 Enter
-Type "make doctor | tail -6"
-Enter
-Sleep 2.5s
+Sleep 850ms
 
-Type "# 2) the status line: model · dir · git · context · cost"
+Type "# blocks the catastrophic, allows the rest"
 Enter
-Type `echo '{"model":{"display_name":"Claude Opus 4.7"},"workspace":{"current_dir":"/Users/you/lantern"},"permission_mode":"acceptEdits","cost":{"estimated_cost_cents":37,"total_input_tokens":42000}}' | claude/statusline.sh; echo`
+Sleep 400ms
+Type "guard 'rm -rf /'"
 Enter
-Sleep 2.5s
+Sleep 1000ms
+Type "guard 'rm -rf ./build'"
+Enter
+Sleep 1300ms
 
-Type "# 3) the guardrail blocks catastrophe (exit 2), allows real subpaths"
+Type "# the live status line: model · dir · git · context · cost"
 Enter
-Type `echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | claude/hooks/protect-paths.sh; echo " exit=$?"`
+Sleep 400ms
+Type "statusline"
 Enter
-Sleep 2s
-Type `echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ./build"}}' | claude/hooks/protect-paths.sh; echo "allowed exit=$?"`
-Enter
-Sleep 2.5s
+Sleep 1500ms
 
-Type "# 4) the roster: specialist subagents + workflow commands"
+Type "# a cost-tiered crew + the workflows you actually use"
 Enter
-Type "ls claude/agents | sed 's/.md//' | column && echo --- && ls claude/commands | sed 's/.md//' | column"
+Sleep 400ms
+Type "roster"
 Enter
-Sleep 3s
+Sleep 850ms
+Type "cmds"
+Enter
+Sleep 1200ms
 
-Type "# install once -> every repo gets it.  /plugin install core@compass for teams."
+Type "# install once, every repo gets it:  /plugin install core@compass"
 Enter
-Sleep 2.5s
+Sleep 1900ms
