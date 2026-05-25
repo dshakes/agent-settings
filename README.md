@@ -9,6 +9,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)](docs/05-plugin.md)
 [![AGENTS.md](https://img.shields.io/badge/AGENTS.md-compatible-2ea44f.svg)](https://agents.md/)
+[![status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)](#status)
 
 </div>
 
@@ -38,6 +39,7 @@
 - [Grounded in published practice](#grounded-in-published-practice)
 - [Customizing](#customizing)
 - [Safety and honesty](#safety-and-honesty)
+- [Status](#status)
 - [Docs](#docs)
 
 ---
@@ -209,7 +211,7 @@ Commit a project `.claude/settings.json` so everyone who opens the repo gets the
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.4.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.6.0" } }
   },
   "enabledPlugins": { "core@compass": true }
 }
@@ -281,6 +283,22 @@ A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearl
 - Symlink install means `git pull` updates everyone; use `--copy` to snapshot instead.
 - **Guardrails reduce footguns; they are not a security boundary.** Keep least-privilege credentials and review diffs.
 - Model IDs and a couple of Codex keys track tool versions — `make doctor` and inline comments flag what to verify.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Status
+
+**Alpha.** The core (manual, hooks, subagents, commands, MCP, plugin/marketplace) is stable
+and dogfooded; the **SDLC pipeline** is newer — proven end-to-end on a pilot, but treat it as
+early. Known limits, by design:
+- **Humans merge & deploy** — agents stop at a PR (never auto-merge/deploy).
+- **Cloud agents need a runner or credential** — keyless via a self-hosted runner (`claude -p`),
+  or a subscription token / API key for GitHub-hosted runners.
+- **Agent teams are interactive-only** — headless multi-agent coordination uses chained
+  `claude -p` + `codex exec`, not teams.
+- Pin to a tagged release (not `main`) for stability. Report issues via the templates.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 

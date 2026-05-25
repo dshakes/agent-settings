@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.6.0] — 2026-05-25
+
+### Added
+- **Keyless cloud agents** (`sdlc/selfhosted/`) — review / audit / implement workflows that
+  shell out to `claude -p` / `codex exec` on a self-hosted runner (your **subscription** — no
+  API key or token). `setup.sh --self-hosted`. Proven end-to-end on a pilot PR.
+- **One-command onboarding** — `setup.sh --all`: labels + workflows + CODEOWNERS + commit/push
+  + secrets + branch protection (via the GitHub API).
+- **Subscription auth for hosted runners** — workflows accept `CLAUDE_CODE_OAUTH_TOKEN`
+  (`claude setup-token`) as an alternative to an API key.
+- **README Status section** (alpha + known limits) and an alpha badge.
+
+### Fixed
+- `claude-code-action` workflows need `id-token: write` (OIDC) — added to review + implement.
+- Orchestrator printed the Codex audit twice; deduped a `[profiles.deep]` that an earlier
+  rename had duplicated in the local Codex `config.toml`.
+
 ## [0.5.0] — 2026-05-25
 
 ### Added
@@ -80,6 +97,7 @@ First public release.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
+[0.6.0]: https://github.com/dshakes/compass/releases/tag/v0.6.0
 [0.5.0]: https://github.com/dshakes/compass/releases/tag/v0.5.0
 [0.4.0]: https://github.com/dshakes/compass/releases/tag/v0.4.0
 [0.3.0]: https://github.com/dshakes/compass/releases/tag/v0.3.0
