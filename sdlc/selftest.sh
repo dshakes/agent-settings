@@ -59,6 +59,17 @@ else
   echo "verdict (hosted / jq): SKIPPED — jq not installed"
 fi
 
+# ── 4 · Domain classification parse (mirror of sdlc-classify.yml self-hosted) ─────
+domain_parse() { # arg: classifier text on stdin → ui|api|infra|docs|core
+  local d; d="$(grep -oE 'SDLC-DOMAIN: (ui|api|infra|docs|core)' | tail -1 | awk '{print $2}')"
+  case "${d:-}" in ui|api|infra|docs|core) echo "$d" ;; *) echo core ;; esac
+}
+echo "domain classification:"
+eq "ui"                "$(printf 'looks frontend\nSDLC-DOMAIN: ui\n'   | domain_parse)" "ui"
+eq "infra"             "$(printf 'SDLC-DOMAIN: infra\n'                 | domain_parse)" "infra"
+eq "no line → core"    "$(printf 'no verdict here\n'                    | domain_parse)" "core"
+eq "garbage → core"    "$(printf 'SDLC-DOMAIN: banana\n'                | domain_parse)" "core"
+
 echo
 printf 'selftest: %d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
