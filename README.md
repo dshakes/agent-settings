@@ -1,135 +1,163 @@
-# compass
+<div align="center">
+
+# 🧭 compass
+
+**One configuration that makes Claude Code and Codex behave like your best engineer — by default, in every repo.**
 
 [![ci](https://github.com/dshakes/compass/actions/workflows/ci.yml/badge.svg)](https://github.com/dshakes/compass/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/dshakes/compass?color=8A63D2)](https://github.com/dshakes/compass/releases)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)](docs/05-plugin.md)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)](docs/05-plugin.md)
+[![AGENTS.md](https://img.shields.io/badge/AGENTS.md-compatible-2ea44f.svg)](https://agents.md/)
 
-![compass demo](demo/compass.gif)
-<!-- Generate this GIF with `make demo` (needs vhs). See demo/README.md. -->
+</div>
 
-A production-grade, **cloneable** configuration for [Claude Code](https://claude.com/claude-code)
-and [Codex](https://openai.com/codex) — tuned for serious, polyglot software work
-and kept honest. Clone it, run `make install`, and your agents pick up a
-core operating manual, safety guardrails, auto-formatting,
-cost-aware model routing, a roster of specialist subagents, and a set of
-workflow commands.
+```console
+$ make doctor
+  ✓ valid JSON: claude/settings.json        ✓ plugin in sync with claude/
+  ✓ linked: ~/.claude/CLAUDE.md -> ~/compass/claude/CLAUDE.md
+  Result: 47 ok · 1 warn · 0 error
 
-> No magic, no fabricated "secret configs." Everything here is built on
-> **documented** Claude Code / Codex features and battle-tested patterns. Read
-> any file before you trust it — that's the point of shipping it as source.
+  status line   Claude Opus 4.7 · compass · main* · 42k ctx · $0.37 · [edits]
 
-**Two ways to install** — pick one (don't run both; hooks would double-fire):
+  guardrail     rm -rf /        → BLOCKED (exit 2)
+                rm -rf ./build  → allowed (exit 0)
+
+  subagents     architect · code-reviewer · security-auditor · debugger
+                go-engineer · rust-engineer · k8s-operator · test-runner · docs-writer
+  commands      /ship  /review  /tdd  /pr  /adr  /triage  /scaffold  /cost
+```
+
+<sub>▶ Prefer it animated? `make demo` renders `demo/compass.gif` (needs [vhs](https://github.com/charmbracelet/vhs)) — then drop `![demo](demo/compass.gif)` here.</sub>
+
+> **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
+
+---
+
+## Contents
+
+- [Quickstart](#quickstart)
+- [Why compass](#why-compass)
+- [What's inside](#whats-inside)
+- [The hooks](#the-hooks)
+- [Cost model](#cost-model)
+- [MCP servers](#mcp-servers)
+- [Language servers (LSP)](#language-servers-lsp)
+- [New or existing repos](#new-or-existing-repos)
+- [Team rollout](#team-rollout)
+- [Cross-tool: one source](#cross-tool-one-source)
+- [Grounded in published practice](#grounded-in-published-practice)
+- [Customizing](#customizing)
+- [Safety and honesty](#safety-and-honesty)
+- [Docs](#docs)
+
+---
+
+## Quickstart
+
+Pick **one** path — running both double-fires the hooks.
+
+**A · Full setup** (recommended) — manual + permissions + statusline + hooks + subagents + MCP, global to every repo:
 
 ```bash
-# A) Full setup (recommended) — clone + symlink into ~/.claude and ~/.codex.
-#    Includes the CLAUDE.md operating manual, permissions, statusline, Codex parity.
 git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
-make dry-run     # see exactly what will change
-make install     # backs up anything it replaces
+make dry-run     # preview every change
+make install     # symlink into ~/.claude + ~/.codex (backs up first)
 make doctor      # validate everything
+```
 
-# B) Plugin only (zero-config team rollout of the machinery — subagents,
-#    commands, hooks, skill, output style, MCP). Can't carry memory/permissions.
+**B · Plugin only** (zero-config, team-friendly) — the machinery, but *not* memory/permissions:
+
+```bash
 /plugin marketplace add dshakes/compass
 /plugin install core@compass
 ```
 
-See [`docs/05-plugin.md`](docs/05-plugin.md) for what each method can and can't ship.
+→ [What each method can and can't ship](docs/05-plugin.md)
 
-## Setup — new or existing repo
-
-```bash
-# Your machine (once): everything below applies to EVERY repo automatically.
-git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
-make install        # symlinks into ~/.claude + ~/.codex (backs up first)
-make mcp            # optional: register context7 / fetch / git
-
-# An EXISTING repo — give it project context (+ optional team rollout):
-make new-repo DIR=/path/to/repo            # adds starter CLAUDE.md + AGENTS.md symlink
-make new-repo DIR=/path/to/repo TEAM=1     # also pins core@compass for the whole team
-#   then run Claude's /init or the bootstrap-agent-config skill to fill CLAUDE.md
-
-# A BRAND-NEW repo:
-make new-repo DIR=./my-thing TEAM=1        # git init + CLAUDE.md + AGENTS.md + pinned settings
-```
-
-Full guide: [`docs/08-defaults.md`](docs/08-defaults.md). Tip: add
-`newrepo(){ ~/compass/scripts/new-repo.sh "$@"; }` to your shell for a one-word command.
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## Why this exists
+## Why compass
 
-The gap between a default agent and a great one isn't the model — it's the
-**configuration around it**: what it knows by default, what it's allowed to do,
-what it does automatically, and which model does which job. This repo encodes that
-configuration so you don't reinvent it per machine or per teammate.
+The gap between a default agent and a great one isn't the model — it's the **configuration around it**: what it knows, what it's allowed to do, what it does automatically, and which model does which job. compass encodes that once so you don't rebuild it per machine or per teammate.
 
-What you get on the first task:
-- **It already knows how to behave** — a tight operating manual (`CLAUDE.md` /
-  `AGENTS.md`) loads into every session: understand-before-changing, stay in
-  scope, verify, report faithfully.
-- **It can't do the catastrophic thing** — a `PreToolUse` hook blocks secret
-  writes, `rm -rf /`, `curl|sh`, and force-push/hard-reset on protected branches.
-- **It cleans up after itself** — a `PostToolUse` hook formats every file it edits
-  with the canonical formatter for the language.
-- **It costs less** — fan-out work is delegated to **Haiku/Sonnet** subagents;
-  **Opus** is reserved for hard reasoning. A live status line shows session cost.
-- **It has specialists** — `code-reviewer`, `security-auditor`, `debugger`,
-  `architect`, `go-engineer`, `rust-engineer`, `k8s-operator`, `test-runner`,
-  `docs-writer` — each with the right model and scoped tools.
-- **It has workflows** — `/ship`, `/review`, `/tdd`, `/pr`, `/adr`, `/triage`,
-  `/scaffold`, `/cost`.
+<details>
+<summary><strong>What you get on the first task →</strong></summary>
+
+- **It already knows how to behave** — a tight operating manual loads every session: understand-before-changing, stay in scope, verify, report faithfully.
+- **It can't do the catastrophic thing** — a `PreToolUse` hook blocks secret writes, `rm -rf /`, `curl|sh`, and force-push/hard-reset on protected branches.
+- **It cleans up after itself** — edits are auto-formatted (gofmt, rustfmt, prettier/biome, ruff, …).
+- **It costs less** — fan-out goes to Haiku/Sonnet subagents; Opus is reserved for hard reasoning; a status line shows live cost.
+- **It has specialists** — code-reviewer, security-auditor, debugger, architect, go/rust-engineer, k8s-operator, test-runner, docs-writer.
+- **It has workflows** — `/ship` `/review` `/tdd` `/pr` `/adr` `/triage` `/scaffold` `/cost`.
+
+</details>
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## What's in the box
+## What's inside
+
+| Area | What you get | Lives in |
+|---|---|---|
+| **Operating manual** | `CLAUDE.md` (≙ `AGENTS.md`), loaded every session | `claude/CLAUDE.md` |
+| **Guardrail + quality hooks** | protect-paths · format-on-edit · inject-context · notify | `claude/hooks/` |
+| **Specialist subagents** (9) | cost-tiered across Haiku / Sonnet / Opus | `claude/agents/` |
+| **Workflow commands** (8) | `/ship` `/review` `/tdd` `/pr` `/adr` `/triage` `/scaffold` `/cost` | `claude/commands/` |
+| **Skill** | bootstrap a grounded project `CLAUDE.md` | `claude/skills/` |
+| **Status line** | model · dir · git · context · `$cost` | `claude/statusline.sh` |
+| **Codex parity** | `AGENTS.md` + cost profiles | `codex/` |
+| **MCP (single source)** | context7 · fetch · git | `mcp/servers.json` |
+| **Plugins + marketplace** | `core`, `core-lsp` | `plugins/`, `.claude-plugin/` |
+
+<details>
+<summary><strong>Repo layout →</strong></summary>
 
 ```
 compass/
-├── claude/                     # → symlinked into ~/.claude
-│   ├── settings.json           # model, permissions, hooks, statusline, env
-│   ├── CLAUDE.md               # global operating manual (loads every session)
-│   ├── statusline.sh           # model · dir · git · context · $cost
-│   ├── output-styles/          # "Concise" terse tone
-│   ├── agents/                 # 9 cost-tiered specialist subagents
-│   ├── commands/               # /ship /review /tdd /pr /adr /triage /scaffold /cost
-│   ├── skills/                 # bootstrap-agent-config (+ your own)
-│   └── hooks/                  # protect-paths · format-on-edit · inject-context · notify
-├── codex/                      # → symlinked/merged into ~/.codex
-│   ├── config.toml             # profiles (deep/standard/cheap), sandbox posture
-│   └── AGENTS.md               # same constitution as CLAUDE.md
-├── mcp/
-│   └── servers.json            # single-source MCP manifest → both Claude & Codex
-├── templates/                  # CLAUDE.md + project .mcp.json skeletons
-├── scripts/                    # doctor.sh, setup-mcp.sh, uninstall.sh
-├── docs/                       # philosophy, architecture, cost, customization
-├── install.sh                 # idempotent, backs up, symlink or --copy
-└── Makefile
+├── claude/                  # → symlinked into ~/.claude
+│   ├── settings.json        # model, permissions, hooks, statusline, env
+│   ├── CLAUDE.md            # global operating manual
+│   ├── statusline.sh        # model · dir · git · context · $cost
+│   ├── output-styles/       # "Concise" terse tone
+│   ├── agents/  commands/  skills/  hooks/
+├── codex/                   # → symlinked/merged into ~/.codex (config.toml + AGENTS.md)
+├── mcp/servers.json         # single-source MCP manifest → both tools
+├── plugins/                 # core, core-lsp (self-contained)
+├── .claude-plugin/          # marketplace.json
+├── templates/  scripts/  docs/  demo/
+├── install.sh  Makefile
 ```
 
-See [`docs/01-architecture.md`](docs/01-architecture.md) for how each piece maps
-into the runtime.
+</details>
+
+→ [Architecture](docs/01-architecture.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## The hooks (balanced posture)
+## The hooks
+
+Balanced posture: stop accidents, stay invisible otherwise. Dependency-light (jq → python3 → grep) and they **never fail a session**.
 
 | Hook | Event | What it does |
 |---|---|---|
-| `protect-paths.sh` | PreToolUse | **Blocks** secret writes, `rm -rf /`, fork bombs, `curl\|sh`, force-push/hard-reset to `main`/`prod`. Everything else flows to normal rules. |
-| `format-on-edit.sh` | PostToolUse | Formats the edited file (gofmt, rustfmt, prettier/biome, ruff, shfmt, terraform, buf). Best-effort, silent. |
-| `inject-context.sh` | SessionStart | Hands Claude branch, dirty state, recent commits up front — no wasted first turn. |
-| `notify.sh` | Stop / Notification | Desktop notification when a turn finishes or input is needed (macOS/Linux). |
+| `protect-paths` | PreToolUse | **Blocks** secret writes, `rm -rf /` `~` `$HOME`, fork bombs, `curl\|sh`, force-push/hard-reset to `main`/`prod` — allows real subpaths. |
+| `format-on-edit` | PostToolUse | Formats the edited file (gofmt, rustfmt, prettier/biome, ruff, shfmt, terraform, buf). |
+| `inject-context` | SessionStart | Hands the agent branch, dirty state, recent commits up front. |
+| `notify` | Stop / Notification | Desktop notification when a turn finishes or needs input (macOS/Linux). |
 
-All hooks are dependency-light (jq → python3 → grep fallback) and **never fail a
-session**. Read them — they're short.
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
 ## Cost model
 
-The driver runs **Opus 4.7 / high effort**. The savings come from *delegation*:
+The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**.
 
 | Tier | Model | Used by | For |
 |---|---|---|---|
@@ -137,117 +165,134 @@ The driver runs **Opus 4.7 / high effort**. The savings come from *delegation*:
 | Standard | Sonnet 4.6 | `code-reviewer`, `go/rust-engineer`, `docs-writer`, `k8s-operator` | most coding & review |
 | Deep | Opus 4.7 | `architect`, `security-auditor`, `debugger`, driver | architecture, security, subtle bugs |
 
-`/cost` re-plans any task to the cheapest-correct mix. More in
-[`docs/02-cost-and-models.md`](docs/02-cost-and-models.md).
+`/cost` re-plans any task to the cheapest-correct mix. → [Cost & models](docs/02-cost-and-models.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## MCP servers (kept in Claude ↔ Codex parity)
+## MCP servers
 
-One manifest ([`mcp/servers.json`](mcp/servers.json)) registers servers in **both**
-tools, skipping anything that would duplicate your existing Codex plugins.
+One manifest ([`mcp/servers.json`](mcp/servers.json)) registers servers in **both** tools, skipping anything that would duplicate your existing Codex plugins.
 
 ```bash
-make mcp          # register curated servers in Claude + Codex
+make mcp          # register in Claude + Codex
 claude mcp list   # verify health
 ```
 
-Auto-registered (secret-free): **context7** (live library docs), **fetch** (URL →
-markdown), **git** (structured git). Opt-in/documented: **github** (OAuth),
-**postgres** (read-only, project-scoped — pre-wired for lantern via its
-`.mcp.json`, gated on `LANTERN_DATABASE_URL`). Details in
-[`docs/04-mcp.md`](docs/04-mcp.md).
+- **Auto (secret-free):** `context7` (live library docs) · `fetch` (URL → markdown) · `git` (structured git).
+- **Opt-in:** `github` (OAuth) · `postgres` (read-only, project-scoped — pre-wired for lantern, gated on `LANTERN_DATABASE_URL`).
+
+→ [MCP guide](docs/04-mcp.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## LSP — language intelligence (opt-in, Claude-only)
+## Language servers (LSP)
 
-A companion plugin gives Claude **automatic diagnostics + navigation** (background,
-zero context cost) for Go, Rust, TypeScript, and Python:
+An **opt-in** companion plugin gives Claude background **diagnostics + navigation** (zero context cost) for Go, Rust, TypeScript, Python:
 
 ```bash
-/plugin install core-lsp@compass    # needs the servers on PATH
+/plugin install core-lsp@compass   # needs gopls / rust-analyzer / typescript-language-server / pyright on PATH
 ```
 
-It's separate because it requires `gopls`/`rust-analyzer`/`typescript-language-server`/
-`pyright` installed. Codex has no native LSP, so this is Claude-only — see
-[`docs/06-lsp.md`](docs/06-lsp.md).
+Separate because it needs the language-server binaries. Codex has no native LSP, so this one is Claude-only. → [LSP guide](docs/06-lsp.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## Team rollout (pin the plugin in a shared repo)
+## New or existing repos
 
-Commit a project `.claude/settings.json` so everyone who opens the repo gets the
-machinery — pinned to a tag for stability:
+After `make install`, the manual + hooks + subagents + MCP apply to **every** repo automatically. For committed, per-repo context:
+
+```bash
+make new-repo DIR=/path/to/repo            # existing repo: starter CLAUDE.md + AGENTS.md symlink
+make new-repo DIR=/path/to/repo TEAM=1     # + pin core@compass for the whole team
+make new-repo DIR=./brand-new TEAM=1       # new repo: git init + files + pinned settings
+```
+
+Then run Claude's `/init` or the `bootstrap-agent-config` skill to fill `CLAUDE.md` from the actual code. Tip: add `newrepo(){ ~/compass/scripts/new-repo.sh "$@"; }` to your shell. → [Defaults guide](docs/08-defaults.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Team rollout
+
+Commit a project `.claude/settings.json` so everyone who opens the repo gets the machinery, pinned to a tag for stability:
 
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.2.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.4.0" } }
   },
   "enabledPlugins": { "core@compass": true }
 }
 ```
 
-A teammate is prompted to trust the repo, then the plugin auto-enables. Anyone who
-already has it globally (via `make install`) opts out per-repo in a gitignored
-`.claude/settings.local.json` (`{ "enabledPlugins": { "core@compass": false } }`)
-to avoid double-firing hooks. This is live in the **lantern** repo. Details:
-[`docs/05-plugin.md`](docs/05-plugin.md).
+A teammate is prompted to trust the repo, then it auto-enables. Anyone who already has it globally opts out per-repo in a gitignored `.claude/settings.local.json` (`{"enabledPlugins":{"core@compass":false}}`) to avoid double-firing hooks. **Live in the lantern repo.** → [Plugin guide](docs/05-plugin.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Cross-tool: one source
+
+`AGENTS.md` — the open standard Codex and 20+ agents read — is a **symlink to `CLAUDE.md`**, globally (`~/.codex/AGENTS.md` → `~/.claude/CLAUDE.md`, byte-identical) and per-repo. Edit the manual once; both tools read the same instructions, no drift.
+
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
 ## Grounded in published practice
 
-The defaults aren't invented — they adopt **cited, verifiable** guidance from
-Anthropic's [Claude Code best practices](https://code.claude.com/docs/en/best-practices),
-the [agents.md](https://agents.md/) standard, Karpathy's public principles, and
-Garry Tan's [`gstack`](https://github.com/garrytan/gstack). The mapping (and an
-honest note on what we did *not* fabricate) is in [`docs/07-practices.md`](docs/07-practices.md).
+The defaults adopt **cited, verifiable** guidance — not invented ones:
 
-## Defaults for new repos
+- Anthropic — [Best practices for Claude Code](https://code.claude.com/docs/en/best-practices)
+- The [agents.md](https://agents.md/) standard
+- Andrej Karpathy's public principles (vibe-coding, "tight leash")
+- Garry Tan's [`gstack`](https://github.com/garrytan/gstack)
 
-After `make install`, the operating manual + hooks + subagents + MCP apply to
-**every** repo automatically (they're global). For a committed, per-repo
-`CLAUDE.md`:
+The full mapping — and an honest note on what we did **not** fabricate — is in [`docs/07-practices.md`](docs/07-practices.md).
 
-```bash
-scripts/new-repo.sh ./my-service          # starter CLAUDE.md + AGENTS.md symlink
-scripts/new-repo.sh ./my-service --team   # also pins core@compass
-# add `newrepo(){ ~/compass/scripts/new-repo.sh "$@"; }` to your shell
-```
-
-`git init.templateDir` only seeds `.git/` (hooks), not working-tree files — so a
-`CLAUDE.md` needs the scaffolder. Full guide: [`docs/08-defaults.md`](docs/08-defaults.md).
-
-## One source for Claude + Codex
-
-`AGENTS.md` (the open standard Codex and 20+ agents read) is a **symlink to
-`CLAUDE.md`** — globally (`~/.codex/AGENTS.md` → `~/.claude/CLAUDE.md`, byte-identical)
-and per-repo. Edit the manual once; both tools read the same instructions, no drift.
-
-## Customizing
-
-This is a starting point, not scripture. Fork it. The global `CLAUDE.md` has a
-clearly-marked stack section you can delete if you're not polyglot AI-infra. Add
-your own agents/commands/skills as plain markdown files — they're picked up
-automatically. See [`docs/03-customize.md`](docs/03-customize.md).
-
-Bootstrapping a new repo? In any project, ask Claude to run the
-**`bootstrap-agent-config`** skill — it inspects the codebase and drafts a
-grounded project `CLAUDE.md` + `AGENTS.md`.
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
-## Safety & honesty notes
+## Customizing
 
-- The installer **backs up** anything it replaces into `~/.claude/backups/` and is
-  idempotent. `make uninstall` removes only the symlinks it created.
-- Symlink install means `git pull` updates everyone; `--copy` if you'd rather
-  snapshot.
-- Guardrails reduce footguns; they are **not** a security boundary. Keep using
-  least-privilege credentials and review diffs.
-- Model IDs and a couple of Codex keys track tool versions — `make doctor` and the
-  inline comments flag what to verify on your machine.
+A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearly-marked stack section you can delete if you're not polyglot AI-infra. Drop your own agents/commands/skills in as plain markdown; they're picked up automatically. → [Customize guide](docs/03-customize.md)
 
-MIT licensed. Built to be shared.
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Safety and honesty
+
+- The installer **backs up** anything it replaces to `~/.claude/backups/` and is idempotent; `make uninstall` removes only what it created.
+- Symlink install means `git pull` updates everyone; use `--copy` to snapshot instead.
+- **Guardrails reduce footguns; they are not a security boundary.** Keep least-privilege credentials and review diffs.
+- Model IDs and a couple of Codex keys track tool versions — `make doctor` and inline comments flag what to verify.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Docs
+
+| Doc | What |
+|---|---|
+| [00 · Philosophy](docs/00-philosophy.md) | the operating beliefs |
+| [01 · Architecture](docs/01-architecture.md) | how each piece maps into the runtime |
+| [02 · Cost & models](docs/02-cost-and-models.md) | the delegation/routing model |
+| [03 · Customize](docs/03-customize.md) | add your own agents/commands/skills |
+| [04 · MCP](docs/04-mcp.md) | single-source server parity |
+| [05 · Plugin](docs/05-plugin.md) | marketplace + what plugins can/can't ship |
+| [06 · LSP](docs/06-lsp.md) | language-server intelligence |
+| [07 · Practices](docs/07-practices.md) | cited best practices (and what's folklore) |
+| [08 · Defaults](docs/08-defaults.md) | making it the default for new repos |
+| [Demo](demo/README.md) | render the terminal GIF with vhs |
+
+<div align="center"><sub>MIT · built to be shared</sub></div>
