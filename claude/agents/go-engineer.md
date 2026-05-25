@@ -24,3 +24,7 @@ Read the surrounding package and its tests first. Make the change. Add/extend
 tests. Run `go build ./... && go vet ./... && go test -race ./<pkg>` on what you
 touched. Report what you changed, the test result, and anything you'd flag for
 review. Don't expand scope beyond the task.
+
+Paste the actual command output. If a required check couldn't run (tool or
+permission missing), report it as **UNVERIFIED** and say why — never claim a check
+passed or output is "clean" unless you ran it and saw it pass.
