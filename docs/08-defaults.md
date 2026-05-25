@@ -16,8 +16,8 @@ A repo-specific `CLAUDE.md` (build/test commands, invariants) is worth committin
 not working-tree files. Use the scaffolder instead:
 
 ```bash
-~/agent-settings/scripts/new-repo.sh ./my-service          # starter CLAUDE.md + AGENTS.md symlink
-~/agent-settings/scripts/new-repo.sh ./my-service --team   # also pins core@agent-settings
+~/compass/scripts/new-repo.sh ./my-service          # starter CLAUDE.md + AGENTS.md symlink
+~/compass/scripts/new-repo.sh ./my-service --team   # also pins core@compass
 ```
 
 Then fill `CLAUDE.md` from the real code with Claude's `/init` or the
@@ -26,7 +26,7 @@ Then fill `CLAUDE.md` from the real code with Claude's `/init` or the
 ### Make it a one-word command
 Add to `~/.zshrc` (or `~/.bashrc`):
 ```bash
-newrepo() { ~/agent-settings/scripts/new-repo.sh "$@"; }
+newrepo() { ~/compass/scripts/new-repo.sh "$@"; }
 ```
 Now `newrepo ./thing` or `newrepo ./thing --team` anywhere.
 

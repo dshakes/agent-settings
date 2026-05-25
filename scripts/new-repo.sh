@@ -7,7 +7,7 @@
 # and optionally the team plugin pin.
 #
 #   new-repo.sh [dir]            # scaffold in dir (created + git-init'd if missing)
-#   new-repo.sh [dir] --team     # also pin core@agent-settings in .claude/settings.json
+#   new-repo.sh [dir] --team     # also pin core@compass in .claude/settings.json
 #   new-repo.sh --team           # scaffold in the current directory
 set -euo pipefail
 
@@ -41,12 +41,12 @@ if [ "$TEAM" = 1 ]; then
     cat > .claude/settings.json <<'JSON'
 {
   "extraKnownMarketplaces": {
-    "agent-settings": { "source": { "source": "github", "repo": "dshakes/agent-settings", "ref": "v0.3.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.3.0" } }
   },
-  "enabledPlugins": { "core@agent-settings": true }
+  "enabledPlugins": { "core@compass": true }
 }
 JSON
-    echo "wrote .claude/settings.json (pins core@agent-settings for the team)"
+    echo "wrote .claude/settings.json (pins core@compass for the team)"
   fi
 fi
 

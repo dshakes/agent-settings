@@ -4,7 +4,7 @@ This repo is **also a Claude Code plugin marketplace**, so teammates can install
 the machinery with two commands instead of cloning + `make install`.
 
 ```
-agent-settings/                         # ← the marketplace (repo root)
+compass/                         # ← the marketplace (repo root)
 ├── .claude-plugin/marketplace.json     # lists the plugins
 └── plugins/
     └── core/             # ← the plugin (self-contained, real files)
@@ -16,19 +16,19 @@ agent-settings/                         # ← the marketplace (repo root)
 
 ## Install (teammates)
 ```bash
-/plugin marketplace add dshakes/agent-settings       # GitHub owner/repo
-/plugin install core@agent-settings
+/plugin marketplace add dshakes/compass       # GitHub owner/repo
+/plugin install core@compass
 ```
 Local testing from a clone:
 ```bash
-/plugin marketplace add ./agent-settings
-/plugin install core@agent-settings
+/plugin marketplace add ./compass
+/plugin install core@compass
 ```
 
 ## What the plugin delivers
 9 subagents · 8 commands · 4 hooks (incl. the `protect-paths` guardrail) ·
 `bootstrap-agent-config` skill · "Concise" output style ·
-3 MCP servers. Validated via `claude plugin details core@agent-settings`
+3 MCP servers. Validated via `claude plugin details core@compass`
 (≈1,165 always-on tokens; agents/commands cost only when invoked).
 
 ## What the plugin **cannot** carry — and why both methods exist

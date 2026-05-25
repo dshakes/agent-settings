@@ -8,8 +8,8 @@
     "name": "Shekhar Mudarapu",
     "url": "https://github.com/dshakes"
   },
-  "homepage": "https://github.com/dshakes/agent-settings#readme",
-  "repository": "https://github.com/dshakes/agent-settings",
+  "homepage": "https://github.com/dshakes/compass#readme",
+  "repository": "https://github.com/dshakes/compass",
   "license": "MIT",
   "keywords": ["subagents", "hooks", "code-review", "security-review", "cost-optimization", "mcp", "go", "rust", "typescript", "kubernetes"]
 }

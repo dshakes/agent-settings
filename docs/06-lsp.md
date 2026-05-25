@@ -11,10 +11,10 @@ them into the main `core` plugin would force-start servers that some
 teammates don't have. So they live in a companion plugin you enable deliberately:
 
 ```bash
-/plugin install core-lsp@agent-settings
+/plugin install core-lsp@compass
 ```
 
-Verified inventory (`claude plugin details core-lsp@agent-settings`):
+Verified inventory (`claude plugin details core-lsp@compass`):
 **4 LSP servers — gopls, rust-analyzer, typescript, pyright.**
 
 ## Prerequisites (install the servers you need)

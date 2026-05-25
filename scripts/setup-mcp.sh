@@ -13,8 +13,8 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="$REPO/mcp/servers.json"
 CODEX="$HOME/.codex/config.toml"
-MARK="# >>> agent-settings mcp >>>"
-MARK_END="# <<< agent-settings mcp <<<"
+MARK="# >>> compass mcp >>>"
+MARK_END="# <<< compass mcp <<<"
 DRY=0; [ "${1:-}" = "--dry-run" ] && DRY=1
 
 command -v jq >/dev/null || { echo "jq required for setup-mcp.sh" >&2; exit 1; }
@@ -46,7 +46,7 @@ printf '\n\033[1mCodex\033[0m\n'
 if [ -f "$CODEX" ] && grep -qF "$MARK" "$CODEX"; then
   say "MCP block already present in ~/.codex/config.toml (skipping)"
 else
-  block="$MARK"$'\n'"# MCP servers — parity with Claude. Managed by agent-settings."$'\n'
+  block="$MARK"$'\n'"# MCP servers — parity with Claude. Managed by compass."$'\n'
   added=0
   for name in $names; do
     jq -e ".servers[\"$name\"].codex==true" "$MANIFEST" >/dev/null || continue

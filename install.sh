@@ -17,7 +17,7 @@ CODEX_SRC="$REPO/codex"
 CLAUDE_DST="$HOME/.claude"
 CODEX_DST="$HOME/.codex"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP="$HOME/.claude/backups/agent-settings-$STAMP"
+BACKUP="$HOME/.claude/backups/compass-$STAMP"
 
 MODE="symlink"; DRY=0; DO_CLAUDE=1; DO_CODEX=1
 for arg in "$@"; do
@@ -55,8 +55,8 @@ chmodx() { [ "$DRY" = 1 ] && return; find "$1" -name '*.sh' -exec chmod +x {} + 
 # Codex config is precious (plugins, marketplaces, trusted projects). Never
 # clobber it: if it exists, append our cost profiles once (marker-delimited,
 # inert until `--profile` is used). Only symlink the full template when absent.
-MARK_BEGIN="# >>> agent-settings profiles >>>"
-MARK_END="# <<< agent-settings profiles <<<"
+MARK_BEGIN="# >>> compass profiles >>>"
+MARK_END="# <<< compass profiles <<<"
 merge_codex_profiles() {
   local dst="$1"
   if [ ! -e "$dst" ]; then place "$CODEX_SRC/config.toml" "$dst"; return; fi
@@ -83,7 +83,7 @@ $MARK_END
 TOML
 }
 
-head "agent-settings installer  (mode: $MODE$( [ "$DRY" = 1 ] && printf ', dry-run' ))"
+head "compass installer  (mode: $MODE$( [ "$DRY" = 1 ] && printf ', dry-run' ))"
 say "repo:   $REPO"
 
 if [ "$DO_CLAUDE" = 1 ]; then

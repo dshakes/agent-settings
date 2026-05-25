@@ -15,7 +15,7 @@ claude mcp list                # verify health
 - **Claude** — runs `claude mcp add-json <name> '<cfg>' --scope user` (skips any
   already registered).
 - **Codex** — appends `[mcp_servers.<name>]` to `~/.codex/config.toml` inside a
-  marker block (`# >>> agent-settings mcp >>>`), and **skips any server whose name
+  marker block (`# >>> compass mcp >>>`), and **skips any server whose name
   collides with an existing Codex plugin** (so it never duplicates your
   github/gmail/drive plugins).
 

@@ -1,6 +1,6 @@
-# agent-settings
+# compass
 
-[![ci](https://github.com/dshakes/agent-settings/actions/workflows/ci.yml/badge.svg)](https://github.com/dshakes/agent-settings/actions/workflows/ci.yml)
+[![ci](https://github.com/dshakes/compass/actions/workflows/ci.yml/badge.svg)](https://github.com/dshakes/compass/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)](docs/05-plugin.md)
 
@@ -20,15 +20,15 @@ workflow commands.
 ```bash
 # A) Full setup (recommended) — clone + symlink into ~/.claude and ~/.codex.
 #    Includes the CLAUDE.md operating manual, permissions, statusline, Codex parity.
-git clone https://github.com/dshakes/agent-settings ~/agent-settings && cd ~/agent-settings
+git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
 make dry-run     # see exactly what will change
 make install     # backs up anything it replaces
 make doctor      # validate everything
 
 # B) Plugin only (zero-config team rollout of the machinery — subagents,
 #    commands, hooks, skill, output style, MCP). Can't carry memory/permissions.
-/plugin marketplace add dshakes/agent-settings
-/plugin install core@agent-settings
+/plugin marketplace add dshakes/compass
+/plugin install core@compass
 ```
 
 See [`docs/05-plugin.md`](docs/05-plugin.md) for what each method can and can't ship.
@@ -63,7 +63,7 @@ What you get on the first task:
 ## What's in the box
 
 ```
-agent-settings/
+compass/
 ├── claude/                     # → symlinked into ~/.claude
 │   ├── settings.json           # model, permissions, hooks, statusline, env
 │   ├── CLAUDE.md               # global operating manual (loads every session)
@@ -143,7 +143,7 @@ A companion plugin gives Claude **automatic diagnostics + navigation** (backgrou
 zero context cost) for Go, Rust, TypeScript, and Python:
 
 ```bash
-/plugin install core-lsp@agent-settings    # needs the servers on PATH
+/plugin install core-lsp@compass    # needs the servers on PATH
 ```
 
 It's separate because it requires `gopls`/`rust-analyzer`/`typescript-language-server`/
@@ -160,15 +160,15 @@ machinery — pinned to a tag for stability:
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "agent-settings": { "source": { "source": "github", "repo": "dshakes/agent-settings", "ref": "v0.2.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.2.0" } }
   },
-  "enabledPlugins": { "core@agent-settings": true }
+  "enabledPlugins": { "core@compass": true }
 }
 ```
 
 A teammate is prompted to trust the repo, then the plugin auto-enables. Anyone who
 already has it globally (via `make install`) opts out per-repo in a gitignored
-`.claude/settings.local.json` (`{ "enabledPlugins": { "core@agent-settings": false } }`)
+`.claude/settings.local.json` (`{ "enabledPlugins": { "core@compass": false } }`)
 to avoid double-firing hooks. This is live in the **lantern** repo. Details:
 [`docs/05-plugin.md`](docs/05-plugin.md).
 
@@ -190,8 +190,8 @@ After `make install`, the operating manual + hooks + subagents + MCP apply to
 
 ```bash
 scripts/new-repo.sh ./my-service          # starter CLAUDE.md + AGENTS.md symlink
-scripts/new-repo.sh ./my-service --team   # also pins core@agent-settings
-# add `newrepo(){ ~/agent-settings/scripts/new-repo.sh "$@"; }` to your shell
+scripts/new-repo.sh ./my-service --team   # also pins core@compass
+# add `newrepo(){ ~/compass/scripts/new-repo.sh "$@"; }` to your shell
 ```
 
 `git init.templateDir` only seeds `.git/` (hooks), not working-tree files — so a

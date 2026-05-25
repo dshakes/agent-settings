@@ -1,20 +1,20 @@
 # Core — Claude Code plugin
 
-Zero-config install of the machinery from [agent-settings](../../README.md):
+Zero-config install of the machinery from [compass](../../README.md):
 specialist subagents, workflow commands, guardrail + auto-quality hooks, a
 repo-bootstrap skill, a terse output style, and parity MCP servers.
 
 ## Install
 
 ```bash
-/plugin marketplace add dshakes/agent-settings
-/plugin install core@agent-settings
+/plugin marketplace add dshakes/compass
+/plugin install core@compass
 ```
 
 Local testing from a clone:
 ```bash
-/plugin marketplace add ./agent-settings
-/plugin install core@agent-settings
+/plugin marketplace add ./compass
+/plugin install core@compass
 ```
 
 ## What you get

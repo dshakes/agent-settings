@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for improving agent-settings. The bar is simple: **everything must be
+Thanks for improving compass. The bar is simple: **everything must be
 real, verified, and inspectable** — no aspirational config, no fabricated claims.
 
 ## Workflow

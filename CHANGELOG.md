@@ -54,11 +54,11 @@ First public release.
   appended without clobbering existing Codex plugins/config.
 - **MCP parity** — single-source `mcp/servers.json` → both tools; auto-registers
   context7, fetch, git; documents opt-in github (OAuth) and read-only postgres.
-- **Installable plugin + marketplace** — `core@agent-settings`,
+- **Installable plugin + marketplace** — `core@compass`,
   self-contained, regenerated from `claude/` via `make sync-plugin`.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
-[0.3.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.3.0
-[0.2.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.2.0
-[0.1.0]: https://github.com/dshakes/agent-settings/releases/tag/v0.1.0
+[0.3.0]: https://github.com/dshakes/compass/releases/tag/v0.3.0
+[0.2.0]: https://github.com/dshakes/compass/releases/tag/v0.2.0
+[0.1.0]: https://github.com/dshakes/compass/releases/tag/v0.1.0

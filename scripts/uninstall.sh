@@ -11,8 +11,8 @@ if [ -L "$HOME/.codex/config.toml" ]; then
   rm -f "$HOME/.codex/config.toml"; echo "removed ~/.codex/config.toml (was our template symlink)"; removed=$((removed+1))
 elif [ -f "$HOME/.codex/config.toml" ]; then
   # Strip only our marker-delimited blocks (profiles + mcp); keep the user's config.
-  for begin in "# >>> agent-settings profiles >>>:# <<< agent-settings profiles <<<" \
-               "# >>> agent-settings mcp >>>:# <<< agent-settings mcp <<<"; do
+  for begin in "# >>> compass profiles >>>:# <<< compass profiles <<<" \
+               "# >>> compass mcp >>>:# <<< compass mcp <<<"; do
     b="${begin%%:*}"; e="${begin##*:}"
     if grep -qF "$b" "$HOME/.codex/config.toml"; then
       tmp="$(mktemp)"; sed "/$b/,/$e/d" "$HOME/.codex/config.toml" >"$tmp" && mv "$tmp" "$HOME/.codex/config.toml"
