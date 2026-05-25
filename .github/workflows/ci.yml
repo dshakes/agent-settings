@@ -27,5 +27,18 @@ jobs:
       - name: shellcheck (style — informational)
         run: shellcheck -S style claude/hooks/*.sh scripts/*.sh install.sh || true
 
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+      - name: Lint workflows + SDLC templates (actionlint + embedded shellcheck)
+        env:
+          SHELLCHECK_OPTS: --severity=error   # match the repo's error-level gate
+        run: |
+          "$(go env GOPATH)/bin/actionlint" \
+            .github/workflows/*.yml sdlc/workflows/*.yml sdlc/selfhosted/*.yml
+
+      - name: SDLC loop self-test (round cap + verdict parsing)
+        run: bash sdlc/selftest.sh
+
       - name: Plugin is in sync with claude/ source
         run: ./scripts/sync-plugin.sh --check

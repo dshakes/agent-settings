@@ -65,9 +65,11 @@ jobs:
               pr_head_ref="$(gh pr view "$pr_num" --json headRefName --jq '.headRefName')"
             fi
           fi
-          echo "is_pr_comment=$is_pr_comment" >> "$GITHUB_OUTPUT"
-          echo "pr_num=$pr_num"               >> "$GITHUB_OUTPUT"
-          echo "pr_head_ref=$pr_head_ref"     >> "$GITHUB_OUTPUT"
+          {
+            echo "is_pr_comment=$is_pr_comment"
+            echo "pr_num=$pr_num"
+            echo "pr_head_ref=$pr_head_ref"
+          } >> "$GITHUB_OUTPUT"
       - name: Checkout (PR mode — existing head branch)
         if: steps.ctx.outputs.is_pr_comment == 'true'
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5

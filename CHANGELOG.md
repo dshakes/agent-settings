@@ -45,6 +45,17 @@ All notable changes to this project are documented here. Format loosely follows
   re-run the gate on returned work. `claude/settings.json` pre-approves the safe validators
   (`actionlint`, `shellcheck`, `yamllint`, `bash -n`) so background subagents can self-verify.
 
+### Validation / testing
+- **`sdlc/selftest.sh`** — runnable unit tests for the loop's control logic (round-cap from
+  labels, verdict parsing for both the hosted `structured_output`/jq path and the self-hosted
+  `SDLC-VERDICT` grep path). 16 assertions; it caught and fixed an empty-`structured_output`
+  edge in `sdlc-review.yml` (now normalizes to `CLEAN`).
+- **CI gate** — `ci.yml` now runs `actionlint` (with embedded `shellcheck`) across all
+  workflows + SDLC templates and executes `sdlc/selftest.sh`, so the pipeline validates
+  itself on every push. Added `.github/actionlint.yaml` (declares the `compass` runner label).
+- **`sdlc/SMOKETEST.md`** — repeatable live smoke-test checklist for the GitHub-native
+  behavior that can't be unit-tested (App, `structured_output`, PAT chaining, the merge gate).
+
 ## [0.6.1] — 2026-05-25
 
 ### Security / hardening

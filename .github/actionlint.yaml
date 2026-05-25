@@ -1,0 +1,4 @@
+# compass SDLC self-hosted workflows target a runner labelled `compass`.
+self-hosted-runner:
+  labels:
+    - compass

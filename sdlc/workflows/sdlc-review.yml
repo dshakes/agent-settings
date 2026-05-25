@@ -68,6 +68,7 @@ jobs:
         run: |
           set -uo pipefail
           verdict="$(printf '%s' "$OUT" | jq -r '.verdict // "CLEAN"' 2>/dev/null || echo CLEAN)"
+          [ -n "$verdict" ] || verdict=CLEAN   # empty structured_output → treat as clean
           echo "Reviewer verdict: $verdict"
           if [ "$verdict" = "BLOCKING" ]; then
             # remove-then-add forces a fresh `labeled` event so sdlc-fix re-fires every round
