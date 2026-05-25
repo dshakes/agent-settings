@@ -38,10 +38,14 @@ if [ "$TOOL" = "Bash" ]; then
   CMD="$(json_get "$INPUT" '.tool_input.command')"
   norm="$(printf '%s' "$CMD" | tr -s ' ')"
 
-  # Recursive force-delete of root / home.
+  # Recursive force-delete of root or home — but NOT of subpaths like /tmp/x,
+  # ./build, or $HOME/project (those are legitimate). Only the catastrophic targets.
+  if printf '%s' "$norm" | grep -Eq 'rm +-[a-zA-Z]*r[a-zA-Z]* +/( |$)' \
+     || printf '%s' "$norm" | grep -Eq 'rm +-[a-zA-Z]*r[a-zA-Z]* +/\*' \
+     || printf '%s' "$norm" | grep -Eq 'rm +-[a-zA-Z]*r[a-zA-Z]* +(~|\$HOME|\$\{HOME\})(/\**)?( |$)'; then
+    deny "Blocked recursive force-delete of root or home. Narrow the target to a subdirectory if intentional."
+  fi
   case "$norm" in
-    *"rm -rf /"|*"rm -rf /"*|*"rm -rf ~"*|*"rm -rf \$HOME"*|*"rm -fr /"*)
-      deny "Blocked a recursive force-delete of a root/home path. Narrow the target if intentional." ;;
     *":(){"*|*":(){ :|:&"*)
       deny "Blocked what looks like a fork bomb." ;;
     *"chmod -R 777 /"*|*"chmod 777 /"*)
