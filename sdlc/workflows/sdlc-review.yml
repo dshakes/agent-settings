@@ -57,7 +57,8 @@ jobs:
             REPO: ${{ github.repository }}   PR: #${{ github.event.pull_request.number }}
           claude_args: |
             --model sonnet
-            --max-turns 6
+            --max-turns 20
+            --max-budget-usd 2.00
             --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)"
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["BLOCKING","CLEAN"]},"summary":{"type":"string"}},"required":["verdict"]}'
       - name: Label the PR and gate on the verdict

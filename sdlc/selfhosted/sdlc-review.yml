@@ -78,7 +78,7 @@ jobs:
           SDLC-VERDICT: CLEAN
 
           Use BLOCKING if there is at least one Blocking finding; otherwise CLEAN." \
-            --model sonnet --max-turns 6 --max-budget-usd 1.50 \
+            --model sonnet --max-turns 12 --max-budget-usd 2.00 \
             --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)" \
             --output-format text < "$diff_file" > "$review_file"
           printf '### Claude review (self-hosted · subscription, keyless)\n\n%s\n' "$(cat "$review_file")" \
