@@ -230,7 +230,8 @@ A pipeline of **named, governed agents** — Planner · Builder · Reviewer · *
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 
 # GitHub-native agents on your PRs (Claude review + Codex audit + @claude implement):
-export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…   # zero-prompt secret setup
+export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — your subscription, no API credits (or use ANTHROPIC_API_KEY)
+export OPENAI_API_KEY=…            # Codex cloud audit
 ~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 ```
 

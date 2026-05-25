@@ -33,7 +33,8 @@ prior outputs from `.sdlc/run-*`, then **opens a PR and stops**. Knobs:
 ### B · GitHub-native — agents on your PRs
 ```bash
 cd /path/to/your/repo
-export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…   # zero-prompt secret setup
+export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — your subscription, no API credits (or use ANTHROPIC_API_KEY)
+export OPENAI_API_KEY=…            # Codex cloud audit
 ~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 ```
 Installs three workflows:
@@ -43,8 +44,10 @@ Installs three workflows:
 | `sdlc-audit.yml` | `agent:audit` label | **Auditor** (Codex) — independent comment | `contents:read` |
 | `sdlc-implement.yml` | `@claude` comment | **Builder** (Claude) — edits + opens PR | `contents:write` |
 
-Prereqs (you have these): the [Claude GitHub App](https://github.com/apps/claude),
-and `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` repo secrets.
+Auth: the [Claude GitHub App](https://github.com/apps/claude), plus a Claude credential —
+either **`CLAUDE_CODE_OAUTH_TOKEN`** (`claude setup-token`, uses your **subscription**, no API
+credits) **or** `ANTHROPIC_API_KEY` (pay-per-use) — and `OPENAI_API_KEY` for the Codex audit.
+The **local** `orchestrate.sh` already uses your `claude`/`codex` CLI logins, so it needs no keys.
 
 ## The human gate (non-negotiable, enforced by GitHub — not trust)
 `setup.sh` prints these; do them once per repo:
@@ -71,7 +74,7 @@ No agent has merge or deploy authority. They open PRs; you merge.
 ## Troubleshooting (gotchas a real dry run surfaced)
 - **`Could not fetch an OIDC token`** → the workflow needs `id-token: write` (already set in the shipped workflows).
 - **`Workflow validation failed … identical content to the default branch`** → the Claude App requires the review workflow to exist *unchanged* on the default branch (so a PR can't inject a rogue reviewer). `setup.sh --all` commits the workflows to the default branch first, which satisfies this; don't hand-edit the workflow only on a feature branch.
-- **`Credit balance is too low`** → auth is fine; the **Anthropic API key has no credits**. Add them at console.anthropic.com → Billing. (Your local `claude` CLI uses your subscription, not the API key, so the headless pipeline is unaffected.)
+- **`Credit balance is too low`** → auth is fine; the **API key has no credits**. Best fix: use your **subscription** instead — run `claude setup-token` and set `CLAUDE_CODE_OAUTH_TOKEN` (no credits needed). Or add credits at console.anthropic.com → Billing. (The local `orchestrate.sh` already uses your subscription via the CLI, so it's unaffected.)
 
 ## Customize
 Edit the registry (names/tags/models/gates), the role prompts in `sdlc/roles/`, the

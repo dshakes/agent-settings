@@ -56,10 +56,11 @@ fi
 if [ "$SECRETS" = 1 ]; then
   echo "==> Secrets"
   set_secret(){ local n="$1" v="${!1:-}"
-    if [ -n "$v" ]; then printf '%s' "$v" | gh secret set "$n" >/dev/null && echo "  ✓ $n (from \$$n)"
-    else echo "  → paste value for $n:"; gh secret set "$n"; fi; }
-  set_secret ANTHROPIC_API_KEY
-  set_secret OPENAI_API_KEY
+    if [ -n "$v" ]; then printf '%s' "$v" | gh secret set "$n" >/dev/null && echo "  ✓ $n (from env)"
+    else echo "  · $n not exported — skipped (set later: gh secret set $n)"; fi; }
+  set_secret CLAUDE_CODE_OAUTH_TOKEN   # preferred: subscription token (claude setup-token), no API credits
+  set_secret ANTHROPIC_API_KEY         # alternative: pay-per-use API key
+  set_secret OPENAI_API_KEY            # Codex cloud audit
 fi
 
 if [ "$PROTECT" = 1 ]; then
