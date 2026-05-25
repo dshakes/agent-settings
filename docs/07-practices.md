@@ -33,6 +33,9 @@ and cites them. Read the sources; don't take our word for it.
 | **One instructions file across tools** (agents.md) | `AGENTS.md` → `CLAUDE.md` symlink (single source) |
 | **Tight leash, small reviewable diffs, verify not rubber-stamp** (Karpathy) | `CLAUDE.md` principles 2 & 4; `acceptEdits` + guardrail hook |
 | **Skills modeling team roles / explicit review gates** (gstack) | `/review`, `/ship`, `architect`, `security-auditor` |
+| **Sprint sequence: think → plan → build → review → test → ship** (gstack) | the SDLC pipeline: Plan → Build → Review → Audit → Security → QA → PR (`sdlc/`) |
+| **Cross-model second opinion (Claude + a second CLI)** (gstack `/codex`) | the **Auditor** runs `codex exec` / `openai/codex-action` on every PR |
+| **Onboarding: "See it work" narrative, diagram-first explanation, example-forward quickstart, symptom-indexed troubleshooting** (gstack README) | README "See it work" + "How it fits together" (Mermaid) + deployment-model table; `docs/09` troubleshooting indexed by symptom |
 
 ## Headless mode (from Anthropic's guidance)
 For CI, pre-commit, or large fan-out migrations:

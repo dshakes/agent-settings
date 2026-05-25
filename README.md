@@ -29,6 +29,8 @@
 
 - [Quickstart](#quickstart)
 - [Why compass](#why-compass)
+- [See it work](#see-it-work)
+- [How it fits together](#how-it-fits-together)
 - [What's inside](#whats-inside)
 - [The hooks](#the-hooks)
 - [Cost model](#cost-model)
@@ -49,6 +51,11 @@
 ## Quickstart
 
 Pick **one** path — running both double-fires the hooks.
+
+| Your situation | Path |
+|---|---|
+| Just me, my machine, every repo | **A · Full setup** |
+| A team, or I don't want to touch my global config | **B · Plugin only** |
 
 **A · Full setup** (recommended) — manual + permissions + statusline + hooks + subagents + MCP, global to every repo:
 
@@ -81,6 +88,47 @@ Everyone has the same models. The edge is the **configuration around them** — 
 - **It cleans up silently** — every file it edits is auto-formatted.
 - **It costs less** — grunt work goes to Haiku/Sonnet; Opus is saved for the hard calls; the status line shows live `$` spend.
 - **It brings a crew** — 9 specialists and 8 commands (`/ship` `/review` `/tdd` …), each on the right model.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## See it work
+
+A normal session, after `make install` — nothing extra to invoke:
+
+1. **You open any repo and start Claude.** The operating manual, your guardrails, the 9 subagents and 8 commands are already loaded. The status line shows the model, branch, and live `$` spend.
+2. **You ask for a change.** Claude reads the relevant code first, states a 2–4 line plan, then implements — delegating the test run to a cheap Haiku subagent and saving Opus for the hard reasoning.
+3. **It tries something dangerous.** `rm -rf $HOME`, a secret write, a force-push to `main` → **blocked** by the guardrail hook before it runs. `rm -rf ./build` sails through.
+4. **Every file it touches is auto-formatted** (gofmt/ruff/prettier/…) — no "fix lint" round-trips.
+5. **You run `/ship`.** It tests, runs a fresh-context reviewer, and prepares a clean commit. You stay the merge gate.
+6. **You raise the PR.** Now the [Autonomous SDLC](#autonomous-sdlc) takes over: review, security, tests, and a cross-tool Codex audit run on the PR — and if the reviewer finds a Blocking issue, the Builder **fixes it on the branch and re-review until green**. You click merge.
+
+> No new vocabulary to learn — it's the same Claude Code / Codex you already use, with a senior engineer's defaults switched on.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## How it fits together
+
+One repo is the source of truth; `make install` **symlinks** it into `~/.claude` (and merges into `~/.codex`), so editing the repo edits your live config — and `git pull` updates everything.
+
+```mermaid
+flowchart LR
+  repo["compass repo<br/>(source of truth)"]
+  repo -->|"make install · symlink"| claude["~/.claude<br/>Claude Code"]
+  repo -->|"merge config + AGENTS.md"| codex["~/.codex<br/>Codex"]
+  claude --> manual["CLAUDE.md<br/>operating manual"]
+  claude --> hooks["hooks<br/>protect · format · context · notify"]
+  claude --> agents["9 subagents<br/>Haiku / Sonnet / Opus"]
+  claude --> cmds["8 commands<br/>/ship /review /tdd /pr …"]
+  claude --> status["status line<br/>model · git · $cost"]
+  repo --> mcp["MCP servers<br/>context7 · fetch · git"]
+  mcp --> claude
+  mcp --> codex
+  manual -. "AGENTS.md → CLAUDE.md<br/>(one source, no drift)" .-> codex
+```
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -229,7 +277,26 @@ A teammate is prompted to trust the repo, then it auto-enables. Anyone who alrea
 
 A pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test your changes, while **humans keep the merge and deploy gates**.
 
-**The closed loop:** open a PR → Reviewer (Claude) + Security (Claude opus) + Auditor (Codex) + QA all fire automatically. If the Reviewer finds Blocking issues it labels `agent:needs-fix`, which triggers the **Builder** to fix the code on the PR's own branch and push — which re-runs the Reviewer. This repeats until the Reviewer is clean or the round cap (`SDLC_MAX_FIX_ROUNDS`, default 3) is hit, at which point `sdlc:needs-human` is applied and a comment is posted. Required status checks (`review` + `qa`) gate the merge; **humans merge and deploy**.
+```mermaid
+flowchart TD
+  pr["You open / push a PR"] --> onpush
+  subgraph onpush["Runs automatically on the PR"]
+    rev["Reviewer · Claude"]
+    sec["Security · Claude opus"]
+    qa["QA · runs tests"]
+    aud["Auditor · Codex"]
+  end
+  onpush --> verdict{"Reviewer<br/>verdict"}
+  verdict -->|CLEAN| green["checks green<br/>label: reviewed-clean"]
+  verdict -->|BLOCKING| needsfix["label: agent:needs-fix"]
+  needsfix --> builder["Builder fixes on the PR branch<br/>+ pushes via SDLC_BOT_TOKEN"]
+  builder -->|"re-triggers the checks"| onpush
+  builder -.->|"round cap, default 3"| human["label: sdlc:needs-human"]
+  green --> gate["Human merge gate<br/>1 code-owner approval"]
+  gate --> ship["You merge and deploy"]
+```
+
+**The loop, in words:** open a PR → Reviewer (Claude) + Security (Claude opus) + Auditor (Codex) + QA all fire automatically. If the Reviewer finds Blocking issues it labels `agent:needs-fix`, which triggers the **Builder** to fix the code on the PR's own branch and push — which re-runs the Reviewer. This repeats until clean or the round cap (`SDLC_MAX_FIX_ROUNDS`, default 3), then `sdlc:needs-human` is applied. Required status checks (`review` + `qa`) gate the merge; **humans merge and deploy**.
 
 The loop auto-chains only with **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Contents+PRs write). Without it, review and one fix still run but the loop won't continue — GitHub blocks workflow-to-workflow recursion with the default token.
 
@@ -246,6 +313,17 @@ export SDLC_BOT_TOKEN=…            # fine-grained PAT — required for the loo
 # …or KEYLESS — claude -p / codex exec on a self-hosted runner (SDLC_BOT_TOKEN still needed for chaining):
 ~/compass/sdlc/setup.sh --self-hosted --commit --protect   # see docs/09 + sdlc/selfhosted/README.md
 ```
+
+**Which way to run it?**
+
+| Model | Runs on | Auth | Manage a box? | API credits? |
+|---|---|---|---|---|
+| **A · Hosted + subscription token** *(simplest)* | GitHub's runners | `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) | No | **No** |
+| **B · Self-hosted, keyless** | your runner (VM/laptop) | logged-in `claude -p` | Yes | No |
+| **C · Hosted + API key** | GitHub's runners | `ANTHROPIC_API_KEY` | No | Yes (pay-per-use) |
+| **Local · no cloud** | your machine | your CLI login | No | No |
+
+All four keep humans on merge & deploy. **A** is the easiest start. *(Validated end-to-end on a live repo — see [`sdlc/SMOKETEST.md`](sdlc/SMOKETEST.md).)*
 
 Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, loop diagram, `SDLC_BOT_TOKEN` setup, required-status-check gate, security posture, and troubleshooting: [`docs/09-sdlc.md`](docs/09-sdlc.md).
 
