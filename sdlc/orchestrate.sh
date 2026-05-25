@@ -78,7 +78,7 @@ if command -v codex >/dev/null; then
   codex exec --sandbox read-only -o "$RUN/audit.md" \
     "Independently audit the changes on this branch ('git diff $BASE...HEAD') — a second
 opinion to the Claude review. Flag correctness regressions, security, and missed edge
-cases. Be concise; lead with anything Blocking." 2>>"$RUN/orchestrate.log" \
+cases. Be concise; lead with anything Blocking." >>"$RUN/orchestrate.log" 2>&1 \
     && cat "$RUN/audit.md" || note "codex audit failed (see $RUN/orchestrate.log)"
 else
   note "codex CLI not found — skipping cross-audit (install it for the Claude↔Codex audit)"
