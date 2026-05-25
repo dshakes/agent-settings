@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# doctor.sh — validate the config repo and the installed result.
+set -uo pipefail
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ok=0; warn=0; err=0
+pass() { printf '  \033[32m✓\033[0m %s\n' "$*"; ok=$((ok+1)); }
+note() { printf '  \033[33m!\033[0m %s\n' "$*"; warn=$((warn+1)); }
+fail() { printf '  \033[31m✗\033[0m %s\n' "$*"; err=$((err+1)); }
+
+echo "Validating $REPO"
+
+# JSON
+if command -v jq >/dev/null 2>&1; then
+  for f in "$REPO"/claude/settings.json \
+           "$REPO"/.claude-plugin/marketplace.json \
+           "$REPO"/plugins/core/.claude-plugin/plugin.json \
+           "$REPO"/plugins/core/hooks/hooks.json \
+           "$REPO"/plugins/core/.mcp.json \
+           "$REPO"/plugins/core-lsp/.claude-plugin/plugin.json \
+           "$REPO"/plugins/core-lsp/.lsp.json \
+           "$REPO"/mcp/servers.json; do
+    [ -e "$f" ] || continue
+    jq empty "$f" 2>/dev/null && pass "valid JSON: ${f#$REPO/}" || fail "invalid JSON: ${f#$REPO/}"
+  done
+else note "jq not installed — skipping JSON validation"; fi
+
+# Plugin freshness (must mirror claude/ source)
+if "$REPO"/scripts/sync-plugin.sh --check >/dev/null 2>&1; then pass "plugin in sync with claude/"
+else note "plugin out of date — run: make sync-plugin"; fi
+
+# Hook + script executability and shellcheck
+while IFS= read -r s; do
+  [ -x "$s" ] && pass "executable: ${s#$REPO/}" || note "not +x (installer will fix): ${s#$REPO/}"
+done < <(find "$REPO/claude/hooks" "$REPO/scripts" "$REPO/claude/statusline.sh" "$REPO"/claude/skills -name '*.sh' 2>/dev/null)
+
+if command -v shellcheck >/dev/null 2>&1; then
+  if find "$REPO/claude/hooks" -name '*.sh' -exec shellcheck -S warning {} + >/dev/null 2>&1; then
+    pass "shellcheck clean (hooks)"
+  else note "shellcheck reported issues — run: shellcheck claude/hooks/*.sh"; fi
+else note "shellcheck not installed — skipping lint"; fi
+
+# Frontmatter sanity for agents/commands/skills
+for d in agents commands; do
+  for f in "$REPO"/claude/$d/*.md; do
+    [ -e "$f" ] || continue
+    head -1 "$f" | grep -q '^---' && pass "frontmatter: ${f#$REPO/}" || fail "missing frontmatter: ${f#$REPO/}"
+  done
+done
+[ -f "$REPO"/claude/skills/bootstrap-agent-config/SKILL.md ] && pass "skill present: bootstrap-agent-config"
+
+# Installed symlinks
+echo "Installed state (~/.claude):"
+for n in settings.json CLAUDE.md statusline.sh agents commands skills hooks output-styles; do
+  t="$HOME/.claude/$n"
+  if [ -L "$t" ]; then pass "linked: ~/.claude/$n -> $(readlink "$t")"
+  elif [ -e "$t" ]; then note "exists but not our symlink: ~/.claude/$n"
+  else note "not installed: ~/.claude/$n (run make install)"; fi
+done
+
+echo
+printf 'Result: \033[32m%d ok\033[0m, \033[33m%d warn\033[0m, \033[31m%d error\033[0m\n' "$ok" "$warn" "$err"
+[ "$err" -eq 0 ]

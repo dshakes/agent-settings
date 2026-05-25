@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# statusline.sh — a dense, glanceable status line.
+#
+# Reads the statusline JSON on stdin and prints one line:
+#   <model> · <dir> · <git branch +dirty> · <ctx%> · <session cost>
+#
+# Degrades gracefully: any missing field is simply omitted. No hard deps
+# beyond a JSON reader (jq preferred, python3 fallback).
+
+. "$HOME/.claude/hooks/lib/common.sh" 2>/dev/null || {
+  # Minimal inline reader if common.sh isn't installed yet.
+  json_get() {
+    local j="$1" p="$2"
+    if command -v jq >/dev/null 2>&1; then printf '%s' "$j" | jq -r "$p // empty" 2>/dev/null
+    elif command -v python3 >/dev/null 2>&1; then printf '%s' "$j" | python3 -c '
+import sys,json
+try: d=json.load(sys.stdin)
+except: sys.exit(0)
+for k in sys.argv[1].lstrip(".").split("."):
+    d=d.get(k) if isinstance(d,dict) else None
+    if d is None: sys.exit(0)
+print(d if isinstance(d,str) else json.dumps(d))' "$p" 2>/dev/null; fi
+  }
+}
+
+INPUT="$(cat)"
+
+# ANSI (256-color). Dim separators, colored segments.
+C_RST=$'\033[0m'; C_DIM=$'\033[2m'
+C_MODEL=$'\033[38;5;141m'   # violet
+C_DIR=$'\033[38;5;39m'      # blue
+C_GIT=$'\033[38;5;42m'      # green
+C_DIRTY=$'\033[38;5;214m'   # amber
+C_CTX=$'\033[38;5;245m'     # grey
+C_COST=$'\033[38;5;108m'    # sage
+SEP=" ${C_DIM}·${C_RST} "
+
+model="$(json_get "$INPUT" '.model.display_name')"
+dir="$(json_get "$INPUT" '.workspace.current_dir')"
+[ -z "$dir" ] && dir="$(json_get "$INPUT" '.cwd')"
+dir_short="$(basename "${dir:-$PWD}")"
+mode="$(json_get "$INPUT" '.permission_mode')"
+
+# Git segment.
+git_seg=""
+if git -C "${dir:-$PWD}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  branch="$(git -C "${dir:-$PWD}" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  if [ -n "$(git -C "${dir:-$PWD}" status --porcelain 2>/dev/null)" ]; then
+    git_seg="${C_GIT}${branch}${C_DIRTY}*${C_RST}"
+  else
+    git_seg="${C_GIT}${branch}${C_RST}"
+  fi
+fi
+
+# Cost segment (cents -> dollars).
+cents="$(json_get "$INPUT" '.cost.estimated_cost_cents')"
+cost_seg=""
+if [ -n "$cents" ] && [ "$cents" != "0" ]; then
+  dollars="$(awk "BEGIN{printf \"%.2f\", $cents/100}" 2>/dev/null)"
+  cost_seg="${C_COST}\$${dollars}${C_RST}"
+fi
+
+# Context-used segment, if the runtime provides token counts.
+ctx_seg=""
+in_tok="$(json_get "$INPUT" '.cost.total_input_tokens')"
+if [ -n "$in_tok" ] && [ "$in_tok" -gt 0 ] 2>/dev/null; then
+  k="$(awk "BEGIN{printf \"%.0f\", $in_tok/1000}" 2>/dev/null)"
+  ctx_seg="${C_CTX}${k}k ctx${C_RST}"
+fi
+
+# Mode badge only when notable.
+mode_seg=""
+case "$mode" in
+  acceptEdits) mode_seg="${C_DIM}[edits]${C_RST}" ;;
+  plan)        mode_seg="${C_DIM}[plan]${C_RST}" ;;
+  bypassPermissions) mode_seg="${C_DIRTY}[bypass]${C_RST}" ;;
+esac
+
+# Assemble, skipping empty segments.
+out="${C_MODEL}${model:-Claude}${C_RST}${SEP}${C_DIR}${dir_short}${C_RST}"
+[ -n "$git_seg" ]  && out="${out}${SEP}${git_seg}"
+[ -n "$ctx_seg" ]  && out="${out}${SEP}${ctx_seg}"
+[ -n "$cost_seg" ] && out="${out}${SEP}${cost_seg}"
+[ -n "$mode_seg" ] && out="${out} ${mode_seg}"
+
+printf '%s' "$out"

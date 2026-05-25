@@ -1,0 +1,16 @@
+# Local overrides — never commit machine-specific or secret config
+*.local.json
+*.local.toml
+.env
+.env.*
+*.key
+*.pem
+
+# OS / editor cruft
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Backups created by the installer (these live under ~/.claude anyway)
+backups/

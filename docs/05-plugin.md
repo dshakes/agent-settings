@@ -1,0 +1,61 @@
+# Distributing as a plugin + marketplace
+
+This repo is **also a Claude Code plugin marketplace**, so teammates can install
+the machinery with two commands instead of cloning + `make install`.
+
+```
+agent-settings/                         # ← the marketplace (repo root)
+├── .claude-plugin/marketplace.json     # lists the plugins
+└── plugins/
+    └── core/             # ← the plugin (self-contained, real files)
+        ├── .claude-plugin/plugin.json
+        ├── agents/  commands/  skills/  output-styles/
+        ├── hooks/   ( *.sh + hooks.json wired with ${CLAUDE_PLUGIN_ROOT} )
+        └── .mcp.json   ( context7, fetch, git )
+```
+
+## Install (teammates)
+```bash
+/plugin marketplace add dshakes/agent-settings       # GitHub owner/repo
+/plugin install core@agent-settings
+```
+Local testing from a clone:
+```bash
+/plugin marketplace add ./agent-settings
+/plugin install core@agent-settings
+```
+
+## What the plugin delivers
+9 subagents · 8 commands · 4 hooks (incl. the `protect-paths` guardrail) ·
+`bootstrap-agent-config` skill · "Concise" output style ·
+3 MCP servers. Validated via `claude plugin details core@agent-settings`
+(≈1,165 always-on tokens; agents/commands cost only when invoked).
+
+## What the plugin **cannot** carry — and why both methods exist
+Claude Code plugins cannot ship user-level **memory, permissions, model defaults,
+or a global status line**. So:
+
+| | `make install` | plugin |
+|---|---|---|
+| Subagents, commands, skills, hooks, output style, MCP | ✓ | ✓ |
+| `CLAUDE.md` operating manual (loaded every session) | ✓ | ✗ |
+| Permission posture (`acceptEdits`, allow/deny) | ✓ | ✗ |
+| Model / effort defaults | ✓ | ✗ |
+| Rich status line | ✓ | ✗ |
+| Codex parity (`AGENTS.md`, profiles) | ✓ | ✗ |
+
+**Use one method, not both at once** — running the plugin alongside `make install`
+double-fires the hooks and double-registers the MCP servers. For the full
+experience, `make install`. For zero-friction team rollout of the machinery, the
+plugin. A common pattern: individuals `make install`; a shared repo pins the
+plugin in its project `.claude/settings.json` so everyone on that repo gets it.
+
+## Maintaining the plugin
+The plugin ships **real files** (cross-repo symlinks aren't reliably followed by
+the loader), generated from the canonical `claude/` source:
+```bash
+make sync-plugin     # regenerate plugins/core/ from claude/
+make doctor          # warns if the plugin has drifted from claude/
+```
+Authored, plugin-only files (`hooks/hooks.json`, `.mcp.json`, `plugin.json`) are
+preserved by the sync. Bump `version` in `plugin.json` when you cut a release.

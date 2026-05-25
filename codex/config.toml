@@ -1,0 +1,40 @@
+# ~/.codex/config.toml — FRESH-INSTALL TEMPLATE, kept in parity with Claude Code.
+#
+# NOTE: the installer does NOT overwrite an existing ~/.codex/config.toml. If you
+# already have one (with plugins, marketplaces, trusted projects), the installer
+# only *appends* the [profiles.*] blocks below — your existing config is preserved.
+# This full file is used only when you have no Codex config yet.
+#
+# Same operating posture as the Claude setup: capable default model, edits applied
+# freely inside the workspace, anything reaching the network or mutating shared
+# state asks first. Behavioral rules live in AGENTS.md so both agents share one
+# constitution. Validate keys against your installed Codex version.
+
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+
+approval_policy = "on-request"      # run read/edit freely; ask before risky/escalated
+sandbox_mode = "workspace-write"    # edits land in the working tree without prompts
+
+[sandbox_workspace_write]
+network_access = false              # no silent egress — parity with curl|sh guardrail
+
+# ── Profiles: pick a cost/quality tier per task (`codex --profile cheap`) ──────
+# Mirrors the Claude "delegate to the cheapest correct model" discipline. With a
+# single available model, the lever is reasoning effort. Add a smaller model to
+# the cheap profile if/when one is available to you.
+
+[profiles.deep]       # architecture, security, subtle debugging
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+approval_policy = "on-request"
+
+[profiles.standard]   # most feature work and refactors
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+
+[profiles.cheap]      # mechanical edits, test runs, log triage
+model = "gpt-5.5"
+model_reasoning_effort = "low"
+approval_policy = "on-failure"

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "agent-settings",
+  "owner": {
+    "name": "dshakes",
+    "url": "https://github.com/dshakes"
+  },
+  "homepage": "https://github.com/dshakes/agent-settings",
+  "description": "Production-grade Claude Code configuration: cost-tiered specialist subagents, workflow commands, guardrail + auto-quality hooks, a bootstrap skill, a terse output style, and parity MCP servers.",
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./plugins/core",
+      "description": "9 specialist subagents, /ship /review /tdd /pr /adr /triage /scaffold /cost, guardrail + format-on-edit + notify hooks, bootstrap-agent-config skill, Concise output style, and context7/fetch/git MCP servers.",
+      "homepage": "https://github.com/dshakes/agent-settings/tree/main/plugins/core",
+      "repository": "https://github.com/dshakes/agent-settings",
+      "author": { "name": "Shekhar Mudarapu", "url": "https://github.com/dshakes" },
+      "category": "workflow",
+      "keywords": ["subagents", "hooks", "code-review", "security", "cost-optimization", "mcp", "polyglot"],
+      "license": "MIT"
+    },
+    {
+      "name": "core-lsp",
+      "source": "./plugins/core-lsp",
+      "description": "Opt-in language-server intelligence (diagnostics + navigation) for Go, Rust, TypeScript, and Python. Requires gopls/rust-analyzer/typescript-language-server/pyright on PATH.",
+      "homepage": "https://github.com/dshakes/agent-settings/tree/main/plugins/core-lsp",
+      "repository": "https://github.com/dshakes/agent-settings",
+      "author": { "name": "Shekhar Mudarapu", "url": "https://github.com/dshakes" },
+      "category": "language-tools",
+      "keywords": ["lsp", "gopls", "rust-analyzer", "typescript", "pyright", "diagnostics"],
+      "license": "MIT"
+    }
+  ]
+}

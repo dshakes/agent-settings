@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "core",
+  "displayName": "Core",
+  "version": "0.1.0",
+  "description": "Cost-tiered specialist subagents, workflow commands, guardrail + auto-quality hooks, a repo-bootstrap skill, a terse output style, and parity MCP servers — for serious polyglot software work.",
+  "author": {
+    "name": "Shekhar Mudarapu",
+    "url": "https://github.com/dshakes"
+  },
+  "homepage": "https://github.com/dshakes/agent-settings#readme",
+  "repository": "https://github.com/dshakes/agent-settings",
+  "license": "MIT",
+  "keywords": ["subagents", "hooks", "code-review", "security-review", "cost-optimization", "mcp", "go", "rust", "typescript", "kubernetes"]
+}

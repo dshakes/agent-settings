@@ -1,0 +1,9 @@
+{
+  "_comment": "Project-scoped MCP servers (.mcp.json at repo root). Claude prompts to trust it on first entry. Use ${ENV_VAR} for secrets — never inline a connection string. Point DB servers at a READ-ONLY role or replica.",
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
+    }
+  }
+}

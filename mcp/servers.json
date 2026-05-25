@@ -1,0 +1,58 @@
+{
+  "_comment": "Single source of truth for MCP servers across Claude Code and Codex. scripts/setup-mcp.sh reads this and registers each server in both tools (Claude: `claude mcp add-json --scope user`; Codex: appended [mcp_servers.*] in ~/.codex/config.toml). Secrets are referenced via ${ENV} expansion, never baked in. Servers with autoRegister:false are documented opt-ins (need a secret or a remote/OAuth flow) — see docs/04-mcp.md.",
+  "servers": {
+    "context7": {
+      "autoRegister": true,
+      "claude": true,
+      "codex": true,
+      "description": "Up-to-date, version-correct documentation and code examples for any library. Frontier: kills 'trained on an old API' hallucinations.",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {},
+      "note": "Works without a key; set CONTEXT7_API_KEY for higher rate limits."
+    },
+    "fetch": {
+      "autoRegister": true,
+      "claude": true,
+      "codex": true,
+      "description": "Fetch a URL and return clean, model-ready markdown. Gives Codex web-fetch parity with Claude's WebFetch.",
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {}
+    },
+    "git": {
+      "autoRegister": true,
+      "claude": true,
+      "codex": true,
+      "description": "Structured local git operations (status, diff, log, blame, show) as typed tools rather than parsed shell output.",
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-git"],
+      "env": {}
+    },
+    "github": {
+      "autoRegister": false,
+      "claude": true,
+      "codex": false,
+      "codexSkipReason": "Codex already provides GitHub via its github@openai-curated plugin — adding it here would duplicate.",
+      "description": "GitHub issues/PRs/repos. Use the official remote server (OAuth) — recommended over the deprecated npm reference server.",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "setup": "claude mcp add --transport http github https://api.githubcopilot.com/mcp/   # completes OAuth in-app"
+    },
+    "postgres": {
+      "autoRegister": false,
+      "claude": true,
+      "codex": true,
+      "scopeHint": "project",
+      "description": "Read-only SQL over a Postgres database (schema introspection + SELECT). Best as a PROJECT server (e.g. lantern), gated on ${LANTERN_DATABASE_URL}.",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${LANTERN_DATABASE_URL}"],
+      "env": {},
+      "note": "Point at a read-replica or a read-only role. Never a write-capable prod credential."
+    }
+  }
+}

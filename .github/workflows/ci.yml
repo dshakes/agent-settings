@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq shellcheck
+
+      - name: doctor (JSON, frontmatter, plugin sync, executability)
+        run: make doctor
+
+      - name: shellcheck (errors fail the build)
+        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh install.sh claude/skills/*/*.sh
+
+      - name: shellcheck (style — informational)
+        run: shellcheck -S style claude/hooks/*.sh scripts/*.sh install.sh || true
+
+      - name: Plugin is in sync with claude/ source
+        run: ./scripts/sync-plugin.sh --check
