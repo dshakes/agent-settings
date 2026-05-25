@@ -64,12 +64,22 @@ if [ "$SECRETS" = 1 ]; then
   set_secret CLAUDE_CODE_OAUTH_TOKEN   # preferred: subscription token (claude setup-token), no API credits
   set_secret ANTHROPIC_API_KEY         # alternative: pay-per-use API key
   set_secret OPENAI_API_KEY            # Codex cloud audit
+  set_secret SDLC_BOT_TOKEN            # PAT that lets the fix loop chain (see note below)
+  [ -n "${SDLC_BOT_TOKEN:-}" ] || cat <<'BOT'
+  ┌ SDLC_BOT_TOKEN not set. The auto-fix LOOP needs it: GitHub will not let a push made
+  │ with the default token re-trigger the Reviewer. Create a fine-grained PAT (Contents:
+  │ write, Pull requests: write on this repo), then:  gh secret set SDLC_BOT_TOKEN
+  └ Without it, review/fix still run once each, but won't auto-loop (degrades to manual).
+BOT
 fi
 
 if [ "$PROTECT" = 1 ]; then
   echo "==> Branch protection on '$BRANCH' (the human merge gate)"
-  gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --input - >/dev/null <<JSON && echo "  ✓ require PR + 1 approval + code-owner review; no bypass" || echo "  ! protection failed (need admin?)"
-{ "required_status_checks": null,
+  # Require the agent checks 'review' (red on Blocking findings) + 'qa' (red on test fail)
+  # to be green, plus a PR with 1 code-owner approval. strict:false so a PR need not be
+  # rebased onto every base push. Remove a context here if your repo doesn't run it.
+  gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --input - >/dev/null <<JSON && echo "  ✓ require PR + 1 approval + code-owner review + checks [review, qa]; no bypass" || echo "  ! protection failed (need admin?)"
+{ "required_status_checks": { "strict": false, "contexts": ["review", "qa"] },
   "enforce_admins": true,
   "required_pull_request_reviews": { "required_approving_review_count": 1, "require_code_owner_reviews": true },
   "restrictions": null }
@@ -80,8 +90,12 @@ cat <<NEXT
 
 ==> Ready. Remaining (one-time, manual — deploy gate):
   Settings → Environments → 'production' → Required reviewers (gates deploy).
-Use it:
-  open a PR → Reviewer (Claude) runs · add label 'agent:audit' → Codex cross-audit ·
-  comment '@claude <task>' → Builder implements + opens a PR.
+The closed loop (needs SDLC_BOT_TOKEN to auto-chain):
+  open a PR → Reviewer + Security + QA + Codex audit run → if the Reviewer finds Blocking
+  issues it labels 'agent:needs-fix' → Builder fixes on the PR branch + pushes → Reviewer
+  re-runs → … repeats up to SDLC_MAX_FIX_ROUNDS (default 3) → then 'sdlc:needs-human'.
+  You still merge & deploy.
+On demand:  label 'agent:audit' (re-audit) · 'agent:release' (release prep) ·
+  comment '@claude <task>' (ad-hoc build) · label an issue 'agent:plan' (triage→plan).
 Local headless run:  ~/compass/sdlc/orchestrate.sh "your task"
 NEXT

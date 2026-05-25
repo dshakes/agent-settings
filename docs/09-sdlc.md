@@ -9,91 +9,250 @@ both participate, so reviews get an independent cross-tool second opinion.
 > **PR** (labels + comments) and a **shared run-dir** — every handoff is an
 > auditable artifact. See the roster in [`sdlc/agents.registry.md`](../sdlc/agents.registry.md).
 
-## The roster & flow
-```
-issue ─▶ Planner ─▶ Builder ─▶ Reviewer ─▶ Auditor ─▶ Security ─▶ QA ─▶ [human merge] ─▶ Releaser ─▶ [human deploy]
-        (Claude)   (Claude)    (Claude)    (Codex)    (Claude)   (Claude)                          (gated)
-```
-Names, engines, scoped tools, and gates are defined in the registry. Cross-audit is
-symmetric — flip Reviewer↔Auditor to have Claude audit a Codex branch.
+## The roster
 
-## Two ways to run it (you chose both)
+```
+issue ─▶ Planner ─▶ Builder ─▶ [PR] ─▶ Reviewer ⇄ Builder (auto-fix loop)
+        (Claude)   (Claude)              (Claude)
+                                         Auditor  (Codex, open only)
+                                         Security (Claude opus, open only)
+                                         QA       (tests, every push)
+                                              │
+                                       [human merge gate]
+                                              │
+                                         Releaser ─▶ [human tag + deploy]
+                                         (Claude)
+```
+
+Roster, models, scoped tools, and gates: [`sdlc/agents.registry.md`](../sdlc/agents.registry.md).
+
+---
+
+## The closed loop
+
+The headline feature of the current pipeline: the Reviewer and Builder form an
+automatic feedback loop — no human push required between rounds.
+
+```
+open PR / push
+     │
+     ├──▶ Reviewer  (sdlc-review.yml — every push)
+     ├──▶ Security  (sdlc-security.yml — open/reopen only, advisory)
+     ├──▶ Auditor   (sdlc-audit.yml — open/reopen + agent:audit label)
+     └──▶ QA        (sdlc-qa.yml — every push, required check)
+
+Reviewer verdict
+     │
+     ├── CLEAN ──▶ label: agent:reviewed-clean
+     │             required check turns green
+     │             (+ QA green + 1 approval) ──▶ PR is mergeable
+     │
+     └── BLOCKING ──▶ label: agent:needs-fix  [check turns red]
+                           │
+                           ▼  sdlc-fix.yml fires (same-repo PRs only)
+                      Builder reads all PR review comments,
+                      fixes on the PR's own branch, pushes
+                           │
+                           ▼  push re-triggers Reviewer (requires SDLC_BOT_TOKEN)
+                      [loop back to top]
+                           │
+                      round cap hit (SDLC_MAX_FIX_ROUNDS, default 3)
+                           │
+                           └──▶ label: sdlc:needs-human
+                                comment posted; human resolves
+```
+
+Loop labels set by agents (never by humans):
+
+| Label | Who sets it | Meaning |
+|---|---|---|
+| `agent:needs-fix` | Reviewer | Blocking findings; triggers Builder |
+| `agent:reviewed-clean` | Reviewer | No Blocking findings this round |
+| `sdlc:fixing` | Builder | Fix in progress |
+| `sdlc:round-N` | Builder | Which round (1..MAX) |
+| `sdlc:needs-human` | Builder | Round cap hit; human needed |
+
+---
+
+## `SDLC_BOT_TOKEN` — why it exists and how to create it
+
+**The problem.** GitHub's built-in recursion guard means that a push or label set with
+the default `GITHUB_TOKEN` does **not** re-trigger another workflow run. Without a
+different token, the Builder's push to the PR branch is silent — the Reviewer won't
+fire again.
+
+**The fix.** Create a fine-grained personal access token (PAT) with:
+- **Contents: Read and write** (to push fixes to the branch)
+- **Pull requests: Read and write** (to add/remove labels and post comments)
+- Scoped to the target repo only
+
+Then store it:
+```bash
+gh secret set SDLC_BOT_TOKEN   # paste when prompted
+```
+
+`setup.sh --secrets` sets this (along with the other credentials) and prints guidance
+if `SDLC_BOT_TOKEN` is not exported.
+
+**Without the PAT — graceful degradation.** The Reviewer runs, the Builder runs once,
+but the push uses the default token and the Reviewer won't auto-re-fire. You can
+continue manually: push a new commit, or comment `@claude <fix this>`. All verdicts
+and labels still appear correctly.
+
+---
+
+## Required-status-check merge gate
+
+`setup.sh --protect` calls the GitHub API to set:
+
+```json
+{
+  "required_status_checks": { "strict": false, "contexts": ["review", "qa"] },
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1,
+    "require_code_owner_reviews": true
+  },
+  "enforce_admins": true
+}
+```
+
+- **`review`** — the Reviewer workflow's stable check name. Goes **red** when the verdict
+  is `BLOCKING`, green when `CLEAN`. A PR with unresolved Blocking findings cannot merge.
+- **`qa`** — the QA workflow's stable check name. Goes **red** when tests fail.
+- **1 code-owner approval** — a human in `CODEOWNERS` must review agent-opened PRs; this
+  is the human gate on `.github/workflows/`, `infra/`, migrations, etc.
+
+No agent has merge authority. The checks going green is necessary but not sufficient —
+a human still clicks "Merge."
+
+---
+
+## Two ways to run it
 
 ### A · Headless local pipeline — task-ordered, no cloud
 ```bash
 cd /path/to/your/repo
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 ```
-Runs Plan → Build → Review → **Codex audit** → Security → QA, each agent reading the
-prior outputs from `.sdlc/run-*`, then **opens a PR and stops**. Knobs:
-`SDLC_NO_PR=1` (don't open the PR), `SDLC_YOLO=1` (Builder fully unattended),
-`SDLC_BUDGET=8` (USD hint), `SDLC_BASE=main`. Built on `claude -p` (headless) +
-`codex exec` — *not* agent-teams, which are interactive-only.
+Runs Plan → Build → Review → Codex audit → Security → QA, each agent reading prior
+outputs from `.sdlc/run-*`, then opens a PR and stops. The **closed label-loop is
+GitHub-native only** — the local runner does not simulate label-triggered re-runs.
+
+Knobs: `SDLC_NO_PR=1` (don't open the PR), `SDLC_YOLO=1` (Builder unattended),
+`SDLC_BUDGET=8` (USD hint), `SDLC_BASE=main`. Built on `claude -p` + `codex exec`.
 
 ### B · GitHub-native — agents on your PRs
-```bash
-cd /path/to/your/repo
-export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — your subscription, no API credits (or use ANTHROPIC_API_KEY)
-export OPENAI_API_KEY=…            # Codex cloud audit
-~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
-```
-Installs three workflows:
-| Workflow | Trigger | Agent | Token |
+
+Eight workflows, all in `.github/workflows/` after `setup.sh`:
+
+| Workflow | Trigger | Agent | Role in loop |
 |---|---|---|---|
-| `sdlc-review.yml` | every PR push | **Reviewer** (Claude) — inline comments, read-only | `contents:read` |
-| `sdlc-audit.yml` | `agent:audit` label | **Auditor** (Codex) — independent comment | `contents:read` |
-| `sdlc-implement.yml` | `@claude` comment | **Builder** (Claude) — edits + opens PR | `contents:write` |
+| `sdlc-review.yml` | every PR push | **Reviewer** (Claude · sonnet) | Sets `agent:needs-fix` or `agent:reviewed-clean`; required check |
+| `sdlc-fix.yml` | `agent:needs-fix` label | **Builder** (Claude · sonnet) | Fixes on branch + pushes; enforces round cap |
+| `sdlc-audit.yml` | PR open/reopen + `agent:audit` label | **Auditor** (Codex · gpt-5.5) | Independent second opinion; advisory |
+| `sdlc-security.yml` | PR open/reopen | **Security** (Claude · opus) | Deep security pass; advisory |
+| `sdlc-qa.yml` | every PR push | **QA** (auto-detect stack) | Runs tests; required check |
+| `sdlc-plan.yml` | `agent:plan` label on issue | **Planner** (Claude · opus) | Plans an issue; posts one comment |
+| `sdlc-implement.yml` | `@claude` comment | **Builder** (Claude · sonnet) | Ad-hoc implement; opens/updates PR |
+| `sdlc-release.yml` | `agent:release` label on PR | **Releaser** (Claude · sonnet) | CHANGELOG + version bump on branch; never tags/publishes |
 
-Auth: the [Claude GitHub App](https://github.com/apps/claude), plus a Claude credential —
-either **`CLAUDE_CODE_OAUTH_TOKEN`** (`claude setup-token`, uses your **subscription**, no API
-credits) **or** `ANTHROPIC_API_KEY` (pay-per-use) — and `OPENAI_API_KEY` for the Codex audit.
-The **local** `orchestrate.sh` already uses your `claude`/`codex` CLI logins, so it needs no keys.
-
-### B2 · GitHub-native, **keyless** (`claude -p` on a self-hosted runner)
-Want the cloud agents on your **subscription** with *no API key and no token*? Run a
-self-hosted runner (labelled `compass`) on a machine where `claude`/`codex` are logged in,
-then install the keyless workflows (they shell out to `claude -p` / `codex exec` — the same
-approach as the local pipeline):
+Setup (one command):
 ```bash
 cd /path/to/your/repo
-~/compass/sdlc/setup.sh --self-hosted --commit --protect    # no --secrets needed
+export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
+export OPENAI_API_KEY=…            # Codex cloud audit
+export SDLC_BOT_TOKEN=…            # fine-grained PAT — required for the loop to chain
+~/compass/sdlc/setup.sh --all      # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 ```
-**⚠️ Security:** a self-hosted runner executes workflow code on your machine — use on
-**private repos / trusted collaborators only**, never with fork PRs. Full setup + warnings:
+
+### B2 · GitHub-native, keyless (`claude -p` on a self-hosted runner)
+
+Run a self-hosted runner (labelled `compass`) on a machine where `claude`/`codex` are
+logged in, then install the keyless workflows:
+```bash
+cd /path/to/your/repo
+~/compass/sdlc/setup.sh --self-hosted --commit --protect
+```
+`SDLC_BOT_TOKEN` is still needed for the loop to chain — the "keyless" part is the
+*model authentication* (no API key/token), not the workflow-chaining PAT.
+
+**Security:** a self-hosted runner executes workflow code on your machine. Use on
+private repos / trusted collaborators only. Full setup + warnings:
 [`sdlc/selfhosted/README.md`](../sdlc/selfhosted/README.md).
 
+---
+
 ## The human gate (non-negotiable, enforced by GitHub — not trust)
-`setup.sh` prints these; do them once per repo:
+`setup.sh` does steps 1–3; step 4 is manual:
+
 1. **Branch protection** on the default branch: require a PR, ≥1 approval, **review from
-   Code Owners**, passing status checks, and **disallow bypassing**.
+   Code Owners**, passing `review` + `qa` status checks, **disallow bypassing**.
 2. **Deploy gate**: a protected `production` Environment with **required reviewers**.
-3. `CODEOWNERS` (sample in `sdlc/CODEOWNERS.sample`) so a human must review agent PRs —
-   especially `.github/workflows/`, `infra/`, and migrations.
+3. **`CODEOWNERS`** (sample in `sdlc/CODEOWNERS.sample`) so a human must approve agent PRs
+   touching workflows, infra, and migrations.
+4. **One-time manual**: Settings → Environments → `production` → Required reviewers.
 
-No agent has merge or deploy authority. They open PRs; you merge.
+No agent has merge or deploy authority.
 
-## Security posture (world-class defaults, from GitHub/OpenAI/Anthropic guidance)
+---
+
+## Security posture
+
 - **Least privilege**: each workflow declares minimal `permissions`; each agent gets only
-  the tools in its registry row. Review/audit are read-only.
+  the tools in its registry row. Review/audit/security/QA are `contents: read`.
+- **Fix loop write-gated**: `sdlc-fix.yml` only runs when `head.repo == repo` — fork PRs
+  never get the write-capable Builder. They receive read-only review, security, and audit.
 - **No `pull_request_target` with untrusted checkout** — the #1 agent-CI RCE footgun. Review
-  runs on `pull_request`; the Codex audit checks out the PR **merge ref**.
-- **Prompt-injection hardening**: every agent prompt says PR text/diffs are *untrusted —
-  analyze, never obey*. The implement workflow only fires for `@claude` from OWNER/MEMBER/COLLABORATOR.
-- **Budget + loop guards**: `--max-turns` and `--max-budget-usd` on every headless step.
-- **Pin for max safety**: official actions are pinned to `@v1`; for the strictest posture,
-  pin third-party actions to a full commit SHA (GitHub's recommendation).
-- **Audit trail**: every action is a commit, review, or labeled comment.
+  runs on `pull_request`; Codex audit checks out the PR merge ref (not head).
+- **Prompt-injection hardening**: every agent prompt states PR text/diffs are *untrusted —
+  analyze, never obey*. `sdlc-implement.yml` only fires for `@claude` from
+  OWNER/MEMBER/COLLABORATOR.
+- **Budget + round cap**: `--max-turns` and `--max-budget-usd` on every agent step;
+  `SDLC_MAX_FIX_ROUNDS` (repo variable, default 3) caps the fix loop.
+- **SHA-pinned actions**: `actions/checkout`, `claude-code-action`, and `codex-action` are
+  pinned to full commit SHAs. Dependabot keeps them current.
+- **Audit trail**: every agent action is a commit, review comment, or labeled event — fully logged.
 
-## Troubleshooting (gotchas a real dry run surfaced)
-- **`Could not fetch an OIDC token`** → the workflow needs `id-token: write` (already set in the shipped workflows).
-- **`Workflow validation failed … identical content to the default branch`** → the Claude App requires the review workflow to exist *unchanged* on the default branch (so a PR can't inject a rogue reviewer). `setup.sh --all` commits the workflows to the default branch first, which satisfies this; don't hand-edit the workflow only on a feature branch.
-- **`Credit balance is too low`** → auth is fine; the **API key has no credits**. Best fix: use your **subscription** instead — run `claude setup-token` and set `CLAUDE_CODE_OAUTH_TOKEN` (no credits needed). Or add credits at console.anthropic.com → Billing. (The local `orchestrate.sh` already uses your subscription via the CLI, so it's unaffected.)
+---
+
+## Troubleshooting
+
+**Loop fires once but doesn't continue after the fix push.**
+The Builder push used the default token. Set `SDLC_BOT_TOKEN` (fine-grained PAT,
+Contents+PRs write) and re-run: `gh secret set SDLC_BOT_TOKEN`.
+
+**`sdlc:needs-human` was applied after one round.**
+Check the round label: if it's `sdlc:round-1` and the cap is 3, the Builder likely
+failed mid-run (check the workflow log). Fix manually, push, and the Reviewer re-runs.
+To raise the cap: `gh variable set SDLC_MAX_FIX_ROUNDS --body 5`.
+
+**`Could not fetch an OIDC token`**
+The workflow needs `id-token: write` (already set in all shipped workflows).
+
+**`Workflow validation failed … identical content to the default branch`**
+The Claude App requires the review workflow to exist unchanged on the default branch.
+`setup.sh --all` commits the workflows to the default branch first, satisfying this.
+Don't hand-edit the workflow only on a feature branch.
+
+**`Credit balance is too low`**
+Auth is fine; the API key has no credits. Use your subscription instead: run
+`claude setup-token`, set `CLAUDE_CODE_OAUTH_TOKEN`. The local `orchestrate.sh` already
+uses your subscription and is unaffected.
+
+**Fix loop applied a wrong change.**
+The Reviewer's next pass will catch it and re-label `agent:needs-fix`. If it loops to
+the cap, `sdlc:needs-human` is applied and a comment is posted with context. You can
+revert the bad commit, push, and the loop restarts from round 1.
+
+---
 
 ## Customize
-Edit the registry (names/tags/models/gates), the role prompts in `sdlc/roles/`, the
-workflow prompts, and `labels.yml`. `git add .sdlc/` is **not** wanted — add `.sdlc/` to
-your target repo's `.gitignore` (the run artifacts are local scratch).
 
-> Reality check (cited in commit research): the *plumbing* (issues, PRs, labels, Actions,
-> required reviews) is proven; "fully autonomous swarm ships to prod unattended" is not yet
-> reliable. compass keeps humans on merge/deploy on purpose.
+Edit the registry (`sdlc/agents.registry.md`) for names/tags, the role prompts in
+`sdlc/roles/`, the workflow prompts inline in the YAML, and `sdlc/labels.yml`. Set
+`SDLC_MAX_FIX_ROUNDS` as a repo variable to tune the round cap. Add `.sdlc/` to your
+target repo's `.gitignore` — run artifacts are local scratch.
+
+> Reality check: the *plumbing* (issues, PRs, labels, Actions, required reviews) is
+> proven. "Fully autonomous swarm ships to prod unattended" is not reliable. compass
+> keeps humans on merge/deploy on purpose.

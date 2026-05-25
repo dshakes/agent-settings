@@ -225,22 +225,27 @@ A teammate is prompted to trust the repo, then it auto-enables. Anyone who alrea
 
 ## Autonomous SDLC
 
-A pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test your changes, while **humans keep the merge and deploy gates**. Claude and Codex both review, so you get an independent cross-tool second opinion.
+A pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test your changes, while **humans keep the merge and deploy gates**.
+
+**The closed loop:** open a PR → Reviewer (Claude) + Security (Claude opus) + Auditor (Codex) + QA all fire automatically. If the Reviewer finds Blocking issues it labels `agent:needs-fix`, which triggers the **Builder** to fix the code on the PR's own branch and push — which re-runs the Reviewer. This repeats until the Reviewer is clean or the round cap (`SDLC_MAX_FIX_ROUNDS`, default 3) is hit, at which point `sdlc:needs-human` is applied and a comment is posted. Required status checks (`review` + `qa`) gate the merge; **humans merge and deploy**.
+
+The loop auto-chains only with **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Contents+PRs write). Without it, review and one fix still run but the loop won't continue — GitHub blocks workflow-to-workflow recursion with the default token.
 
 ```bash
-# Headless, task-ordered (runs in your repo, opens a PR, never merges):
+# Headless, task-ordered (opens a PR, never merges):
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 
-# GitHub-native agents on your PRs (Claude review + Codex audit + @claude implement):
-export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — your subscription, no API credits (or use ANTHROPIC_API_KEY)
+# GitHub-native closed loop (8 workflows, Reviewer ⇄ Builder):
+export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
 export OPENAI_API_KEY=…            # Codex cloud audit
-~/compass/sdlc/setup.sh --all   # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
+export SDLC_BOT_TOKEN=…            # fine-grained PAT — required for the loop to chain
+~/compass/sdlc/setup.sh --all      # labels + workflows + CODEOWNERS + commit/push + secrets + branch protection
 
-# …or fully KEYLESS — claude -p / codex exec on a self-hosted runner (your subscription):
+# …or KEYLESS — claude -p / codex exec on a self-hosted runner (SDLC_BOT_TOKEN still needed for chaining):
 ~/compass/sdlc/setup.sh --self-hosted --commit --protect   # see docs/09 + sdlc/selfhosted/README.md
 ```
 
-Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, setup, and the security posture (least-privilege tokens, no `pull_request_target` footgun, prompt-injection hardening, human gate via branch protection): [`docs/09-sdlc.md`](docs/09-sdlc.md).
+Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, loop diagram, `SDLC_BOT_TOKEN` setup, required-status-check gate, security posture, and troubleshooting: [`docs/09-sdlc.md`](docs/09-sdlc.md).
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -293,9 +298,16 @@ A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearl
 **Alpha.** The core (manual, hooks, subagents, commands, MCP, plugin/marketplace) is stable
 and dogfooded; the **SDLC pipeline** is newer — proven end-to-end on a pilot, but treat it as
 early. Known limits, by design:
-- **Humans merge & deploy** — agents stop at a PR (never auto-merge/deploy).
-- **Cloud agents need a runner or credential** — keyless via a self-hosted runner (`claude -p`),
-  or a subscription token / API key for GitHub-hosted runners.
+- **Humans merge & deploy** — agents stop at the PR (never auto-merge/deploy); required
+  checks + 1 code-owner approval enforce this.
+- **The fix loop needs `SDLC_BOT_TOKEN` to chain** — a fine-grained PAT (Contents+PRs write).
+  Without it, review + one fix run but the loop doesn't auto-continue (degrades to manual).
+- **Forks get review only** — the write-capable fix loop is gated to same-repo PRs; fork
+  PRs receive Reviewer, Security, and Auditor but never the Builder fix push.
+- **Round cap** — the loop repeats up to `SDLC_MAX_FIX_ROUNDS` (default 3), then labels
+  `sdlc:needs-human` and posts a comment.
+- **Cloud agents need a runner or credential** — keyless via a self-hosted runner (`claude
+  -p`), or a subscription token / API key for GitHub-hosted runners.
 - **Agent teams are interactive-only** — headless multi-agent coordination uses chained
   `claude -p` + `codex exec`, not teams.
 - Pin to a tagged release (not `main`) for stability. Report issues via the templates.

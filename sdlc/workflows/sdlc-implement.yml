@@ -35,6 +35,9 @@ jobs:
           # Uses your Claude SUBSCRIPTION (no API credits). For a pay-per-use key, replace with:
           #   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # PAT so the resulting push triggers the Reviewer (sdlc-review.yml). Falls back to
+          # the default token, in which case the review won't auto-run on this push (see docs/09).
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
           branch_prefix: "claude/"
           claude_args: |
             --model sonnet
