@@ -1,10 +1,12 @@
-# Auditor (Codex) — independent cross-audit. Triggered by the `agent:audit` label.
-# Read-only; posts Codex's verdict as a PR comment. Needs secret OPENAI_API_KEY.
+# Auditor (Codex) — independent cross-audit. Runs automatically when a PR opens (an
+# independent second opinion to the Claude reviewer) and on demand via the `agent:audit`
+# label. Read-only; posts Codex's verdict as a PR comment. Needs secret OPENAI_API_KEY.
+# Not on `synchronize`, so the fix loop's pushes don't re-spend Codex credits each round.
 name: "sdlc · audit (Codex)"
 
 on:
   pull_request:
-    types: [labeled]
+    types: [opened, reopened, labeled]
 
 permissions:
   contents: read
@@ -12,7 +14,8 @@ permissions:
 
 jobs:
   audit:
-    if: github.event.label.name == 'agent:audit'
+    # Auto on open/reopen, or on the agent:audit label. (label.name is null on open events.)
+    if: github.event.action != 'labeled' || github.event.label.name == 'agent:audit'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5

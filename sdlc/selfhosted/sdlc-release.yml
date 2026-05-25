@@ -1,0 +1,65 @@
+# Releaser (Claude · sonnet) on a SELF-HOSTED runner — keyless release PREP only.
+# Triggered by the `agent:release` label on a PR. Updates CHANGELOG + version on the
+# PR's branch and pushes; it NEVER tags, publishes, merges, or deploys — a human does
+# the irreversible steps (the release gate).
+#
+# SDLC_BOT_TOKEN (a PAT) is used for checkout so the resulting push chains workflows.
+#
+# ⚠️  SECURITY — READ THIS:
+#   Self-hosted runners execute workflow code on YOUR machine. Use ONLY on PRIVATE repos
+#   or with FULLY TRUSTED collaborators. This job refuses PRs from forks. Never enable
+#   self-hosted runners on a public repo that accepts fork PRs (arbitrary code execution).
+name: "sdlc · release-prep (Claude · self-hosted, keyless)"
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write          # commit changelog/version bump to the PR's feature branch
+  pull-requests: write
+
+jobs:
+  release:
+    if: |
+      github.event.label.name == 'agent:release' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, compass]
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      - name: Claude release prep via `claude -p` (runner subscription)
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}   # untrusted branch name → via env, never inline
+        run: |
+          set -euo pipefail
+          command -v claude >/dev/null || { echo "::error::claude CLI not on the runner's PATH"; exit 1; }
+          git config user.name  "compass-agent"
+          git config user.email "compass-agent@users.noreply.github.com"
+          claude -p "You are **Releaser** (agent:release) in an autonomous SDLC pipeline,
+          preparing a release on PR #${PR}'s branch.
+
+          Do release PREP only:
+          - Add a new version section to CHANGELOG.md summarizing this PR's user-facing changes
+            (follow the file's existing format and SemVer).
+          - Bump the version in the repo's conventional location if one exists
+            (package.json, Cargo.toml, pyproject.toml, a VERSION file, etc.).
+          Commit the changes with \`git commit\`.
+
+          Do NOT tag, do NOT publish, do NOT merge, do NOT deploy, do NOT touch protected
+          branches. A human performs those steps after merge. Report what you changed." \
+            --model sonnet --max-turns 12 --max-budget-usd 3.00 \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(git log:*),Bash(git diff:*)" \
+            --output-format text
+          if [ -n "$(git log --oneline "origin/$HEAD_REF..HEAD" 2>/dev/null)" ]; then
+            git push origin "HEAD:$HEAD_REF"
+            echo "Pushed release-prep commits to $HEAD_REF."
+          else
+            echo "No commits from release prep; nothing to push."
+          fi

@@ -35,8 +35,23 @@ cd <your-repo>
 ```
 
 ## 3. Use it
-- Open a PR → **Reviewer** (`claude -p`) comments.
+
+The closed loop works the same as on hosted runners:
+
+- Open a PR → **Reviewer** (`claude -p`) runs on every push. If it finds Blocking issues it
+  labels `agent:needs-fix`, which triggers the **Builder** (`claude -p`) to fix on the PR
+  branch and push — re-running the Reviewer. Repeats up to `SDLC_MAX_FIX_ROUNDS` (default 3),
+  then labels `sdlc:needs-human`.
 - Add the **`agent:audit`** label → **Auditor** (`codex exec`) posts an independent audit.
 - Comment **`@claude <task>`** → **Builder** (`claude -p`) implements on a branch + opens a PR.
+- Label an issue **`agent:plan`** → **Planner** posts a plan comment.
 
-No keys, no credits, no token — your subscription, gated by a human merge as always.
+**The "keyless" part is model authentication** — no API key or token needed for Claude/Codex
+to run. The loop still needs **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Contents+PRs write) to
+chain: a push made with the default token will not re-trigger the Reviewer. Set it once:
+```bash
+gh secret set SDLC_BOT_TOKEN
+```
+Without it, the loop degrades gracefully to one review + one fix, then waits for a human push.
+
+Your subscription does the model calls; humans keep the merge gate as always.

@@ -1,0 +1,56 @@
+# QA — runs the test suite on every PR push and FAILS the check on failure, so it can be
+# a required status check (the deterministic half of the merge gate). Auto-detects the
+# stack; comments only when tests fail (a green check covers the passing case).
+#
+# TEMPLATE: add your stack's setup step before "Run test suite" if the runner needs a
+# toolchain install (e.g. actions/setup-go, dtolnay/rust-toolchain, …). The self-hosted
+# runner typically already has the relevant toolchain.
+name: "sdlc · qa (tests · self-hosted)"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sdlc-qa-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: qa               # stable check name — referenced by branch-protection required checks
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, compass]
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+      - name: Run test suite
+        id: test
+        run: |
+          set -uo pipefail
+          log="$RUNNER_TEMP/qa.log"; rc=0
+          {
+            if [ -f Makefile ] && grep -qE '^test:' Makefile; then make test
+            elif [ -f go.mod ];        then go test ./...
+            elif [ -f Cargo.toml ];    then cargo test
+            elif [ -f package.json ];  then npm test --silent
+            elif [ -f pyproject.toml ] || [ -d tests ]; then pytest -q
+            else echo "no recognized test setup — skipped"; fi
+          } >"$log" 2>&1 || rc=$?
+          echo "rc=$rc"  >> "$GITHUB_OUTPUT"
+          echo "log=$log" >> "$GITHUB_OUTPUT"
+          tail -60 "$log"
+          exit "$rc"
+      - name: Comment on failure
+        if: ${{ always() && steps.test.outputs.rc != '0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          LOG: ${{ steps.test.outputs.log }}
+        run: |
+          { printf '### QA — tests failing\n\n```\n'; tail -60 "$LOG" 2>/dev/null; printf '\n```\n'; } \
+            | gh pr comment "$PR" --body-file -
