@@ -33,6 +33,7 @@
 - [Language servers (LSP)](#language-servers-lsp)
 - [New or existing repos](#new-or-existing-repos)
 - [Team rollout](#team-rollout)
+- [Autonomous SDLC](#autonomous-sdlc)
 - [Cross-tool: one source](#cross-tool-one-source)
 - [Grounded in published practice](#grounded-in-published-practice)
 - [Customizing](#customizing)
@@ -220,6 +221,24 @@ A teammate is prompted to trust the repo, then it auto-enables. Anyone who alrea
 
 ---
 
+## Autonomous SDLC
+
+A pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test your changes, while **humans keep the merge and deploy gates**. Claude and Codex both review, so you get an independent cross-tool second opinion.
+
+```bash
+# Headless, task-ordered (runs in your repo, opens a PR, never merges):
+~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
+
+# GitHub-native agents on your PRs (Claude review + Codex audit + @claude implement):
+~/compass/sdlc/setup.sh --workflows     # labels + workflows + CODEOWNERS, then prints the gate steps
+```
+
+Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Full design, setup, and the security posture (least-privilege tokens, no `pull_request_target` footgun, prompt-injection hardening, human gate via branch protection): [`docs/09-sdlc.md`](docs/09-sdlc.md).
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
 ## Cross-tool: one source
 
 `AGENTS.md` — the open standard Codex and 20+ agents read — is a **symlink to `CLAUDE.md`**, globally (`~/.codex/AGENTS.md` → `~/.claude/CLAUDE.md`, byte-identical) and per-repo. Edit the manual once; both tools read the same instructions, no drift.
@@ -275,6 +294,7 @@ A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearl
 | [06 · LSP](docs/06-lsp.md) | language-server intelligence |
 | [07 · Practices](docs/07-practices.md) | cited best practices (and what's folklore) |
 | [08 · Defaults](docs/08-defaults.md) | making it the default for new repos |
+| [09 · SDLC](docs/09-sdlc.md) | autonomous governed agents (plan→build→review→audit→QA), human-gated |
 | [Demo](demo/README.md) | render the terminal GIF with vhs |
 
 <div align="center"><sub>MIT · built to be shared</sub></div>

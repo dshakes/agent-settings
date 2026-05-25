@@ -1,0 +1,42 @@
+# Builder (Claude) — implements on demand. Triggered by @claude in an issue/PR comment.
+# Can edit code and push to a `claude/`-prefixed branch + open a PR. NEVER merges.
+# Needs the Claude GitHub App installed + secret ANTHROPIC_API_KEY.
+name: "sdlc · implement (Claude)"
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write          # push to a feature branch (not protected branches)
+  pull-requests: write
+  issues: write
+
+jobs:
+  implement:
+    # Only act on an explicit @claude from someone with repo write access.
+    # (claude-code-action additionally verifies author association.)
+    if: |
+      contains(github.event.comment.body, '@claude') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Claude implement
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          branch_prefix: "claude/"
+          claude_args: |
+            --model sonnet
+            --max-turns 25
+            --max-budget-usd 5.00
+          # Interactive mode: Claude reads the @claude request, implements on a
+          # claude/ branch, opens/updates a PR, and reports back. It does not merge —
+          # branch protection + required reviews are the human gate.

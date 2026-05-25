@@ -1,0 +1,10 @@
+# Copy to .github/CODEOWNERS in your target repo.
+# CODEOWNERS + branch protection = the human merge gate the agents cannot bypass.
+# Require review from these owners on every PR to a protected branch.
+
+*                       @dshakes
+# Tighten high-blast-radius areas so a human MUST review agent changes there:
+/.github/workflows/     @dshakes
+/sdlc/                  @dshakes
+/infra/                 @dshakes
+/**/migrations/         @dshakes

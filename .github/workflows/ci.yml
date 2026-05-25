@@ -22,7 +22,7 @@ jobs:
         run: make doctor
 
       - name: shellcheck (errors fail the build)
-        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh install.sh claude/skills/*/*.sh
+        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh install.sh claude/skills/*/*.sh sdlc/*.sh
 
       - name: shellcheck (style — informational)
         run: shellcheck -S style claude/hooks/*.sh scripts/*.sh install.sh || true

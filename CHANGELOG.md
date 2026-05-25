@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.5.0] — 2026-05-25
+
+### Added
+- **Autonomous SDLC pipeline** (`sdlc/`, `docs/09-sdlc.md`) — a governed roster
+  (Planner · Builder · Reviewer · **Codex Auditor** · Security · QA · Releaser) with
+  names/tags/gates. A **headless, task-ordered orchestrator** (`sdlc/orchestrate.sh`:
+  plan → build → review → Codex audit → security → QA → open PR) and **GitHub-native
+  workflows** (Claude review, Codex cross-audit, `@claude` implement). Humans keep the
+  merge/deploy gate (branch protection + CODEOWNERS + required reviewers). Least-privilege
+  tokens, no `pull_request_target` footgun, prompt-injection hardening, budget/loop guards,
+  and a `/sdlc` command.
+
+## [0.4.0] — 2026-05-25
+
+### Changed
+- **Renamed the project to `compass`** (repo, marketplace id, install paths, lantern pin);
+  plugins now install as `core@compass` / `core-lsp@compass`. Added an SVG hero + animated
+  demo GIF, a navigable README (clickable TOC, collapsibles, back-to-top), and open-source
+  polish (Code of Conduct, Security policy, issue/PR templates). Fixed a `protect-paths`
+  false positive that blocked legitimate `rm -rf` subpaths.
+
 ## [0.3.0] — 2026-05-25
 
 ### Added
@@ -59,6 +80,8 @@ First public release.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
+[0.5.0]: https://github.com/dshakes/compass/releases/tag/v0.5.0
+[0.4.0]: https://github.com/dshakes/compass/releases/tag/v0.4.0
 [0.3.0]: https://github.com/dshakes/compass/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dshakes/compass/releases/tag/v0.2.0
 [0.1.0]: https://github.com/dshakes/compass/releases/tag/v0.1.0

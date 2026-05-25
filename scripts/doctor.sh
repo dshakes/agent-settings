@@ -31,7 +31,7 @@ else note "plugin out of date — run: make sync-plugin"; fi
 # Hook + script executability and shellcheck
 while IFS= read -r s; do
   [ -x "$s" ] && pass "executable: ${s#$REPO/}" || note "not +x (installer will fix): ${s#$REPO/}"
-done < <(find "$REPO/claude/hooks" "$REPO/scripts" "$REPO/claude/statusline.sh" "$REPO"/claude/skills -name '*.sh' 2>/dev/null)
+done < <(find "$REPO/claude/hooks" "$REPO/scripts" "$REPO/sdlc" "$REPO/claude/statusline.sh" "$REPO"/claude/skills -name '*.sh' 2>/dev/null)
 
 if command -v shellcheck >/dev/null 2>&1; then
   if find "$REPO/claude/hooks" -name '*.sh' -exec shellcheck -S warning {} + >/dev/null 2>&1; then
