@@ -13,10 +13,10 @@
 </div>
 
 <p align="center">
-  <img src="assets/hero.svg" alt="compass — make doctor, status line, guardrail, subagents and commands at a glance" width="900">
+  <img src="demo/compass.gif" alt="compass demo — make doctor, status line, guardrail, subagents and commands" width="900">
 </p>
 
-<sub>▶ Want a live recording instead? `make demo` renders an animated `demo/compass.gif` (needs [vhs](https://github.com/charmbracelet/vhs)).</sub>
+<sub>Recorded with <a href="https://github.com/charmbracelet/vhs">vhs</a> from <a href="demo/demo.tape"><code>demo/demo.tape</code></a> — run <code>make demo</code> to re-render. Static version: <a href="assets/hero.svg"><code>assets/hero.svg</code></a>.</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
