@@ -27,9 +27,22 @@ cd <any-repo>
 ```
 No API key or credits needed — it runs `claude -p` / `codex exec` on your login.
 
+### …or the closed loop on your GitHub PRs
+Want the agents to run **on every PR** and auto-fix their own review findings —
+open PR → review/security/QA/audit → if Blocking, the Builder fixes on the branch and
+pushes → re-review → repeat until clean (you still merge)?
+```bash
+cd <any-repo>          # needs the Claude GitHub App installed
+export CLAUDE_CODE_OAUTH_TOKEN=…  OPENAI_API_KEY=…  SDLC_BOT_TOKEN=…
+~/compass/sdlc/setup.sh --all     # installs 8 workflows + the merge gate
+```
+The loop auto-chains only with `SDLC_BOT_TOKEN` (a fine-grained PAT). Full walkthrough,
+the why, and troubleshooting: [`09-sdlc.md`](09-sdlc.md). **Newest piece — treat as early.**
+
 ## What to expect (alpha)
 - **You always merge & deploy.** Agents stop at a PR. That's by design.
-- **Cloud PR automation** needs a self-hosted runner (keyless) or a credential — see
+- **Cloud PR automation** (the closed review⇄fix loop) needs the GitHub App + a
+  `SDLC_BOT_TOKEN` PAT, or a self-hosted runner for the keyless path — see
   [`09-sdlc.md`](09-sdlc.md). The local pipeline above needs neither.
 - **Pin a release** (e.g. `v0.6.0`), not `main`, for stability.
 - It's safe to uninstall: `make uninstall` removes only what it added (backups in `~/.claude/backups/`).

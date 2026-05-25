@@ -21,6 +21,8 @@
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
+> **🆕 Closed-loop autonomous PRs (alpha).** Open a PR and the agents review, security-check, test, and cross-audit it — then **auto-fix their own Blocking findings on the branch and re-review until clean**. You still merge. → [Autonomous SDLC](#autonomous-sdlc)
+
 ---
 
 ## Contents
