@@ -292,7 +292,7 @@ Commit a project `.claude/settings.json` so everyone who opens the repo gets the
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.6.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.7.0" } }
   },
   "enabledPlugins": { "core@compass": true }
 }

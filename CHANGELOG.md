@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.7.0] — 2026-05-25
 
 ### Agentic capabilities (roadmap built — opt-in; human merge/deploy gate unchanged)
 - **Work-type review routing** — `sdlc-classify.yml` labels each PR `domain:*` (haiku);
