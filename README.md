@@ -126,6 +126,16 @@ Everyone has the same models. The edge is the **configuration around them** — 
 
 ## See it work
 
+<br>
+
+<p align="center">
+  <img src="demo/preview.gif" alt="Terminal demo: compass blocks 'rm -rf /' (red) while 'rm -rf ./build' is allowed (green), shows the cost-aware status line, then the autonomous PR loop — review · security · tests · Codex audit → BLOCKING auto-fixes on the branch and re-reviews → CLEAN → you merge — plus the 9-subagent / 11-command crew." width="760">
+</p>
+
+<p align="center"><sub>Guardrails · cost-aware status line · the self-fixing PR loop · the crew — in ~25s. (<a href="demo/preview.gif">open full size</a>)</sub></p>
+
+<br>
+
 A normal session, after `make install` — nothing extra to invoke:
 
 1. **You open any repo and start Claude.** The operating manual, your guardrails, the 9 subagents and 11 commands are already loaded. The status line shows the model, branch, and live `$` spend.
@@ -307,6 +317,16 @@ A teammate is prompted to trust the repo, then it auto-enables. Anyone who alrea
 
 A pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test your changes, while **humans keep the merge and deploy gates**.
 
+<br>
+
+<p align="center">
+  <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
+</p>
+
+<br>
+
+<details><summary><b>Same loop as a text diagram (Mermaid)</b></summary>
+
 ```mermaid
 flowchart TD
   pr["You open / push a PR"] --> onpush
@@ -325,6 +345,8 @@ flowchart TD
   green --> gate["Human merge gate<br/>1 code-owner approval"]
   gate --> ship["You merge and deploy"]
 ```
+
+</details>
 
 **The loop, in words:** open a PR → Reviewer (Claude) + Security (Claude opus) + Auditor (Codex) + QA all fire automatically. If the Reviewer finds Blocking issues it labels `agent:needs-fix`, which triggers the **Builder** to fix the code on the PR's own branch and push — which re-runs the Reviewer. This repeats until clean or the round cap (`SDLC_MAX_FIX_ROUNDS`, default 3), then `sdlc:needs-human` is applied. Required status checks (`review` + `qa`) gate the merge; **humans merge and deploy**.
 

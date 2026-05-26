@@ -9,7 +9,7 @@ Set Width 1180
 Set Height 640
 Set Padding 30
 Set Theme "Catppuccin Mocha"
-Set TypingSpeed 18ms
+Set TypingSpeed 32ms
 
 Hide
 Type "source demo/_demo.sh; setopt interactive_comments 2>/dev/null; PROMPT='%F{141}❯%f '; clear"
@@ -17,33 +17,35 @@ Enter
 Sleep 300ms
 Show
 
-Type "# 🧭 compass — one config, every agent"
+Type "# compass — one config · every agent · every repo"
 Enter
-Sleep 700ms
+Sleep 1400ms
 
 Type "# guardrails: block the catastrophic, allow the rest"
 Enter
+Sleep 900ms
 Type "guard 'rm -rf /'"
 Enter
-Sleep 700ms
+Sleep 1100ms
 Type "guard 'rm -rf ./build'"
 Enter
-Sleep 1100ms
+Sleep 1800ms
 
 Type "statusline"
 Enter
-Sleep 1500ms
+Sleep 2200ms
 
 Type "# raise a PR → it reviews & fixes itself → you merge"
 Enter
+Sleep 900ms
 Type "loop"
 Enter
-Sleep 2600ms
+Sleep 3400ms
 
 Type "crew"
 Enter
-Sleep 1600ms
+Sleep 2400ms
 
 Type "# install once → make install   (or:  /plugin install core@compass)"
 Enter
-Sleep 2200ms
+Sleep 2800ms
