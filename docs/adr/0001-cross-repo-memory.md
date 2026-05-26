@@ -1,8 +1,9 @@
 # ADR 0001 — Cross-repo agent memory via an MCP knowledge server
 
-- **Status:** Proposed (gates roadmap §6; not implemented/enabled)
+- **Status:** **Accepted for a LOCAL, opt-in v1** (stdio + SQLite, not registered by default).
+  A **networked/team version remains a separate, gated decision** (see Posture).
 - **Date:** 2026-05-25
-- **Deciders:** repo owner (human approval required before build)
+- **Deciders:** repo owner (approved local v1)
 
 ## Context
 Claude Code's auto-memory (`~/.claude/projects/<repo>/memory/`) is **per-repo and
@@ -48,8 +49,26 @@ dependency of compass:
 3. **Vendor a heavyweight memory service into compass.** Rejected: makes compass a service, not
    a config; couples every user to infra they didn't ask for.
 
+## Security review (gate satisfied for local v1)
+Reviewed by the `security-auditor` agent (2026-05-25). Verdict: **safe to ship as the opt-in,
+local, stdio v1** after two must-fixes, now applied:
+- **DB file is `0600`** (+ WAL/SHM sidecars) — trust tiers are an in-process filter, not OS
+  access control. (`store.py:connect`)
+- **Trust tiers are most-restrictive-wins** on duplicate entries — no privilege escalation via
+  config drift. (`store.py:trust_tier`)
+- Redaction reworded as **best-effort, not a guarantee**; patterns widened (connection-string
+  creds, provider key prefixes, long hex/base64); every stored field is scanned; LIKE wildcards
+  escaped; repo ids validated. Logic is unit-tested (`test_store.py`, in CI).
+
+**Hard gate before any networked/team version** (per the review): encryption-at-rest, endpoint
+authn/authz, write-identity derived from authenticated context (not a request field),
+prompt-injection containment on read-back, audit logging, and a materially stronger redaction
+layer. None exist today and v1 ships none — it is local and single-user by design.
+
 ## Posture
-- **Not enabled by default.** A **reference scaffold** lives in [`mcp/compass-memory/`](../../mcp/compass-memory/)
-  marked experimental/untested; it is **not** registered in `mcp/servers.json`.
-- Building the production version is **blocked on explicit human approval** of this ADR and a
-  follow-up security review of the chosen storage + endpoint.
+- **v1 is real but opt-in:** [`mcp/compass-memory/`](../../mcp/compass-memory/) (`store.py` tested,
+  `server.py` thin MCP glue). Registered in `mcp/servers.json` with `autoRegister:false` — a human
+  enables it per-repo at project scope; never global, never automatic.
+- **The record/inject hooks** (`Stop`/`SessionStart`) and the **networked/Postgres+pgvector team
+  option** are **out of scope for v1** and blocked on the hard gate above. For now, Claude calls
+  the `memory_search`/`memory_record` MCP tools when relevant.

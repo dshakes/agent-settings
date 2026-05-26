@@ -40,5 +40,8 @@ jobs:
       - name: SDLC loop self-test (round cap + verdict parsing)
         run: bash sdlc/selftest.sh
 
+      - name: compass-memory store tests (redaction + trust tiers)
+        run: python3 mcp/compass-memory/test_store.py
+
       - name: Plugin is in sync with claude/ source
         run: ./scripts/sync-plugin.sh --check
