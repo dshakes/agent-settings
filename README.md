@@ -73,7 +73,9 @@ make doctor      # validate everything
 /plugin install core@compass
 ```
 
-→ [What each method can and can't ship](docs/05-plugin.md)
+**Across many repos at once:** `make apply-many DIRS="~/code/*"` (or `--git-only`). Then `make doctor` to validate.
+
+→ **New here? Read [Using compass](docs/11-using-compass.md)** — install paths, the pieces (plugins vs skills vs hooks), the daily workflow, and how to stay cheap + fast. · [What each method can and can't ship](docs/05-plugin.md)
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -411,6 +413,8 @@ early. Known limits, by design:
 | [08 · Defaults](docs/08-defaults.md) | making it the default for new repos |
 | [09 · SDLC](docs/09-sdlc.md) | autonomous governed agents (plan→build→review→audit→QA), human-gated |
 | [10 · Roadmap](docs/10-roadmap.md) | agentic directions — review-routing, scheduled agents, agent teams, cross-repo memory (grounded in real harness primitives) |
+| [11 · Using compass](docs/11-using-compass.md) | **start here** — install in one command, the pieces, daily workflow, cost-effective + productive habits |
+| [ADRs](docs/adr/) | load-bearing decisions (cross-repo memory; autonomous-loop trust boundary) |
 | [Alpha](docs/alpha.md) | onboarding guide for alpha users |
 | [Demo](demo/README.md) | render the terminal GIF with vhs |
 

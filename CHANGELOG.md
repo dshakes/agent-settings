@@ -29,6 +29,12 @@ All notable changes to this project are documented here. Format loosely follows
   (experimental, not enabled; production blocked on ADR approval + security review).
 - `docs/10-roadmap.md` tracks all of the above with maturity tags; `docs/07-practices.md`
   records the adopted gstack techniques.
+- **Cross-repo memory v1** — `mcp/compass-memory/` (tested `store.py` + thin `server.py`),
+  opt-in, local SQLite, security-reviewed; ADR 0001 Accepted for local v1 (network gated),
+  ADR 0002 records the autonomous-loop trust boundary.
+- **One-command UX** — `make apply-many DIRS="~/code/*"` (`scripts/apply-repos.sh`) applies
+  per-repo config across many repos at once; new hero graphic (`assets/hero.svg`);
+  `docs/11-using-compass.md` ("start here" guide).
 
 ### Changed
 - `claude/settings.json`: `includeCoAuthoredBy` → `false` (no Claude co-author trailer on commits).

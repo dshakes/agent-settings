@@ -36,6 +36,9 @@ demo: ## Render the terminal demo GIF -> demo/preview.gif (needs vhs)
 new-repo: ## Scaffold agent config into DIR (usage: make new-repo DIR=./path [TEAM=1])
 	@./scripts/new-repo.sh $(DIR) $(if $(TEAM),--team,)
 
+apply-many: ## Apply per-repo config to many repos at once (usage: make apply-many DIRS="a b c" [TEAM=1])
+	@./scripts/apply-repos.sh $(if $(TEAM),--team,) $(DIRS)
+
 update: ## Pull latest and re-run install (for symlink installs this is just a pull)
 	@git pull --ff-only && ./install.sh
 
