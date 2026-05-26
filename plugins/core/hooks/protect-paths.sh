@@ -8,6 +8,10 @@
 #
 # Wired in settings.json as a PreToolUse hook matching "Bash|Edit|Write|NotebookEdit".
 # Contract: exit 2 + JSON deny  => blocked. exit 0 => defer to normal rules.
+#
+# NOTE: this is BEST-EFFORT footgun-prevention, NOT a security boundary. It catches common
+# accidents, not a determined attacker or a cleverly-obfuscated command. Keep least-privilege
+# credentials and review diffs. (See SECURITY.md.)
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh

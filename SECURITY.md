@@ -10,6 +10,21 @@ stop common accidents (secret writes, `rm -rf /`, `curl|sh`, force-push to `main
 not a determined attacker or a cleverly-phrased command. Keep using least-privilege
 credentials and review diffs.
 
+## What talks to the network (egress)
+compass itself phones home to nothing. Network calls happen only through tools you enable:
+
+| Endpoint | When | Default |
+|---|---|---|
+| **Anthropic API** | Claude Code / `claude-code-action` / `claude -p` | core to using Claude |
+| **Upstash (context7 MCP)** | live library-docs lookups | auto-registered (secret-free) |
+| **Arbitrary URLs (fetch MCP)** | when the agent fetches a page | auto-registered |
+| **OpenAI (Codex)** | the SDLC cross-audit (`codex` / `codex-action`) | opt-in (SDLC only) |
+| **GitHub API** | SDLC workflows, optional `github` MCP | opt-in |
+| **Live web pages (Playwright `browser` MCP)** | UI/web tasks — *can act on live sites* | opt-in, off by default |
+| **Your Postgres (`postgres` MCP)** | read-only SQL | opt-in, project-scoped |
+
+No telemetry. The `compass-memory` MCP is **local-only** (SQLite over stdio, no network). compass modifies shared files only by symlinking config into `~/.claude` and `~/.codex` (backed up; `make uninstall` reverts). No feature uses `--dangerously-skip-permissions`.
+
 ## Reporting a vulnerability
 Please report security issues **privately** — do not open a public issue.
 - Use GitHub's **Report a vulnerability** (Security → Advisories), or

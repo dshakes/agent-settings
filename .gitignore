@@ -12,5 +12,12 @@
 .idea/
 .vscode/
 
+# Python / tooling caches (compass-memory reference server)
+__pycache__/
+*.pyc
+.ruff_cache/
+venv/
+.sdlc/
+
 # Backups created by the installer (these live under ~/.claude anyway)
 backups/
