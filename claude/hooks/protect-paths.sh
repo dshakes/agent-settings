@@ -50,7 +50,7 @@ if [ "$TOOL" = "Bash" ]; then
     deny "Blocked recursive force-delete of root or home. Narrow the target to a subdirectory if intentional."
   fi
   case "$norm" in
-    *":(){"*|*":(){ :|:&"*)
+    *":(){"*)
       deny "Blocked what looks like a fork bomb." ;;
     *"chmod -R 777 /"*|*"chmod 777 /"*)
       deny "Blocked chmod 777 on a system path." ;;

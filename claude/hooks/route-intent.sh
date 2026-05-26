@@ -21,7 +21,7 @@ case "$low" in
     hint="this looks load-bearing — consider an ADR first (/adr) before implementing." ;;
 esac
 case "$low" in
-  *security*|*auth*|*authz*|*secret*|*tenant*|*injection*)
+  *security*|*auth*|*secret*|*tenant*|*injection*)
     hint="${hint:+$hint }it touches security — plan a security-auditor pass on the diff." ;;
 esac
 case "$low" in

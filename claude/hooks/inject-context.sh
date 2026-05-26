@@ -20,7 +20,7 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
 branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 dirty="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
-ahead_behind="$(git rev-list --left-right --count @{u}...HEAD 2>/dev/null | awk '{print "behind "$1", ahead "$2}')"
+ahead_behind="$(git rev-list --left-right --count '@{u}...HEAD' 2>/dev/null | awk '{print "behind "$1", ahead "$2}')"
 recent="$(git log --oneline -5 2>/dev/null)"
 
 ctx="Repo orientation (auto, from SessionStart hook):
