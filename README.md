@@ -45,7 +45,7 @@ git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make i
 > No `curl \| sh`. You clone it and read before you run — that's the point (compass *blocks* `curl\|sh` in your own work, too). Uninstall is one command: `make uninstall`.
 
 ### What you get, day one
-- **Both tools, one config.** Claude Code **and** Codex behave like a senior engineer in *every* repo — understand first, stay in scope, verify before "done."
+- **Every agent, one config.** Claude Code, Codex, and Gemini (plus Cursor/Windsurf via `AGENTS.md`) behave like a senior engineer in *every* repo — understand first, stay in scope, verify before "done."
 - **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, force-push to `main`; auto-formats every edit — silently.
 - **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
 - **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge.
@@ -118,7 +118,7 @@ Everyone has the same models. The edge is the **configuration around them** — 
 - **It stops the disaster** — hard-blocks `rm -rf /`, secret writes, `curl\|sh`, force-push to `main`; waves `rm -rf ./build` straight through.
 - **It cleans up silently** — every file it edits is auto-formatted.
 - **It costs less** — grunt work goes to Haiku/Sonnet; Opus is saved for the hard calls; the status line shows live `$` spend.
-- **It brings a crew** — 9 specialists and 8 commands (`/ship` `/review` `/tdd` …), each on the right model.
+- **It brings a crew** — 9 specialists and 11 commands (`/ship` `/review` `/tdd` …), each on the right model.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -128,7 +128,7 @@ Everyone has the same models. The edge is the **configuration around them** — 
 
 A normal session, after `make install` — nothing extra to invoke:
 
-1. **You open any repo and start Claude.** The operating manual, your guardrails, the 9 subagents and 8 commands are already loaded. The status line shows the model, branch, and live `$` spend.
+1. **You open any repo and start Claude.** The operating manual, your guardrails, the 9 subagents and 11 commands are already loaded. The status line shows the model, branch, and live `$` spend.
 2. **You ask for a change.** Claude reads the relevant code first, states a 2–4 line plan, then implements — delegating the test run to a cheap Haiku subagent and saving Opus for the hard reasoning.
 3. **It tries something dangerous.** `rm -rf $HOME`, a secret write, a force-push to `main` → **blocked** by the guardrail hook before it runs. `rm -rf ./build` sails through.
 4. **Every file it touches is auto-formatted** (gofmt/ruff/prettier/…) — no "fix lint" round-trips.
@@ -171,7 +171,7 @@ flowchart LR
 | **Operating manual** | `CLAUDE.md` (≙ `AGENTS.md`), loaded every session | `claude/CLAUDE.md` |
 | **Guardrail + quality hooks** | protect-paths · format-on-edit · inject-context · notify | `claude/hooks/` |
 | **Specialist subagents** (9) | cost-tiered across Haiku / Sonnet / Opus | `claude/agents/` |
-| **Workflow commands** (8) | `/ship` `/review` `/tdd` `/pr` `/adr` `/triage` `/scaffold` `/cost` | `claude/commands/` |
+| **Workflow commands** (11) | `/ship` `/review` `/tdd` `/spec` `/pr` `/adr` `/triage` `/scaffold` `/cost` `/sdlc` `/team-review` | `claude/commands/` |
 | **Skill** | bootstrap a grounded project `CLAUDE.md` | `claude/skills/` |
 | **Status line** | model · dir · git · context · `$cost` | `claude/statusline.sh` |
 | **Codex parity** | `AGENTS.md` + cost profiles | `codex/` |
@@ -334,7 +334,7 @@ The loop auto-chains only with **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Content
 # Headless, task-ordered (opens a PR, never merges):
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 
-# GitHub-native closed loop (8 workflows, Reviewer ⇄ Builder):
+# GitHub-native closed loop (10 workflows, Reviewer ⇄ Builder):
 export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
 export OPENAI_API_KEY=…            # Codex cloud audit
 export SDLC_BOT_TOKEN=…            # fine-grained PAT — required for the loop to chain

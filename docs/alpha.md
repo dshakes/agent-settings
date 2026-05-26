@@ -34,7 +34,7 @@ pushes → re-review → repeat until clean (you still merge)?
 ```bash
 cd <any-repo>          # needs the Claude GitHub App installed
 export CLAUDE_CODE_OAUTH_TOKEN=…  OPENAI_API_KEY=…  SDLC_BOT_TOKEN=…
-~/compass/sdlc/setup.sh --all     # installs 8 workflows + the merge gate
+~/compass/sdlc/setup.sh --all     # installs 10 workflows + the merge gate
 ```
 The loop auto-chains only with `SDLC_BOT_TOKEN` (a fine-grained PAT). Full walkthrough,
 the why, and troubleshooting: [`09-sdlc.md`](09-sdlc.md). **Newest piece — treat as early.**
