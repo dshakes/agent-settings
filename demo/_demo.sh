@@ -25,6 +25,6 @@ loop() {
 }
 
 crew() {
-  printf "  %b9 subagents%b  architect · reviewer · %bsecurity%b · debugger · go/rust · k8s · qa · docs\n" "$B" "$X" "$P" "$X"
-  printf "  %b11 commands%b  /ship /review /tdd /spec /pr /adr /triage /scaffold /cost …\n" "$B" "$X"
+  printf "  %b9 subagents%b  architect·reviewer·%bsecurity%b·debugger·go/rust·k8s·qa·docs\n" "$B" "$X" "$P" "$X"
+  printf "  %b11 commands%b  /ship /review /tdd /spec /pr /adr /triage /scaffold /cost\n" "$B" "$X"
 }

@@ -5,11 +5,13 @@ Output demo/preview.gif
 
 Set Shell "zsh"
 Set FontSize 24
-Set Width 1180
-Set Height 640
-Set Padding 30
+Set Width 1280
+Set Height 720
+Set Padding 40
+Set Margin 0
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 32ms
+Set LineHeight 1.45
 
 Hide
 Type "source demo/_demo.sh; setopt interactive_comments 2>/dev/null; PROMPT='%F{141}❯%f '; clear"

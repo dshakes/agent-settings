@@ -5,14 +5,17 @@
       <stop offset="0" stop-color="#cf222e"/><stop offset="0.5" stop-color="#8A63D2"/><stop offset="1" stop-color="#2ea44f"/>
       <animateTransform attributeName="gradientTransform" type="translate" values="-0.3 0;0.3 0;-0.3 0" dur="6s" repeatCount="indefinite"/>
     </linearGradient>
-    <marker id="ar" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker>
-    <marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e3b341"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2ea44f"/></marker>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#cf222e"/></marker>
+    <marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A63D2"/></marker>
+    <marker id="ary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e3b341"/></marker>
     <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect x="1" y="1" width="1198" height="538" rx="20" fill="url(#bg)" stroke="#30363d" stroke-width="2"/>
   <rect x="1" y="536" width="1198" height="4" fill="url(#acc)"/>
 
-  <!-- header: rotating loop glyph + title -->
+  <!-- header -->
   <g transform="translate(56,46)">
     <circle r="20" fill="#161b22" stroke="#8A63D2" stroke-width="2.5"/>
     <g><path d="M0,-12 A12,12 0 1 1 -10.4,6" fill="none" stroke="#58a6ff" stroke-width="3" stroke-linecap="round"/>
@@ -22,93 +25,93 @@
     <text x="37" y="22" font-size="14" fill="#8b949e">named, governed agents — they fix their own review findings, then <tspan fill="#3fb950" font-weight="700">you merge</tspan></text>
   </g>
 
-  <!-- ============ TOP ROW: the happy path (left → right) ============ -->
+  <!-- ============ TOP ROW (happy path), all centered on y=250 ============ -->
 
   <!-- PR node -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.3s" dur="0.6s" fill="freeze"/>
-    <rect x="58" y="210" width="122" height="80" rx="14" fill="#161b22" stroke="#8A63D2" stroke-width="2"/>
-    <g transform="translate(95,234)" stroke="#8A63D2" stroke-width="3" fill="none">
+    <rect x="58" y="210" width="124" height="80" rx="14" fill="#161b22" stroke="#8A63D2" stroke-width="2"/>
+    <g transform="translate(96,233)" stroke="#a371f7" stroke-width="3" fill="none">
       <circle cx="0" cy="-4" r="4"/><circle cx="0" cy="20" r="4"/><circle cx="26" cy="-4" r="4"/>
       <path d="M0,0 V16 M0,-4 H22 a4,4 0 0 1 4,4 V-2" stroke-linecap="round"/>
     </g>
-    <text x="119" y="262" text-anchor="middle" font-size="14" font-weight="700" fill="#f0f6fc">you push</text>
-    <text x="119" y="280" text-anchor="middle" font-size="13" fill="#adbac7">a PR</text>
+    <text x="120" y="262" text-anchor="middle" font-size="14" font-weight="700" fill="#f0f6fc">you push</text>
+    <text x="120" y="280" text-anchor="middle" font-size="13" fill="#adbac7">a PR</text>
   </g>
-  <line x1="182" y1="250" x2="206" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
-  <circle r="3.5" fill="#8A63D2" filter="url(#g)"><animateMotion path="M182,250 L200,250" dur="1.6s" repeatCount="indefinite"/></circle>
+  <line x1="184" y1="250" x2="208" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
+  <circle r="3.5" fill="#a371f7" filter="url(#g)"><animateMotion path="M184,250 L202,250" dur="1.6s" repeatCount="indefinite"/></circle>
 
   <!-- agents box -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.6s" dur="0.6s" fill="freeze"/>
     <rect x="210" y="150" width="300" height="200" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
-    <text x="360" y="178" text-anchor="middle" font-size="12.5" letter-spacing="1.5" fill="#8b949e">RUNS AUTOMATICALLY ON THE PR</text>
-    <g font-size="13.5" text-anchor="middle" fill="#c9d1d9" font-weight="600">
-      <g><rect x="224" y="194" width="130" height="44" rx="10" fill="#0d1117" stroke="#8A63D2"><animate attributeName="stroke-width" values="1;2.4;1" keyTimes="0;0.12;0.3" dur="4s" begin="1s" repeatCount="indefinite"/></rect><circle cx="244" cy="216" r="4.5" fill="#8A63D2"/><text x="297" y="221">Reviewer</text></g>
-      <g><rect x="366" y="194" width="130" height="44" rx="10" fill="#0d1117" stroke="#58a6ff"><animate attributeName="stroke-width" values="1;2.4;1" keyTimes="0;0.12;0.3" dur="4s" begin="1.3s" repeatCount="indefinite"/></rect><circle cx="386" cy="216" r="4.5" fill="#58a6ff"/><text x="437" y="221">Auditor·Codex</text></g>
-      <g><rect x="224" y="248" width="130" height="44" rx="10" fill="#0d1117" stroke="#cf222e"><animate attributeName="stroke-width" values="1;2.4;1" keyTimes="0;0.12;0.3" dur="4s" begin="1.6s" repeatCount="indefinite"/></rect><circle cx="244" cy="270" r="4.5" fill="#cf222e"/><text x="296" y="275">Security</text></g>
-      <g><rect x="366" y="248" width="130" height="44" rx="10" fill="#0d1117" stroke="#2ea44f"><animate attributeName="stroke-width" values="1;2.4;1" keyTimes="0;0.12;0.3" dur="4s" begin="1.9s" repeatCount="indefinite"/></rect><circle cx="386" cy="270" r="4.5" fill="#2ea44f"/><text x="437" y="275">QA · tests</text></g>
+    <text x="360" y="180" text-anchor="middle" font-size="12.5" letter-spacing="1.5" fill="#8b949e">RUNS AUTOMATICALLY ON THE PR</text>
+    <g font-size="13.5" text-anchor="middle" fill="#e6edf3" font-weight="700">
+      <g><rect x="226" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#a371f7" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1s" repeatCount="indefinite"/></rect><text x="291" y="225">Reviewer</text></g>
+      <g><rect x="368" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#58a6ff" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.3s" repeatCount="indefinite"/></rect><text x="433" y="220" font-size="13">Auditor</text><text x="433" y="235" font-size="10.5" fill="#7d8590" font-weight="600">Codex</text></g>
+      <g><rect x="226" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#f0596b" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.6s" repeatCount="indefinite"/></rect><text x="291" y="279">Security</text></g>
+      <g><rect x="368" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.9s" repeatCount="indefinite"/></rect><text x="433" y="279">QA · tests</text></g>
     </g>
-    <text x="360" y="322" text-anchor="middle" font-size="12.5" fill="#6e7681">parallel · per-tenant ids · fresh context</text>
+    <text x="360" y="326" text-anchor="middle" font-size="12.5" fill="#6e7681">parallel · per-tenant ids · fresh context</text>
   </g>
-  <line x1="510" y1="250" x2="552" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
-  <circle r="3.5" fill="#58a6ff" filter="url(#g)"><animateMotion path="M510,250 L546,250" dur="1.5s" repeatCount="indefinite"/></circle>
+  <line x1="510" y1="250" x2="548" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
+  <circle r="3.5" fill="#58a6ff" filter="url(#g)"><animateMotion path="M510,250 L542,250" dur="1.5s" repeatCount="indefinite"/></circle>
 
-  <!-- verdict diamond (flips BLOCKING ↔ CLEAN) -->
+  <!-- verdict diamond (flips BLOCKING <-> CLEAN) -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="1s" dur="0.6s" fill="freeze"/>
-    <text x="635" y="180" text-anchor="middle" font-size="12" letter-spacing="1" fill="#8b949e">REVIEWER VERDICT</text>
-    <polygon points="635,194 712,250 635,306 558,250" fill="#161b22" stroke="#cf222e" stroke-width="3">
+    <text x="615" y="182" text-anchor="middle" font-size="12" letter-spacing="1" fill="#8b949e">REVIEWER VERDICT</text>
+    <polygon points="615,198 680,250 615,302 550,250" fill="#161b22" stroke="#cf222e" stroke-width="3">
       <animate attributeName="stroke" values="#cf222e;#cf222e;#3fb950;#3fb950" keyTimes="0;0.45;0.55;1" dur="5s" repeatCount="indefinite"/></polygon>
     <g text-anchor="middle" font-weight="800">
-      <text x="635" y="256" font-size="16" fill="#ff6b6b"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.45;0.55;1" dur="5s" repeatCount="indefinite"/>BLOCKING</text>
-      <text x="635" y="256" font-size="18" fill="#3fb950"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.45;0.55;1" dur="5s" repeatCount="indefinite"/>CLEAN</text>
+      <text x="615" y="256" font-size="16" fill="#ff6b6b"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.45;0.55;1" dur="5s" repeatCount="indefinite"/>BLOCKING</text>
+      <text x="615" y="256" font-size="18" fill="#3fb950"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.45;0.55;1" dur="5s" repeatCount="indefinite"/>CLEAN</text>
     </g>
   </g>
 
-  <!-- CLEAN branch (verdict → right) -->
+  <!-- CLEAN branch: verdict -> checks green -> human gate -> you merge -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="1.4s" dur="0.6s" fill="freeze"/>
-    <line x1="712" y1="250" x2="742" y2="250" stroke="#2ea44f" stroke-width="2.5" marker-end="url(#ar)"/>
-    <text x="727" y="238" text-anchor="middle" font-size="11" font-weight="700" fill="#3fb950">CLEAN</text>
-    <rect x="744" y="226" width="120" height="48" rx="12" fill="#0d1117" stroke="#2ea44f" stroke-width="2"/>
-    <text x="804" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#3fb950">checks green</text>
-    <text x="804" y="265" text-anchor="middle" font-size="11" fill="#6e7681">review · qa required</text>
-    <line x1="864" y1="250" x2="896" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
-    <rect x="898" y="210" width="126" height="80" rx="14" fill="#161b22" stroke="#e3b341" stroke-width="2"/>
-    <g transform="translate(961,236)" stroke="#e3b341" stroke-width="2.4" fill="none"><rect x="-9" y="-2" width="18" height="13" rx="2"/><path d="M-5,-2 V-6 a5,5 0 0 1 10,0 V-2" stroke-linecap="round"/></g>
-    <text x="961" y="266" text-anchor="middle" font-size="13" font-weight="700" fill="#f0f6fc">human gate</text>
-    <text x="961" y="282" text-anchor="middle" font-size="11" fill="#adbac7">1 code-owner</text>
-    <line x1="1024" y1="250" x2="1056" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
-    <rect x="1058" y="224" width="118" height="52" rx="13" fill="#13261a" stroke="#3fb950" stroke-width="2.5"/>
-    <text x="1117" y="247" text-anchor="middle" font-size="13.5" font-weight="800" fill="#3fb950">you merge</text>
-    <text x="1117" y="265" text-anchor="middle" font-size="11" fill="#7ee2a8">&amp; deploy</text>
+    <text x="697" y="240" text-anchor="middle" font-size="10" letter-spacing="0.5" font-weight="700" fill="#3fb950">CLEAN</text>
+    <line x1="680" y1="250" x2="714" y2="250" stroke="#2ea44f" stroke-width="2.5" marker-end="url(#arg)"/>
+    <rect x="716" y="226" width="120" height="48" rx="12" fill="#0d1117" stroke="#2ea44f" stroke-width="2"/>
+    <text x="776" y="247" text-anchor="middle" font-size="13" font-weight="700" fill="#3fb950">checks green</text>
+    <text x="776" y="264" text-anchor="middle" font-size="10.5" fill="#6e7681">review · qa required</text>
+    <line x1="836" y1="250" x2="872" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
+    <rect x="874" y="210" width="120" height="80" rx="14" fill="#161b22" stroke="#e3b341" stroke-width="2"/>
+    <g transform="translate(934,236)" stroke="#e3b341" stroke-width="2.4" fill="none"><rect x="-9" y="-2" width="18" height="13" rx="2"/><path d="M-5,-2 V-6 a5,5 0 0 1 10,0 V-2" stroke-linecap="round"/></g>
+    <text x="934" y="266" text-anchor="middle" font-size="13" font-weight="700" fill="#f0f6fc">human gate</text>
+    <text x="934" y="282" text-anchor="middle" font-size="10.5" fill="#adbac7">1 code-owner</text>
+    <line x1="994" y1="250" x2="1030" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
+    <rect x="1032" y="224" width="126" height="52" rx="13" fill="#13261a" stroke="#3fb950" stroke-width="2.5"/>
+    <text x="1095" y="247" text-anchor="middle" font-size="13.5" font-weight="800" fill="#3fb950">you merge</text>
+    <text x="1095" y="265" text-anchor="middle" font-size="11" fill="#7ee2a8">&amp; deploy</text>
   </g>
-  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M716,250 L740,250" dur="1.4s" begin="2s" repeatCount="indefinite"/></circle>
-  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M868,250 L894,250" dur="1.4s" begin="2.4s" repeatCount="indefinite"/></circle>
-  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M1028,250 L1054,250" dur="1.4s" begin="2.8s" repeatCount="indefinite"/></circle>
+  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M682,250 L712,250" dur="1.4s" begin="2s" repeatCount="indefinite"/></circle>
+  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M838,250 L870,250" dur="1.4s" begin="2.4s" repeatCount="indefinite"/></circle>
+  <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M996,250 L1028,250" dur="1.4s" begin="2.8s" repeatCount="indefinite"/></circle>
 
-  <!-- ============ BLOCKING branch (verdict → down → Builder → loop back) ============ -->
+  <!-- BLOCKING branch: verdict -> needs-fix -> Builder -> (loop back) / round cap -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="1.6s" dur="0.6s" fill="freeze"/>
-    <line x1="635" y1="306" x2="635" y2="360" stroke="#cf222e" stroke-width="2.5" marker-end="url(#ar)"/>
-    <rect x="566" y="318" width="138" height="22" rx="11" fill="#2d1418" stroke="#cf222e" stroke-width="1.5"/>
-    <text x="635" y="334" text-anchor="middle" font-size="12" font-weight="700" fill="#ff6b6b">label: agent:needs-fix</text>
+    <line x1="615" y1="302" x2="615" y2="322" stroke="#cf222e" stroke-width="2.5" marker-end="url(#arr)"/>
+    <rect x="540" y="326" width="150" height="24" rx="12" fill="#2d1418" stroke="#cf222e" stroke-width="1.5"/>
+    <text x="615" y="342" text-anchor="middle" font-size="12" font-weight="700" fill="#ff6b6b">label: agent:needs-fix</text>
+    <line x1="615" y1="350" x2="615" y2="378" stroke="#cf222e" stroke-width="2.5" marker-end="url(#arr)"/>
 
-    <rect x="500" y="362" width="270" height="66" rx="14" fill="#161b22" stroke="#8A63D2" stroke-width="2"/>
-    <text x="635" y="389" text-anchor="middle" font-size="14.5" font-weight="800" fill="#f0f6fc">Builder fixes on the PR branch</text>
-    <text x="635" y="410" text-anchor="middle" font-size="12.5" fill="#adbac7">+ pushes via <tspan fill="#58a6ff" font-weight="700">SDLC_BOT_TOKEN</tspan></text>
+    <rect x="475" y="380" width="280" height="62" rx="14" fill="#161b22" stroke="#a371f7" stroke-width="2"/>
+    <text x="615" y="406" text-anchor="middle" font-size="14.5" font-weight="800" fill="#f0f6fc">Builder fixes on the PR branch</text>
+    <text x="615" y="426" text-anchor="middle" font-size="12.5" fill="#adbac7">+ pushes via <tspan fill="#58a6ff" font-weight="700">SDLC_BOT_TOKEN</tspan></text>
 
-    <!-- loop-back arc: Builder → agents box (re-review) -->
-    <path d="M500,395 C 430,395 392,395 392,360" fill="none" stroke="#8A63D2" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#ar)">
+    <!-- loop-back to agents box (re-review) -->
+    <path d="M475,411 C 408,411 360,408 360,352" fill="none" stroke="#8A63D2" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#arp)">
       <animate attributeName="stroke-dashoffset" from="52" to="0" dur="0.9s" repeatCount="indefinite"/></path>
-    <circle r="4" fill="#8A63D2" filter="url(#g)"><animateMotion path="M500,395 C 430,395 392,395 392,360" dur="1.6s" repeatCount="indefinite"/></circle>
-    <text x="455" y="382" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a371f7">↻ re-review</text>
+    <text x="412" y="396" text-anchor="middle" font-size="12" font-weight="700" fill="#a371f7">↻ re-review</text>
 
-    <!-- round cap → needs-human -->
-    <line x1="635" y1="428" x2="635" y2="452" stroke="#e3b341" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arr)"/>
-    <rect x="540" y="454" width="190" height="30" rx="15" fill="#2a2210" stroke="#e3b341" stroke-width="1.5"/>
-    <text x="635" y="473" text-anchor="middle" font-size="11.5" font-weight="700" fill="#e3b341">round cap ×3 → sdlc:needs-human</text>
+    <!-- round cap -> needs-human -->
+    <line x1="615" y1="442" x2="615" y2="460" stroke="#e3b341" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#ary)"/>
+    <rect x="520" y="462" width="190" height="26" rx="13" fill="#2a2210" stroke="#e3b341" stroke-width="1.5"/>
+    <text x="615" y="479" text-anchor="middle" font-size="11.5" font-weight="700" fill="#e3b341">round cap ×3 → sdlc:needs-human</text>
   </g>
-
-  <!-- red token cycling the fix loop -->
-  <circle r="3.5" fill="#ff6b6b" filter="url(#g)"><animateMotion path="M635,308 L635,358" dur="1.4s" begin="2.2s" repeatCount="indefinite"/></circle>
+  <!-- tokens on the fix loop -->
+  <circle r="3.5" fill="#ff6b6b" filter="url(#g)"><animateMotion path="M615,304 L615,320" dur="1.2s" begin="2.2s" repeatCount="indefinite"/></circle>
+  <circle r="4" fill="#a371f7" filter="url(#g)"><animateMotion path="M475,411 C 408,411 360,408 360,352" dur="1.7s" repeatCount="indefinite"/></circle>
 
   <!-- footer tagline -->
-  <text x="600" y="512" text-anchor="middle" font-size="13" fill="#8b949e">open a PR  →  review · security · tests · cross-audit  →  <tspan fill="#ff6b6b" font-weight="700">it fixes its own blockers</tspan>  →  <tspan fill="#3fb950" font-weight="700">you merge &amp; deploy</tspan></text>
+  <text x="600" y="514" text-anchor="middle" font-size="13" fill="#8b949e">open a PR  →  review · security · tests · cross-audit  →  <tspan fill="#ff6b6b" font-weight="700">it fixes its own blockers</tspan>  →  <tspan fill="#3fb950" font-weight="700">you merge &amp; deploy</tspan></text>
 </svg>
