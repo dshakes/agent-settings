@@ -143,22 +143,21 @@ A normal session, after `make install` — nothing extra to invoke:
 
 ## How it fits together
 
-One repo is the source of truth; `make install` **symlinks** it into `~/.claude` (and merges into `~/.codex`), so editing the repo edits your live config — and `git pull` updates everything.
+One repo is the source of truth; `make install` **symlinks** it into your tools, so editing the repo edits your live config — and `git pull` updates everything. The same manual (via the `AGENTS.md` standard) reaches every major agent.
 
 ```mermaid
 flowchart LR
-  repo["compass repo<br/>(source of truth)"]
-  repo -->|"make install · symlink"| claude["~/.claude<br/>Claude Code"]
-  repo -->|"merge config + AGENTS.md"| codex["~/.codex<br/>Codex"]
-  claude --> manual["CLAUDE.md<br/>operating manual"]
-  claude --> hooks["hooks<br/>protect · format · context · notify"]
-  claude --> agents["9 subagents<br/>Haiku / Sonnet / Opus"]
-  claude --> cmds["8 commands<br/>/ship /review /tdd /pr …"]
-  claude --> status["status line<br/>model · git · $cost"]
-  repo --> mcp["MCP servers<br/>context7 · fetch · git"]
-  mcp --> claude
-  mcp --> codex
-  manual -. "AGENTS.md → CLAUDE.md<br/>(one source, no drift)" .-> codex
+  repo["compass repo<br/>one source of truth<br/>(CLAUDE.md ≙ AGENTS.md)"]
+  repo -->|"make install"| claude["Claude Code<br/>~/.claude"]
+  repo -->|"make install"| codex["Codex<br/>~/.codex"]
+  repo -->|"install.sh --gemini"| gemini["Gemini CLI<br/>~/.gemini"]
+  repo -. "per-repo AGENTS.md<br/>(Linux Foundation standard)" .-> ides["Cursor · Windsurf<br/>Copilot · Amp · Devin"]
+
+  claude --> bundle["manual · guardrail + format hooks<br/>9 cost-tiered subagents · commands<br/>status line · MCP (context7/fetch/git)"]
+  codex --> tiers["tiers: deep / standard / cheap<br/>+ local (Ollama) · router (OpenRouter)"]
+
+  claude --> loop["autonomous PR loop<br/>review ⇄ fix · Codex cross-audit · human merge"]
+  codex --> loop
 ```
 
 <div align="right"><a href="#contents">↑ top</a></div>

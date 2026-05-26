@@ -149,10 +149,14 @@ models are **cost-tiered** (classify = haiku, QA = deterministic/free, review = 
 opus security + Codex audit run **once on open**, not every push), **routing** runs domain
 reviewers only where they apply, and **round caps** bound spend.
 - **Shipped:** `orchestrate.sh SDLC_LITE=1` (skip audit + opus security → review + QA + human
-  gate only — fast/cheap for small changes); classifier-gated routing; parallel cloud checks.
+  gate only — fast/cheap for small changes); classifier-gated routing; parallel cloud checks;
+  **bring-your-own-model** (`codex --profile local` → Ollama, `--profile router` → OpenRouter)
+  for the cheap tier; **spend pre-estimate + post-run analysis** (per-step `total_cost_usd` →
+  `costs.tsv` + PR "Spend" line). See [`docs/02-cost-and-models.md`](02-cost-and-models.md).
 - **Next:** diff-size-gated model selection (haiku review for ≤N-line diffs); GitHub Actions
   dependency caching in `sdlc-qa.yml`; **test-impact selection** (run only tests affected by the
-  diff) for low-latency QA; optional merge-queue. 🔵
+  diff) for low-latency QA; a **first-class smart router** (cross-provider, cost-aware) and a
+  rolling spend dashboard; optional merge-queue. 🔵
 
 ### 11. More governed, more tested 🟢
 - **Shipped:** required status checks (`review` + `qa`), ADR-gated trust boundaries, self-tests

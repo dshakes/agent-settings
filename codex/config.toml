@@ -38,3 +38,31 @@ approval_policy = "on-request"
 model = "gpt-5.5"
 model_reasoning_effort = "low"
 approval_policy = "on-failure"
+
+# ── Bring-your-own-model: route a tier to a LOCAL model or a cost router ───────
+# Codex talks to any OpenAI-compatible endpoint, so the cheap/grunt tier can run on a
+# free local model (Ollama/LM Studio) or a cross-provider router (OpenRouter — one key,
+# many models, pick the cheapest capable one). These are OPT-IN and INERT by default —
+# used only when you run `codex --profile local` / `codex --profile router`. The default
+# tiers above are unchanged. (Claude Code's core runs Claude/Bedrock/Vertex; this
+# bring-your-own-model lever is Codex-side — see docs/02-cost-and-models.md.)
+# Adjust the example model names to ones you've actually pulled / have access to.
+
+[model_providers.ollama]            # free + private, on your machine
+base_url = "http://localhost:11434/v1"
+wire_api = "chat"
+
+[model_providers.openrouter]        # one API key → many models; cost-route to the cheapest capable
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+wire_api = "chat"
+
+[profiles.local]      # grunt work on a local model (needs Ollama running)
+model = "qwen2.5-coder"
+model_provider = "ollama"
+approval_policy = "on-failure"
+
+[profiles.router]     # cost-route via OpenRouter (export OPENROUTER_API_KEY first)
+model = "deepseek/deepseek-chat"
+model_provider = "openrouter"
+approval_policy = "on-request"

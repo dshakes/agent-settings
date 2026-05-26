@@ -15,6 +15,13 @@ All notable changes to this project are documented here. Format loosely follows
 - **Roadmap Phase 4** (`docs/10-roadmap.md`) — cross-vendor (Gemini/IDE/MCP), cost+latency SDLC
   (diff-size-gated models, dep caching, test-impact selection), and more governance/testing
   (SBOM/dep-audit, coverage gate), each grounded in a real primitive with a maturity tag.
+- **Bring-your-own-model (Codex side)** — `codex/config.toml` ships opt-in, inert providers:
+  `--profile local` (Ollama/LM Studio, free + private) and `--profile router` (OpenRouter,
+  cost-route across models). Default tiers unchanged. Honest limit: Claude Code core runs
+  Claude/Bedrock/Vertex. Documented in `docs/02-cost-and-models.md`.
+- **Spend pre-estimate + post-run analysis** — `orchestrate.sh` prints the budget ceiling up
+  front and (with `jq`) tallies each step's real `total_cost_usd` into `costs.tsv` + a PR
+  "Spend" line. Architecture diagram in the README updated to show the multi-agent + model-routing reality.
 
 ## [0.7.0] — 2026-05-25
 
