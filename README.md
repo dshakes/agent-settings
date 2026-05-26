@@ -14,10 +14,10 @@
 </div>
 
 <p align="center">
-  <img src="assets/hero.svg" alt="compass — one config makes Claude Code + Codex behave like your best engineer; AGENTS.md=CLAUDE.md one source; the autonomous SDLC loop (review · security · tests · Codex audit → auto-fix → you merge), humans merge and deploy" width="940">
+  <img src="assets/pitch.svg" alt="compass in one picture: the problem (every repo rebuilt by hand) → one config (CLAUDE.md ≙ AGENTS.md) → every agent (Claude Code, Codex, Gemini, Cursor, Windsurf, Copilot); senior-engineer defaults (blocks rm -rf /, auto-formats, cheap models, 9 subagents); and the autonomous PR loop — raise a PR, it reviews/security-checks/tests/Codex-audits and auto-fixes its own findings until green, then you merge. Humans own merge and deploy." width="980">
 </p>
 
-<sub>▶ <a href="demo/preview.gif">Watch the terminal demo</a> — recorded with <a href="https://github.com/charmbracelet/vhs">vhs</a> from <a href="demo/demo.tape"><code>demo/demo.tape</code></a> (<code>make demo</code> to re-render).</sub>
+<sub>📐 <a href="assets/hero.svg">Architecture diagram</a> · ▶ <a href="demo/preview.gif">terminal demo</a> (<a href="https://github.com/charmbracelet/vhs">vhs</a>, <code>make demo</code> to re-render)</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
@@ -27,20 +27,20 @@
 
 ## Get started
 
-**Engineers — one paste, every repo, fully reversible:**
+**Full setup — one paste, every repo, fully reversible:**
 
 ```bash
 git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make install && make doctor
 ```
 
-**Anyone, zero terminal — paste inside Claude Code:**
+**Zero-config — paste inside Claude Code (no terminal):**
 
 ```text
 /plugin marketplace add dshakes/compass
 /plugin install core@compass
 ```
 
-**New to this?** → **[Using compass](docs/11-using-compass.md)** explains every piece in plain language — for engineers *and* non-engineers — with the daily workflow and how to stay cheap and fast. Across many repos at once: `make apply-many DIRS="~/code/*"`.
+**New to this?** → **[Using compass](docs/11-using-compass.md)** explains every piece in plain language — from your first session to the full autonomous loop — with the daily workflow and how to stay cheap and fast. Across many repos at once: `make apply-many DIRS="~/code/*"`.
 
 > No `curl \| sh`. You clone it and read before you run — that's the point (compass *blocks* `curl\|sh` in your own work, too). Uninstall is one command: `make uninstall`.
 
