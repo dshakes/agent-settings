@@ -14,10 +14,10 @@
 </div>
 
 <p align="center">
-  <img src="demo/preview.gif" alt="compass demo — make doctor, status line, guardrail, subagents and commands" width="900">
+  <img src="assets/hero.svg" alt="compass — one config makes Claude Code + Codex behave like your best engineer; AGENTS.md=CLAUDE.md one source; the autonomous SDLC loop (review · security · tests · Codex audit → auto-fix → you merge), humans merge and deploy" width="940">
 </p>
 
-<sub>Recorded with <a href="https://github.com/charmbracelet/vhs">vhs</a> from <a href="demo/demo.tape"><code>demo/demo.tape</code></a> — run <code>make demo</code> to re-render. Static version: <a href="assets/hero.svg"><code>assets/hero.svg</code></a>.</sub>
+<sub>▶ <a href="demo/preview.gif">Watch the terminal demo</a> — recorded with <a href="https://github.com/charmbracelet/vhs">vhs</a> from <a href="demo/demo.tape"><code>demo/demo.tape</code></a> (<code>make demo</code> to re-render).</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
