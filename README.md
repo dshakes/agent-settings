@@ -14,10 +14,10 @@
 </div>
 
 <p align="center">
-  <img src="assets/pitch.svg" alt="compass in one picture: the problem (every repo rebuilt by hand) → one config (CLAUDE.md ≙ AGENTS.md) → every agent (Claude Code, Codex, Gemini, Cursor, Windsurf, Copilot); senior-engineer defaults (blocks rm -rf /, auto-formats, cheap models, 9 subagents); and the autonomous PR loop — raise a PR, it reviews/security-checks/tests/Codex-audits and auto-fixes its own findings until green, then you merge. Humans own merge and deploy." width="980">
+  <img src="demo/preview.gif" alt="compass terminal demo: guardrail blocks rm -rf / and allows rm -rf ./build; the live status line (Claude Opus 4.7 · lantern · 42k ctx · $0.37); the autonomous PR loop — review · security · tests · Codex audit → BLOCKING → Builder fixes → CLEAN → you merge (humans own merge & deploy); the 9-subagent crew + 11 commands; and one-command install" width="900">
 </p>
 
-<sub>📐 <a href="assets/hero.svg">Architecture diagram</a> · ▶ <a href="demo/preview.gif">terminal demo</a> (<a href="https://github.com/charmbracelet/vhs">vhs</a>, <code>make demo</code> to re-render)</sub>
+<sub>📐 <a href="assets/hero.svg">Architecture diagram</a> · re-render this demo with <code>make demo</code> (<a href="https://github.com/charmbracelet/vhs">vhs</a>)</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 
