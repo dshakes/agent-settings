@@ -46,12 +46,28 @@ If any field didn't pre-fill, set it manually (verbatim — these match their dr
 > After `make install`, ask Claude to run `rm -rf $HOME` → it is **blocked** before executing, while `rm -rf ./build` is allowed. For the autonomous loop, follow `sdlc/SMOKETEST.md` on a private repo: open a PR whose code is correct but omits a test its spec requires — the spec-aware reviewer flags it **Blocking** and the Builder auto-adds the test and re-reviews to green (a real, documented run).
 
 ### Paste into "Additional Comments"
-> Distinctive Claude-Code angle: one source for **both** Claude Code and Codex, plus a closed autonomous PR loop with a **cross-model (Claude + Codex) second opinion** and **spec/intent verification** — humans always own merge/deploy. Alpha; security posture in README + SECURITY.md + ADRs; CI self-validates the config (actionlint/shellcheck/unit tests). Ran your `evaluate-repository.md` rubric ahead of time.
+> **How this differs from existing entries** (I checked the list): unlike config frameworks already listed — SuperClaude (commands/personas), Everything Claude Code (a pattern grab-bag), Claude Codex Settings (integration plugins, "not overly-opinionated") — compass pairs an *opinionated, single-source* config for **both** Claude Code and Codex (AGENTS.md ≙ CLAUDE.md) with a **governed, closed autonomous PR loop**: Claude reviews, **Codex independently cross-audits**, it **auto-fixes its own Blocking findings** and re-reviews until green, with **spec/intent verification** — and humans always own merge/deploy (enforced by branch protection, not trust). Standalone orchestrators (Auto-Claude, The Agentic Startup) do autonomous SDLC but aren't a config; claude-code-tools does Claude↔Codex *handoff* but not a shared config or a review loop. That intersection — cross-tool config + cross-model governed loop — is the unique bit.
+> Alpha; security posture in README + SECURITY.md + ADRs; CI self-validates the config (actionlint/shellcheck/unit tests). Ran your `evaluate-repository.md` rubric ahead of time.
 
 ### The required checklist (tick all — they're true)
 - [x] Not already submitted · [x] **over one week since first commit** (true on/after Jun 2) · [x] links work · [x] no other open issues in their repo · [x] human
 
 **Approval odds:** their own rubric scored compass 9/10 on security/transparency/quality; the only risk was *scope*, which the **"config manager"** framing above directly addresses. Format is airtight; approval is the maintainer's call.
+
+### Uniqueness check (done — compass is NOT a category-of-one, but it is differentiated)
+The list already has similar resources; the maintainer requires uniqueness, so lead with the real differentiator, not breadth.
+
+| Existing entry | What it is | Overlap | How compass differs |
+|---|---|---|---|
+| **SuperClaude** (General) | config framework: commands, personas, methodologies | "config framework w/ commands" | no cross-tool single source, no autonomous PR loop, no cross-model audit, no governance/ADRs |
+| **Everything Claude Code** (General) | broad grab-bag of exemplary patterns | breadth | compass is *integrated + opinionated + installable* with a governed loop, not a pattern store |
+| **Claude Codex Settings** (General) | cross-tool integration plugins, "not overly-opinionated" | Claude+Codex | compass is *opinionated senior-engineer defaults* + the loop, not integration plugins |
+| **claude-code-tools** (General) | session continuity + Claude↔Codex handoff + safety hooks | cross-agent + hooks | compass shares one *config* across tools + a review/fix loop, not handoff/continuity |
+| **Auto-Claude / The Agentic Startup** (Orchestrators) | autonomous multi-agent SDLC frameworks | "autonomous SDLC" | those are standalone orchestrators; compass is a *config* whose loop is one optional, human-gated layer with a Codex cross-audit |
+
+**The non-arbitrary unique intersection:** an *opinionated, single-source config for both Claude Code and Codex* **+** a *governed, closed PR loop with a cross-model (Claude+Codex) second opinion, spec/intent verification, and a hard human merge gate.* No listed resource combines those. We submit under **Tooling: Config Managers** (only 3 entries — a linter, a rules-checker, a config-switcher — none opinionated configs), which is both accurate and keeps us out of the crowded "General" config-framework bucket where SuperClaude lives.
+
+**Honest risk:** a selective curator could still see "another config framework." Mitigation is baked into the Description/Comments above — lead with the cross-tool + cross-model-loop angle, never with "comprehensive."
 
 ---
 
