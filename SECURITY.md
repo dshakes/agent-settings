@@ -22,8 +22,10 @@ compass itself phones home to nothing. Network calls happen only through tools y
 | **GitHub API** | SDLC workflows, optional `github` MCP | opt-in |
 | **Live web pages (Playwright `browser` MCP)** | UI/web tasks — *can act on live sites* | opt-in, off by default |
 | **Your Postgres (`postgres` MCP)** | read-only SQL | opt-in, project-scoped |
+| **OpenRouter** | `codex --profile router` (cost router) | opt-in, off by default |
+| **Local model — Ollama/LM Studio** | `codex --profile local` | opt-in; **local only**, no egress |
 
-No telemetry. The `compass-memory` MCP is **local-only** (SQLite over stdio, no network). compass modifies shared files only by symlinking config into `~/.claude` and `~/.codex` (backed up; `make uninstall` reverts). No feature uses `--dangerously-skip-permissions`.
+No telemetry. The `compass-memory` MCP is **local-only** (SQLite over stdio, no network). compass modifies shared files only by symlinking config into `~/.claude`, `~/.codex`, and (with `--gemini`) `~/.gemini` (backed up; `make uninstall` reverts all three). No feature uses `--dangerously-skip-permissions`.
 
 ## Reporting a vulnerability
 Please report security issues **privately** — do not open a public issue.

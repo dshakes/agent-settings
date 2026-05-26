@@ -49,13 +49,13 @@ git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make i
 - **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, force-push to `main`; auto-formats every edit — silently.
 - **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
 - **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge.
+- **As little or as much as you want.** The core is the manual + guardrails + subagents. The autonomous loop, scheduled agents, cross-tool (Gemini/Cursor/Windsurf) support, and local/router cost-routing are all **opt-in** — nothing you don't switch on ever runs.
 
 ---
 
 ## Contents
 
 - [Get started](#get-started)
-
 - [Quickstart](#quickstart)
 - [Why compass](#why-compass)
 - [See it work](#see-it-work)
