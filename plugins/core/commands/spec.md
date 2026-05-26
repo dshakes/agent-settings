@@ -29,5 +29,11 @@ Hand the spec to implementation: `~/compass/sdlc/orchestrate.sh "<task>"` with
 and the Reviewer is told to **verify the diff against the acceptance criteria** (flag any
 unmet or out-of-scope). The human approves the *spec* (intent), not just the diff.
 
+**End to end (cloud loop too):** commit the spec **in the same PR** (it lives under `specs/`),
+or add a `Spec: specs/<slug>.md` line to the PR description. The GitHub Reviewer
+(`sdlc-review.yml`) detects the spec, verifies the diff against its Acceptance Criteria, and
+marks **unmet criteria or out-of-scope changes as Blocking** — so the auto-fix loop converges on
+*intent*, not just "tests pass." Same human merge gate.
+
 > Lightweight by design. For a typo or one-liner, skip the spec — this is for features where
 > "did we build the right thing?" is a real question.

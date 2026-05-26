@@ -49,6 +49,12 @@ jobs:
             `path:line — issue — fix`. Do NOT post per-line inline review comments
             (they are turn-expensive and can exhaust the turn budget) and do NOT modify files.
 
+            SPEC CHECK (intent, not just implementation): if this PR is spec-driven — a
+            `specs/*.md` file appears in `git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD`,
+            or the PR description has a `Spec: <path>` line — READ that spec and verify the diff
+            satisfies every Acceptance Criterion and respects its Non-goals. Treat an unmet
+            criterion or an out-of-scope change as **Blocking**.
+
             Then RETURN a structured verdict: set "verdict" to "BLOCKING" if there is at
             least one Blocking finding, otherwise "CLEAN"; set "summary" to one line.
 

@@ -101,6 +101,16 @@ and labels still appear correctly.
 
 ---
 
+## Spec-driven verification (intent, not just implementation)
+
+The loop verifies **correctness-of-intent** when a spec is present. Write one with `/spec`
+(it lands in `specs/<slug>.md`), then either commit it **in the PR** or add a `Spec: <path>`
+line to the PR description. The Reviewer (hosted and self-hosted) detects the spec, checks the
+diff against its **Acceptance Criteria** and **Non-goals**, and marks anything unmet or
+out-of-scope as **Blocking** — so the auto-fix loop converges on what you asked for, not just
+"tests pass." Locally, `orchestrate.sh` with `SDLC_SPEC=specs/<slug>.md` does the same across
+plan → build → review. No spec? The loop behaves exactly as before.
+
 ## Required-status-check merge gate
 
 `setup.sh --protect` calls the GitHub API to set:
