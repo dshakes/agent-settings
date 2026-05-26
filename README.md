@@ -25,7 +25,36 @@
 
 ---
 
+## Get started
+
+**Engineers — one paste, every repo, fully reversible:**
+
+```bash
+git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make install && make doctor
+```
+
+**Anyone, zero terminal — paste inside Claude Code:**
+
+```text
+/plugin marketplace add dshakes/compass
+/plugin install core@compass
+```
+
+**New to this?** → **[Using compass](docs/11-using-compass.md)** explains every piece in plain language — for engineers *and* non-engineers — with the daily workflow and how to stay cheap and fast. Across many repos at once: `make apply-many DIRS="~/code/*"`.
+
+> No `curl \| sh`. You clone it and read before you run — that's the point (compass *blocks* `curl\|sh` in your own work, too). Uninstall is one command: `make uninstall`.
+
+### What you get, day one
+- **Both tools, one config.** Claude Code **and** Codex behave like a senior engineer in *every* repo — understand first, stay in scope, verify before "done."
+- **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, force-push to `main`; auto-formats every edit — silently.
+- **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
+- **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge.
+
+---
+
 ## Contents
+
+- [Get started](#get-started)
 
 - [Quickstart](#quickstart)
 - [Why compass](#why-compass)
