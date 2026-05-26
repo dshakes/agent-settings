@@ -132,6 +132,36 @@ migration → load the `/adr` skill first"), and a `PostToolUse` hook that **enf
 
 ---
 
+## Phase 4 — cross-vendor, cost & latency (real problems, grounded primitives)
+
+### 9. LLM-agnostic / IDE-native via the AGENTS.md standard 🟢
+`AGENTS.md` (Linux Foundation Agentic AI Foundation) is read natively by Codex, Cursor,
+Windsurf, Copilot, Amp, Devin; Gemini CLI reads `GEMINI.md` or `AGENTS.md` via `context.fileName`.
+- **Shipped:** `./install.sh --gemini` (one manual → Gemini CLI); per-repo `AGENTS.md` already
+  feeds Cursor/Windsurf/Copilot; MCP manifest is cross-tool. See [`docs/12-every-agent.md`](12-every-agent.md).
+- **Next:** auto-register the MCP manifest into Gemini CLI / Cursor (`scripts/setup-mcp.sh`);
+  per-repo `GEMINI.md` symlink in `new-repo.sh`; a Gemini-driven cloud SDLC agent (`gemini -p`)
+  as a third cross-model auditor. 🔵
+
+### 10. Cost-effective, low-latency SDLC 🟢
+The loop is already built for this: checks fire **in parallel** on a PR (not sequential),
+models are **cost-tiered** (classify = haiku, QA = deterministic/free, review = sonnet, the
+opus security + Codex audit run **once on open**, not every push), **routing** runs domain
+reviewers only where they apply, and **round caps** bound spend.
+- **Shipped:** `orchestrate.sh SDLC_LITE=1` (skip audit + opus security → review + QA + human
+  gate only — fast/cheap for small changes); classifier-gated routing; parallel cloud checks.
+- **Next:** diff-size-gated model selection (haiku review for ≤N-line diffs); GitHub Actions
+  dependency caching in `sdlc-qa.yml`; **test-impact selection** (run only tests affected by the
+  diff) for low-latency QA; optional merge-queue. 🔵
+
+### 11. More governed, more tested 🟢
+- **Shipped:** required status checks (`review` + `qa`), ADR-gated trust boundaries, self-tests
+  (`selftest.sh` + `compass-memory` tests) in CI, a security-auditor pass on load-bearing code.
+- **Next:** an optional **dependency-audit / SBOM** step and a **coverage gate** in the QA
+  workflow; signed commits from the Builder; a periodic `security-review` routine. 🔵
+
+---
+
 ## Deliberately NOT on the roadmap (honesty)
 - **A fully unattended merge-to-prod swarm.** The human merge/deploy gate is the product's
   spine, not a limitation. Agents open PRs; humans ship.

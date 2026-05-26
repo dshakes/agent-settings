@@ -9,6 +9,7 @@
 #   ./install.sh --dry-run        # show what would happen, change nothing
 #   ./install.sh --claude-only    # skip Codex
 #   ./install.sh --codex-only     # skip Claude
+#   ./install.sh --gemini         # ALSO feed the same manual to Gemini CLI (~/.gemini/GEMINI.md)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,16 +17,18 @@ CLAUDE_SRC="$REPO/claude"
 CODEX_SRC="$REPO/codex"
 CLAUDE_DST="$HOME/.claude"
 CODEX_DST="$HOME/.codex"
+GEMINI_DST="$HOME/.gemini"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 BACKUP="$HOME/.claude/backups/compass-$STAMP"
 
-MODE="symlink"; DRY=0; DO_CLAUDE=1; DO_CODEX=1
+MODE="symlink"; DRY=0; DO_CLAUDE=1; DO_CODEX=1; DO_GEMINI=0
 for arg in "$@"; do
   case "$arg" in
     --copy) MODE="copy" ;;
     --dry-run) DRY=1 ;;
     --claude-only) DO_CODEX=0 ;;
     --codex-only) DO_CLAUDE=0 ;;
+    --gemini) DO_GEMINI=1 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown flag: $arg" >&2; exit 1 ;;
   esac
@@ -106,6 +109,15 @@ if [ "$DO_CODEX" = 1 ]; then
   run "mkdir -p '$CODEX_DST'"
   merge_codex_profiles "$CODEX_DST/config.toml"   # never clobbers an existing config
   place "$CODEX_SRC/AGENTS.md" "$CODEX_DST/AGENTS.md"
+fi
+
+if [ "$DO_GEMINI" = 1 ]; then
+  head "Gemini CLI  →  $GEMINI_DST"
+  run "mkdir -p '$GEMINI_DST'"
+  # Same operating manual, one source. Gemini CLI reads ~/.gemini/GEMINI.md by default.
+  place "$CLAUDE_SRC/CLAUDE.md" "$GEMINI_DST/GEMINI.md"
+  say "tip: to also use per-repo AGENTS.md in Gemini, set context.fileName in ~/.gemini/settings.json:"
+  say '      { "context": { "fileName": ["AGENTS.md", "GEMINI.md"] } }'
 fi
 
 head "Done."

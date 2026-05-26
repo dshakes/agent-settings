@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **LLM/IDE-agnostic single source** — `./install.sh --gemini` feeds the same operating manual
+  to Gemini CLI (`~/.gemini/GEMINI.md`). Per-repo `AGENTS.md` (the Linux Foundation Agentic-AI
+  standard) is already read natively by Cursor, Windsurf, Copilot, Codex, Amp, Devin. New guide
+  `docs/12-every-agent.md` (verified + sourced) + README "Cross-tool" broadened.
+- **`SDLC_LITE=1`** for `orchestrate.sh` — fast/cheap governed run: skips the Codex cross-audit
+  and opus security pass, keeps Plan → Build → Review → QA → PR with the human merge gate.
+- **Roadmap Phase 4** (`docs/10-roadmap.md`) — cross-vendor (Gemini/IDE/MCP), cost+latency SDLC
+  (diff-size-gated models, dep caching, test-impact selection), and more governance/testing
+  (SBOM/dep-audit, coverage gate), each grounded in a real primitive with a maturity tag.
+
 ## [0.7.0] — 2026-05-25
 
 ### Agentic capabilities (roadmap built — opt-in; human merge/deploy gate unchanged)

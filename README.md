@@ -364,7 +364,7 @@ Roster + tags + gates: [`sdlc/agents.registry.md`](sdlc/agents.registry.md). Ful
 
 ## Cross-tool: one source
 
-`AGENTS.md` — the open standard Codex and 20+ agents read — is a **symlink to `CLAUDE.md`**, globally (`~/.codex/AGENTS.md` → `~/.claude/CLAUDE.md`, byte-identical) and per-repo. Edit the manual once; both tools read the same instructions, no drift.
+`AGENTS.md` — the open standard (now under the Linux Foundation's Agentic AI Foundation) read by **Codex, Cursor, Windsurf, Copilot, Amp, Devin** — is a **symlink to `CLAUDE.md`**, globally and per-repo. Edit the manual once; every agent reads the same instructions, no drift. **Gemini CLI** too: `./install.sh --gemini` feeds it the same manual. So your operating manual + conventions are **LLM/IDE-agnostic** — switch or mix vendors without rewriting config. → [Every agent, one source](docs/12-every-agent.md)
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -443,6 +443,7 @@ early. Known limits, by design:
 | [09 · SDLC](docs/09-sdlc.md) | autonomous governed agents (plan→build→review→audit→QA), human-gated |
 | [10 · Roadmap](docs/10-roadmap.md) | agentic directions — review-routing, scheduled agents, agent teams, cross-repo memory (grounded in real harness primitives) |
 | [11 · Using compass](docs/11-using-compass.md) | **start here** — install in one command, the pieces, daily workflow, cost-effective + productive habits |
+| [12 · Every agent](docs/12-every-agent.md) | LLM/IDE-agnostic — one manual for Claude Code, Codex, Gemini CLI, Cursor, Windsurf, Copilot (AGENTS.md standard) |
 | [ADRs](docs/adr/) | load-bearing decisions (cross-repo memory; autonomous-loop trust boundary) |
 | [Alpha](docs/alpha.md) | onboarding guide for alpha users |
 | [Demo](demo/README.md) | render the terminal GIF with vhs |

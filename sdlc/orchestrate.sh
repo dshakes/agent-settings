@@ -16,6 +16,7 @@
 #   SDLC_BASE=main   base branch for the PR (default: current branch)
 #   SDLC_CONVERGE=1  after review, loop fix→re-review until CLEAN or SDLC_MAX_FIX_ROUNDS (default 3)
 #   SDLC_SPEC=path   spec-driven: plan/build to this spec; review verifies vs its acceptance criteria
+#   SDLC_LITE=1      fast/cheap: skip Codex audit + opus security (keep review + QA + human gate)
 set -uo pipefail
 
 TASK="${1:-}"; [ -n "$TASK" ] || { echo "usage: orchestrate.sh \"<task description>\""; exit 2; }
@@ -106,22 +107,28 @@ Edit the code, add/adjust tests, build/test what you touch, commit. Do not push 
   fi
 fi
 
-# 4 · AUDIT (Codex cross-tool, read-only) — independent second opinion
-log "audit  (codex · cross-tool)"
-if command -v codex >/dev/null; then
-  codex exec --sandbox read-only -o "$RUN/audit.md" \
-    "Independently audit the changes on this branch ('git diff $BASE...HEAD') — a second
+# SDLC_LITE=1 → fast, cheap path: skip the cross-audit + opus security pass. Keeps
+# Plan → Build → Review → QA → PR with the human merge gate. Good for small/low-risk changes.
+if [ "${SDLC_LITE:-0}" = 1 ]; then
+  note "SDLC_LITE — skipping Codex audit + security pass (review + QA + human gate remain)."
+else
+  # 4 · AUDIT (Codex cross-tool, read-only) — independent second opinion
+  log "audit  (codex · cross-tool)"
+  if command -v codex >/dev/null; then
+    codex exec --sandbox read-only -o "$RUN/audit.md" \
+      "Independently audit the changes on this branch ('git diff $BASE...HEAD') — a second
 opinion to the Claude review. Flag correctness regressions, security, and missed edge
 cases. Be concise; lead with anything Blocking." >>"$RUN/orchestrate.log" 2>&1 \
-    && cat "$RUN/audit.md" || note "codex audit failed (see $RUN/orchestrate.log)"
-else
-  note "codex CLI not found — skipping cross-audit (install it for the Claude↔Codex audit)"
-fi
+      && cat "$RUN/audit.md" || note "codex audit failed (see $RUN/orchestrate.log)"
+  else
+    note "codex CLI not found — skipping cross-audit (install it for the Claude↔Codex audit)"
+  fi
 
-# 5 · SECURITY (Claude, read-only)
-claude_step security security.md opus plan \
-  "Read,Grep,Glob,Bash(git diff:*)" \
-  "Security-audit the diff of $BRANCH against $BASE ('git diff $BASE...HEAD')."
+  # 5 · SECURITY (Claude, read-only)
+  claude_step security security.md opus plan \
+    "Read,Grep,Glob,Bash(git diff:*)" \
+    "Security-audit the diff of $BRANCH against $BASE ('git diff $BASE...HEAD')."
+fi
 
 # 6 · QA (run the suite directly for a deterministic result)
 log "qa  (test suite)"
