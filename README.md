@@ -2,7 +2,7 @@
 
 # 🧭 compass
 
-**One configuration that makes Claude Code and Codex behave like your best engineer — by default, in every repo.**
+**One configuration that makes Claude Code, Codex, and Gemini behave like your best engineer — by default, in every repo.**
 
 [![ci](https://github.com/dshakes/compass/actions/workflows/ci.yml/badge.svg)](https://github.com/dshakes/compass/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/dshakes/compass?color=8A63D2)](https://github.com/dshakes/compass/releases)
@@ -14,10 +14,10 @@
 </div>
 
 <p align="center">
-  <img src="demo/preview.gif" alt="compass terminal demo: guardrail blocks rm -rf / and allows rm -rf ./build; the live status line (Claude Opus 4.7 · lantern · 42k ctx · $0.37); the autonomous PR loop — review · security · tests · Codex audit → BLOCKING → Builder fixes → CLEAN → you merge (humans own merge & deploy); the 9-subagent crew + 11 commands; and one-command install" width="900">
+  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Plus: blocks the disaster, cheaper by default, ships faster." width="900">
 </p>
 
-<sub>📐 <a href="assets/hero.svg">Architecture diagram</a> · re-render this demo with <code>make demo</code> (<a href="https://github.com/charmbracelet/vhs">vhs</a>)</sub>
+<sub>▶ <a href="demo/preview.gif">terminal demo</a> · 📐 <a href="assets/hero.svg">architecture diagram</a> · 🎬 live autonomous-loop recording coming (see <a href="docs/launch-kit.md">launch kit</a>)</sub>
 
 > **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
 

@@ -107,4 +107,52 @@ A 600–900 word post: *"One config for Claude Code and Codex — and an autonom
 
 ---
 
+## 4. Record the autonomous loop (the hero asset)
+
+The most impressive, authentic visual is the **real loop on a PR** — review flags a Blocking
+issue, the Builder pushes a fix, checks go green. You capture it (I can't screen-record); I've
+made it turnkey.
+
+### Step 1 — stage a clean BLOCKING → fix → green PR (one paste)
+Run right before recording, on the smoke-test repo (workflows + `SDLC_BOT_TOKEN` already set):
+```bash
+cd ~/workspace/compass-sdlc-smoketest && git checkout -q main && git pull -q
+git checkout -q -b demo/loop-$(date +%s)
+mkdir -p specs
+cat > specs/divide.md <<'EOF'
+# Spec: Divide
+## Acceptance criteria
+1. Divide(10,2) == 5
+2. Returns 0 when the divisor is 0 (no panic)
+3. A table-driven test TestDivide covers both
+EOF
+printf 'package smoketest\n\n// Divide returns a / b.\nfunc Divide(a, b int) int { return a / b }\n' > divide.go
+git add -A && git commit -q -m "feat: add Divide (per specs/divide.md)"
+git push -q -u origin HEAD
+gh pr create --fill --body "Implements specs/divide.md. Spec: specs/divide.md"
+```
+The code is "fine" but violates the spec (no zero-guard, no test) → the reviewer flags it
+**Blocking**, the Builder fixes it on the branch, re-review goes **green**.
+
+### Step 2 — record
+- Open the PR; show the **Checks** + the conversation/commits. Start a screen recording
+  (macOS ⌘⇧5, or Kap/CleanShot for direct GIF).
+- The loop takes a few minutes, so **record the three beats and speed up later**:
+  1. checks running → `review` **red** + `agent:needs-fix`
+  2. the **Builder's fix commit** lands on the branch
+  3. re-review → **green ✓** (mergeable, pending your approval)
+
+### Step 3 — convert + hand back
+```bash
+ffmpeg -i loop.mov -vf "setpts=0.2*PTS,fps=12,scale=1000:-1:flags=lanczos" -loop 0 assets/loop.gif
+```
+(`setpts=0.2*PTS` = 5× speed → ~20–30s.) Then drop `assets/loop.gif` in the repo and ping me —
+I'll wire it under the hero. *(MP4 alternative: upload to a GitHub Release/Issue; GitHub renders
+uploaded `.mp4` as a player — paste that URL instead.)*
+
+> Until it exists, the hero is the animated `assets/explainer.svg` (YC-style, minimal-text) +
+> the terminal demo. The recording becomes the centerpiece once captured.
+
+---
+
 *Generated as a launch checklist. Update the eligibility date if the first-commit date changes.*
