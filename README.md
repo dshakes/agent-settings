@@ -138,11 +138,17 @@ flowchart LR
   repo -->|"install.sh --gemini"| gemini["Gemini CLI<br/>~/.gemini"]
   repo -. "per-repo AGENTS.md<br/>(Linux Foundation standard)" .-> ides["Cursor · Windsurf<br/>Copilot · Amp · Devin"]
 
+  repo -->|"make install"| cli["compass CLI · ~/.local/bin<br/>status · onboard · impact · spend · schedule"]
+
   claude --> bundle["manual · guardrail + format hooks<br/>9 cost-tiered subagents · commands<br/>status line · MCP (context7/fetch/git)"]
   codex --> tiers["tiers: deep / standard / cheap<br/>+ local (Ollama) · router (OpenRouter)"]
 
-  claude --> loop["autonomous PR loop<br/>review ⇄ fix · Codex cross-audit · human merge"]
+  claude --> loop["autonomous PR loop<br/>intake → review ⇄ fix → human merge"]
   codex --> loop
+
+  bundle -. "blocks · formats · cost" .-> obs["~/.compass ledgers"]
+  loop -. "spend" .-> obs
+  obs --> impact["compass impact + 🧭 status line<br/>footguns blocked · \$ saved"]
 ```
 
 <div align="right"><a href="#contents">↑ top</a></div>

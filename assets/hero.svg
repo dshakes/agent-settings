@@ -25,23 +25,25 @@
     <circle r="3" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
   </g>
   <text x="532" y="88" font-size="52" font-weight="700" fill="#f0f6fc">compass</text>
-  <text x="600" y="138" text-anchor="middle" font-size="21" fill="#adbac7">One configuration that makes <tspan fill="#c9d1d9" font-weight="600">Claude Code</tspan> and <tspan fill="#c9d1d9" font-weight="600">Codex</tspan> behave like your best engineer — by default, in every repo.</text>
+  <text x="600" y="138" text-anchor="middle" font-size="21" fill="#adbac7">One config that makes <tspan fill="#c9d1d9" font-weight="600">Claude Code</tspan>, <tspan fill="#c9d1d9" font-weight="600">Codex</tspan>, and <tspan fill="#c9d1d9" font-weight="600">Gemini</tspan> behave like your best engineer — in every repo.</text>
 
   <!-- flow: one config -> both tools -> every repo -->
   <g transform="translate(0,178)">
     <rect x="60" y="0" width="320" height="150" rx="14" fill="#161b22" stroke="#8A63D2" stroke-width="1.5"/>
     <text x="220" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#f0f6fc">one config · compass</text>
     <text x="220" y="64" text-anchor="middle" font-size="14" fill="#8b949e">operating manual · guardrail hooks</text>
-    <text x="220" y="86" text-anchor="middle" font-size="14" fill="#8b949e">9 cost-tiered subagents · 8 commands</text>
-    <text x="220" y="108" text-anchor="middle" font-size="14" fill="#8b949e">MCP servers · skills · status line</text>
+    <text x="220" y="86" text-anchor="middle" font-size="14" fill="#8b949e">9 subagents · 12 commands · compass CLI</text>
+    <text x="220" y="108" text-anchor="middle" font-size="14" fill="#8b949e">MCP · skills · status line · impact</text>
     <text x="220" y="132" text-anchor="middle" font-size="13" fill="#6e7681">git source of truth → symlinked live</text>
 
     <line x1="392" y1="75" x2="452" y2="75" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
 
-    <rect x="462" y="6" width="276" height="64" rx="12" fill="#161b22" stroke="#30363d"/>
-    <text x="600" y="44" text-anchor="middle" font-size="19" font-weight="600" fill="#c9d1d9">Claude Code</text>
-    <rect x="462" y="80" width="276" height="64" rx="12" fill="#161b22" stroke="#30363d"/>
-    <text x="600" y="118" text-anchor="middle" font-size="19" font-weight="600" fill="#c9d1d9">Codex</text>
+    <rect x="462" y="4" width="276" height="40" rx="10" fill="#161b22" stroke="#30363d"/>
+    <text x="600" y="30" text-anchor="middle" font-size="17" font-weight="600" fill="#c9d1d9">Claude Code</text>
+    <rect x="462" y="50" width="276" height="40" rx="10" fill="#161b22" stroke="#30363d"/>
+    <text x="600" y="76" text-anchor="middle" font-size="17" font-weight="600" fill="#c9d1d9">Codex</text>
+    <rect x="462" y="96" width="276" height="40" rx="10" fill="#161b22" stroke="#30363d"/>
+    <text x="600" y="122" text-anchor="middle" font-size="17" font-weight="600" fill="#c9d1d9">Gemini · Cursor</text>
     <text x="600" y="-2" text-anchor="middle" font-size="12" fill="#6e7681">AGENTS.md → CLAUDE.md · one source</text>
 
     <line x1="750" y1="75" x2="810" y2="75" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
