@@ -32,6 +32,7 @@ else note "plugin out of date — run: make sync-plugin"; fi
 while IFS= read -r s; do
   [ -x "$s" ] && pass "executable: ${s#$REPO/}" || note "not +x (installer will fix): ${s#$REPO/}"
 done < <(find "$REPO/claude/hooks" "$REPO/scripts" "$REPO/sdlc" "$REPO/claude/statusline.sh" "$REPO"/claude/skills -name '*.sh' 2>/dev/null)
+[ -x "$REPO/bin/compass" ] && pass "executable: bin/compass" || note "not +x (installer will fix): bin/compass"
 
 if command -v shellcheck >/dev/null 2>&1; then
   if find "$REPO/claude/hooks" -name '*.sh' -exec shellcheck -S warning {} + >/dev/null 2>&1; then
@@ -56,6 +57,9 @@ for n in settings.json CLAUDE.md statusline.sh agents commands skills hooks outp
   elif [ -e "$t" ]; then note "exists but not our symlink: ~/.claude/$n"
   else note "not installed: ~/.claude/$n (run make install)"; fi
 done
+if command -v compass >/dev/null 2>&1; then pass "compass CLI on PATH: $(command -v compass)"
+elif [ -L "$HOME/.local/bin/compass" ]; then note "compass CLI installed but ~/.local/bin not on PATH — add it or open a new shell"
+else note "compass CLI not on PATH (run make install, then open a new shell)"; fi
 
 echo
 printf 'Result: \033[32m%d ok\033[0m, \033[33m%d warn\033[0m, \033[31m%d error\033[0m\n' "$ok" "$warn" "$err"

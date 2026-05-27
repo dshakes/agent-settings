@@ -8,6 +8,15 @@ for n in settings.json CLAUDE.md statusline.sh agents commands skills hooks outp
 done
 if [ -L "$HOME/.codex/AGENTS.md" ]; then rm -f "$HOME/.codex/AGENTS.md"; echo "removed ~/.codex/AGENTS.md"; removed=$((removed+1)); fi
 if [ -L "$HOME/.gemini/GEMINI.md" ]; then rm -f "$HOME/.gemini/GEMINI.md"; echo "removed ~/.gemini/GEMINI.md"; removed=$((removed+1)); fi
+# compass CLI: the ~/.local/bin symlink + the marker-tagged PATH line in the shell rc.
+if [ -L "$HOME/.local/bin/compass" ]; then rm -f "$HOME/.local/bin/compass"; echo "removed ~/.local/bin/compass"; removed=$((removed+1)); fi
+for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
+  [ -f "$rc" ] || continue
+  if grep -q '# compass CLI' "$rc"; then
+    tmp="$(mktemp)"; sed '/# compass CLI/,+1d' "$rc" >"$tmp" && mv "$tmp" "$rc"
+    echo "stripped compass PATH line from ${rc#"$HOME"/}"; removed=$((removed+1))
+  fi
+done
 if [ -L "$HOME/.codex/config.toml" ]; then
   rm -f "$HOME/.codex/config.toml"; echo "removed ~/.codex/config.toml (was our template symlink)"; removed=$((removed+1))
 elif [ -f "$HOME/.codex/config.toml" ]; then

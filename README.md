@@ -57,9 +57,11 @@ Pick **one** path (running both double-fires the hooks):
 ```bash
 git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
 make dry-run     # preview every change
-make install     # symlink into ~/.claude + ~/.codex (backs up first)
+make install     # symlink into ~/.claude + ~/.codex + the `compass` CLI (backs up first)
 make doctor      # validate everything
 ```
+
+Open a new shell (or `source` your rc) and the **`compass`** command is available — `compass impact`, `compass onboard`, … (see [Local tools & impact](#local-tools--impact)).
 
 **B · Plugin only** — *a team, or you'd rather not touch your global config.* The machinery, without your personal memory/permissions. Paste inside Claude Code — no terminal:
 
@@ -221,7 +223,7 @@ The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**
 
 ## Local tools & impact
 
-A `compass` CLI ([`bin/compass`](bin/compass) — put `bin/` on your PATH) for local agentic work, and a way to **see what compass is doing for you**:
+`make install` puts a **`compass` CLI** on your PATH (symlinked into `~/.local/bin`) for local agentic work — plus a way to **see what compass is doing for you**:
 
 | Command | What |
 |---|---|

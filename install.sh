@@ -21,7 +21,7 @@ GEMINI_DST="$HOME/.gemini"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 BACKUP="$HOME/.claude/backups/compass-$STAMP"
 
-MODE="symlink"; DRY=0; DO_CLAUDE=1; DO_CODEX=1; DO_GEMINI=0
+MODE="symlink"; DRY=0; DO_CLAUDE=1; DO_CODEX=1; DO_GEMINI=0; DO_CLI=1
 for arg in "$@"; do
   case "$arg" in
     --copy) MODE="copy" ;;
@@ -29,6 +29,7 @@ for arg in "$@"; do
     --claude-only) DO_CODEX=0 ;;
     --codex-only) DO_CLAUDE=0 ;;
     --gemini) DO_GEMINI=1 ;;
+    --no-cli) DO_CLI=0 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown flag: $arg" >&2; exit 1 ;;
   esac
@@ -54,6 +55,33 @@ place() {
 }
 
 chmodx() { [ "$DRY" = 1 ] && return; find "$1" -name '*.sh' -exec chmod +x {} + 2>/dev/null || true; }
+
+# Bake the `compass` CLI onto PATH: symlink into ~/.local/bin (repo-location-independent)
+# and, if that dir isn't on PATH, add it to the shell rc once (marker-tagged for clean removal).
+install_cli() {
+  local bindir="$HOME/.local/bin" src="$REPO/bin/compass" dst
+  dst="$bindir/compass"
+  head "compass CLI  →  $dst"
+  run "mkdir -p '$bindir'"
+  chmodx "$REPO/scripts"; [ "$DRY" = 1 ] || chmod +x "$src" 2>/dev/null || true
+  if [ -L "$dst" ]; then run "rm -f '$dst'"; fi
+  if [ -e "$dst" ]; then run "mkdir -p '$BACKUP'"; run "mv '$dst' '$BACKUP/compass'"; say "backed up: ~/.local/bin/compass"; fi
+  run "ln -s '$src' '$dst'"; say "linked: ~/.local/bin/compass -> ${src#$REPO/}"
+  case ":$PATH:" in
+    *":$bindir:"*) say "~/.local/bin already on PATH ✓  — try: compass impact" ;;
+    *)
+      local rc=""
+      case "${SHELL##*/}" in
+        zsh)  rc="$HOME/.zshrc" ;;
+        bash) rc="$HOME/.bash_profile"; [ -f "$HOME/.bashrc" ] && rc="$HOME/.bashrc" ;;
+      esac
+      if [ -n "$rc" ] && [ "$DRY" = 0 ]; then
+        if grep -q 'compass CLI on PATH' "$rc" 2>/dev/null; then say "PATH line already in ${rc#$HOME/}"
+        else printf '\n# compass CLI on PATH (added by compass install)\nexport PATH="$HOME/.local/bin:$PATH"\n' >>"$rc"
+          say "added ~/.local/bin to PATH in ${rc#$HOME/} — run: source ${rc#$HOME/}"; fi
+      else say "add ~/.local/bin to your PATH, then: compass impact"; fi ;;
+  esac
+}
 
 # Codex config is precious (plugins, marketplaces, trusted projects). Never
 # clobber it: if it exists, append our cost profiles once (marker-delimited,
@@ -119,6 +147,8 @@ if [ "$DO_GEMINI" = 1 ]; then
   say "tip: to also use per-repo AGENTS.md in Gemini, set context.fileName in ~/.gemini/settings.json:"
   say '      { "context": { "fileName": ["AGENTS.md", "GEMINI.md"] } }'
 fi
+
+[ "$DO_CLI" = 1 ] && install_cli
 
 head "Done."
 [ -d "$BACKUP" ] && say "Backups of anything replaced: $BACKUP"

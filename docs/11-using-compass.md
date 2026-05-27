@@ -116,7 +116,8 @@ Uninstall is clean and reversible: `make uninstall` removes only what compass cr
 (backups in `~/.claude/backups/`).
 
 ### New to a repo? Onboard in one command
-Put `~/compass/bin` on your PATH (or call it directly), then in any repo:
+`make install` already put the `compass` CLI on your PATH (via `~/.local/bin`; open a new shell
+if you just installed). Then, in any repo:
 ```bash
 compass onboard             # detect stack → install deps → build+test green → grounded CLAUDE.md → codebase map
 ```

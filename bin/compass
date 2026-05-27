@@ -3,7 +3,15 @@
 # ~/compass/bin/compass directly. Each subcommand is a script in ../scripts.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve through symlinks (we're installed as ~/.local/bin/compass -> <repo>/bin/compass)
+# so the repo root — and scripts/ — is found no matter how compass is invoked.
+SRC="${BASH_SOURCE[0]}"
+while [ -L "$SRC" ]; do
+  dir="$(cd -P "$(dirname "$SRC")" && pwd)"
+  SRC="$(readlink "$SRC")"
+  case "$SRC" in /*) ;; *) SRC="$dir/$SRC" ;; esac
+done
+HERE="$(cd -P "$(dirname "$SRC")" && pwd)"
 ROOT="$(dirname "$HERE")"
 SCRIPTS="$ROOT/scripts"
 
