@@ -136,7 +136,11 @@ ${BLOCK_CLOSE}"
     new_tab="$outside"
   fi
 
-  printf '%s\n' "$new_tab" | crontab -
+  if [ -z "${new_tab//[[:space:]]/}" ]; then
+    crontab -r 2>/dev/null || true   # nothing left to schedule — leave no stray crontab
+  else
+    printf '%s\n' "$new_tab" | crontab -
+  fi
 }
 
 # Build a cron entry line for a given routine and cron expression.
