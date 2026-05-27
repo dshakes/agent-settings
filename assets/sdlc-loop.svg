@@ -73,12 +73,11 @@
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.6s" dur="0.6s" fill="freeze"/>
     <rect x="210" y="150" width="300" height="200" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
     <text x="360" y="180" text-anchor="middle" font-size="12.5" letter-spacing="1.5" fill="#8b949e">RUNS AUTOMATICALLY ON THE PR</text>
-    <g color="#a371f7"><use href="#ic-bot" x="222" y="176"/></g>
-    <g font-size="13.5" text-anchor="middle" fill="#e6edf3" font-weight="700">
-      <g><rect x="226" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#a371f7" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1s" repeatCount="indefinite"/></rect><text x="291" y="225">Reviewer</text></g>
-      <g><rect x="368" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#58a6ff" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.3s" repeatCount="indefinite"/></rect><text x="433" y="220" font-size="13">Auditor</text><text x="433" y="235" font-size="10.5" fill="#7d8590" font-weight="600">Codex</text></g>
-      <g><rect x="226" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#f0596b" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.6s" repeatCount="indefinite"/></rect><text x="291" y="279">Security</text></g>
-      <g><rect x="368" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.9s" repeatCount="indefinite"/></rect><text x="433" y="279">QA · tests</text></g>
+    <g font-size="13.5" fill="#e6edf3" font-weight="700">
+      <g><rect x="226" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#a371f7" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1s" repeatCount="indefinite"/></rect><g color="#a371f7"><use href="#ic-bot" x="247" y="220"/></g><text x="262" y="225">Reviewer</text></g>
+      <g><rect x="368" y="198" width="130" height="44" rx="10" fill="#0d1117" stroke="#58a6ff" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.3s" repeatCount="indefinite"/></rect><g color="#58a6ff"><use href="#ic-bot" x="389" y="221"/></g><text x="404" y="216" font-size="13">Auditor</text><text x="404" y="231" font-size="10.5" fill="#7d8590" font-weight="600">Codex</text></g>
+      <g><rect x="226" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#f0596b" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.6s" repeatCount="indefinite"/></rect><g color="#f0596b"><use href="#ic-bot" x="247" y="274"/></g><text x="262" y="279">Security</text></g>
+      <g><rect x="368" y="252" width="130" height="44" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="1.6"><animate attributeName="stroke-width" values="1.6;2.8;1.6" keyTimes="0;0.12;0.3" dur="4s" begin="1.9s" repeatCount="indefinite"/></rect><g color="#3fb950"><use href="#ic-bot" x="389" y="274"/></g><text x="404" y="279">QA · tests</text></g>
     </g>
     <text x="360" y="326" text-anchor="middle" font-size="12.5" fill="#6e7681">parallel · per-tenant ids · fresh context</text>
   </g>
@@ -110,8 +109,9 @@
     <text x="957" y="282" text-anchor="middle" font-size="10.5" fill="#adbac7">1 code-owner</text>
     <line x1="1015" y1="250" x2="1051" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
     <rect x="1053" y="224" width="124" height="52" rx="13" fill="#13261a" stroke="#3fb950" stroke-width="2.5"/>
-    <text x="1115" y="247" text-anchor="middle" font-size="13.5" font-weight="800" fill="#3fb950">you merge</text>
-    <text x="1115" y="265" text-anchor="middle" font-size="11" fill="#7ee2a8">&amp; deploy</text>
+    <g color="#58a6ff"><use href="#ic-human" x="1071" y="250"/></g>
+    <text x="1125" y="247" text-anchor="middle" font-size="13.5" font-weight="800" fill="#3fb950">you merge</text>
+    <text x="1125" y="265" text-anchor="middle" font-size="11" fill="#7ee2a8">&amp; deploy</text>
   </g>
   <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M682,250 L738,250" dur="1.4s" begin="2s" repeatCount="indefinite"/></circle>
   <circle r="3.5" fill="#3fb950" filter="url(#g)"><animateMotion path="M863,250 L895,250" dur="1.4s" begin="2.4s" repeatCount="indefinite"/></circle>
