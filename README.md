@@ -2,7 +2,7 @@
 
 # 🧭 compass
 
-**One configuration that makes Claude Code, Codex, and Gemini behave like your best engineer — by default, in every repo.**
+**One config that turns Claude Code, Codex, and Gemini into your most senior engineer — by default, in every repo.**
 
 [![ci](https://github.com/dshakes/compass/actions/workflows/ci.yml/badge.svg)](https://github.com/dshakes/compass/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/dshakes/compass?color=8A63D2)](https://github.com/dshakes/compass/releases)
@@ -14,50 +14,76 @@
 </div>
 
 <p align="center">
-  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Plus: blocks the disaster, cheaper by default, ships faster." width="900">
+  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Under the hood, all opt-in: guardrails · cost-tiered (local/router) · subagents/commands/MCP · scheduled agents · spec-driven · cross-model audit · human merge gate." width="900">
 </p>
 
-<sub>▶ <a href="demo/preview.gif">terminal demo</a> · 📐 <a href="assets/hero.svg">architecture diagram</a> · 🎬 live autonomous-loop recording coming (see <a href="docs/launch-kit.md">launch kit</a>)</sub>
-
-> **No magic, no fabricated "secret configs."** Every piece is a *documented* Claude Code / Codex feature, assembled with care and cited where it matters. Read any file before you trust it — that's the point of shipping it as source.
-
-> **🆕 Closed-loop autonomous PRs (alpha).** Open a PR and the agents review, security-check, test, and cross-audit it — then **auto-fix their own Blocking findings on the branch and re-review until clean**. You still merge. → [Autonomous SDLC](#autonomous-sdlc)
+<sub>▶ <a href="demo/preview.gif">terminal demo</a> · 📐 <a href="assets/hero.svg">architecture diagram</a> · 🔁 <a href="#autonomous-sdlc">the autonomous PR loop</a></sub>
 
 ---
 
-## Get started
+## What is compass?
 
-**Full setup — one paste, every repo, fully reversible:**
+You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Cursor**. Out of the box it's a blank slate: no taste, no guardrails, no sense of how *you* work. So you re-explain the same rules in every project, nothing stops it from running a destructive command, and it happily spends the expensive model on trivial work.
+
+**compass is one configuration that fixes that for every repo at once.** Everyone has the same models — the edge is the *configuration around them*. Install compass once and your assistant acts like a seasoned senior engineer **by default**: it reads the code before changing it, stays in scope, and verifies its work before claiming "done." It **hard-blocks** catastrophic commands (`rm -rf /`, secret writes, force-push to `main`), auto-formats every edit, and routes cheap work to cheap models so you spend less.
+
+It's **not an app or a cloud service** — it's a small set of *readable* config files (an operating manual, safety hooks, specialist helpers, ready-made commands) that plug into the tools you already use. Read every line before you trust it; that's the whole point of shipping it as source — **no `curl | sh`, no fabricated "secret configs."**
+
+When you want more, it's all **opt-in**: a governed pipeline can review, security-check, test, and even **fix its own findings** on your pull requests — and *you* always click merge.
+
+> **Prerequisite:** compass *configures* an AI coding assistant; it doesn't replace one. Install **[Claude Code](https://code.claude.com)** (and, optionally, Codex or Gemini CLI) first.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## What you get
+
+- **Every agent, one config.** Claude Code, Codex, and Gemini — plus Cursor/Windsurf via the open `AGENTS.md` standard — follow the same senior-engineer playbook in *every* repo: understand first, stay in scope, verify before "done."
+- **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, `curl | sh`, and force-push to `main`; auto-formats every edit — silently, before anything runs.
+- **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
+- **It brings a crew.** 9 specialist subagents and 11 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model.
+- **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge gate. Turn on as little or as much as you want; nothing you don't enable ever runs.
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Install
+
+> **Need first:** at least one supported assistant — [Claude Code](https://code.claude.com), Codex, or Gemini CLI.
+
+Pick **one** path (running both double-fires the hooks):
+
+**A · Full setup** — *just you, every repo.* The manual, guardrails, status line, subagents, commands, and MCP, global to every repo. Fully reversible.
 
 ```bash
-git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make install && make doctor
+git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
+make dry-run     # preview every change
+make install     # symlink into ~/.claude + ~/.codex (backs up first)
+make doctor      # validate everything
 ```
 
-**Zero-config — paste inside Claude Code (no terminal):**
+**B · Plugin only** — *a team, or you'd rather not touch your global config.* The machinery, without your personal memory/permissions. Paste inside Claude Code — no terminal:
 
 ```text
 /plugin marketplace add dshakes/compass
 /plugin install core@compass
 ```
 
-**New to this?** → **[Using compass](docs/11-using-compass.md)** explains every piece in plain language — from your first session to the full autonomous loop — with the daily workflow and how to stay cheap and fast. Across many repos at once: `make apply-many DIRS="~/code/*"`.
+**Across many repos at once:** `make apply-many DIRS="~/code/*"`, then `make doctor`. Uninstall is always one command — `make uninstall` removes only what it added.
 
-> No `curl \| sh`. You clone it and read before you run — that's the point (compass *blocks* `curl\|sh` in your own work, too). Uninstall is one command: `make uninstall`.
+→ **New here? Start with [Using compass](docs/11-using-compass.md)** — the pieces in plain language (plugins vs skills vs hooks), the daily workflow, and how to stay cheap + fast.
 
-### What you get, day one
-- **Every agent, one config.** Claude Code, Codex, and Gemini (plus Cursor/Windsurf via `AGENTS.md`) behave like a senior engineer in *every* repo — understand first, stay in scope, verify before "done."
-- **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, force-push to `main`; auto-formats every edit — silently.
-- **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
-- **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge.
-- **As little or as much as you want.** The core is the manual + guardrails + subagents. The autonomous loop, scheduled agents, cross-tool (Gemini/Cursor/Windsurf) support, and local/router cost-routing are all **opt-in** — nothing you don't switch on ever runs.
+<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
 ## Contents
 
-- [Get started](#get-started)
-- [Quickstart](#quickstart)
-- [Why compass](#why-compass)
+- [What is compass?](#what-is-compass)
+- [What you get](#what-you-get)
+- [Install](#install)
 - [See it work](#see-it-work)
 - [How it fits together](#how-it-fits-together)
 - [What's inside](#whats-inside)
@@ -74,53 +100,6 @@ git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make i
 - [Safety and honesty](#safety-and-honesty)
 - [Status](#status)
 - [Docs](#docs)
-
----
-
-## Quickstart
-
-Pick **one** path — running both double-fires the hooks.
-
-| Your situation | Path |
-|---|---|
-| Just me, my machine, every repo | **A · Full setup** |
-| A team, or I don't want to touch my global config | **B · Plugin only** |
-
-**A · Full setup** (recommended) — manual + permissions + statusline + hooks + subagents + MCP, global to every repo:
-
-```bash
-git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
-make dry-run     # preview every change
-make install     # symlink into ~/.claude + ~/.codex (backs up first)
-make doctor      # validate everything
-```
-
-**B · Plugin only** (zero-config, team-friendly) — the machinery, but *not* memory/permissions:
-
-```bash
-/plugin marketplace add dshakes/compass
-/plugin install core@compass
-```
-
-**Across many repos at once:** `make apply-many DIRS="~/code/*"` (or `--git-only`). Then `make doctor` to validate.
-
-→ **New here? Read [Using compass](docs/11-using-compass.md)** — install paths, the pieces (plugins vs skills vs hooks), the daily workflow, and how to stay cheap + fast. · [What each method can and can't ship](docs/05-plugin.md)
-
-<div align="right"><a href="#contents">↑ top</a></div>
-
----
-
-## Why compass
-
-Everyone has the same models. The edge is the **configuration around them** — and most people rebuild it from scratch in every repo. compass ships it once:
-
-- **It knows how to act** — one tight manual loads every session: understand first, stay in scope, verify before "done."
-- **It stops the disaster** — hard-blocks `rm -rf /`, secret writes, `curl\|sh`, force-push to `main`; waves `rm -rf ./build` straight through.
-- **It cleans up silently** — every file it edits is auto-formatted.
-- **It costs less** — grunt work goes to Haiku/Sonnet; Opus is saved for the hard calls; the status line shows live `$` spend.
-- **It brings a crew** — 9 specialists and 11 commands (`/ship` `/review` `/tdd` …), each on the right model.
-
-<div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
