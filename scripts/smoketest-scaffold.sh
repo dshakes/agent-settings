@@ -5,13 +5,32 @@
 # watch the Actions tab). It does NOT create a remote repo, push, or touch your tokens.
 set -euo pipefail
 
-DIR="${1:-/tmp/compass-smoketest}"
+FORCE=0; DIR=""
+for a in "$@"; do
+  case "$a" in
+    --force|-f) FORCE=1 ;;
+    -h|--help) echo "usage: smoketest-scaffold.sh [--force] [DIR]   (DIR defaults to /tmp/compass-smoketest)"; exit 0 ;;
+    -*) echo "unknown flag: $a" >&2; exit 2 ;;
+    *) DIR="$a" ;;
+  esac
+done
+DIR="${DIR:-/tmp/compass-smoketest}"
 COMPASS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ -t 1 ]; then B=$'\033[1m'; D=$'\033[2m'; G=$'\033[32m'; Y=$'\033[33m'; P=$'\033[35m'; X=$'\033[0m'
 else B=""; D=""; G=""; Y=""; P=""; X=""; fi
 
-[ -e "$DIR" ] && { echo "refusing: $DIR already exists — pass a fresh path"; exit 2; }
+if [ -e "$DIR" ]; then
+  if [ "$FORCE" = 1 ] && [ "$DIR" != "/" ] && [ "$DIR" != "$HOME" ]; then
+    rm -rf "$DIR"
+  else
+    echo "$DIR already exists — it may already be a valid smoke repo. Options:"
+    echo "  • reuse it:    cd $DIR    (then run the gh/setup commands)"
+    echo "  • overwrite:   $0 --force $DIR"
+    echo "  • fresh path:  $0 ${DIR}-2"
+    exit 2
+  fi
+fi
 command -v git >/dev/null || { echo "git required"; exit 2; }
 
 echo "${B}Scaffolding a throwaway SDLC smoke-test repo at${X} $DIR"

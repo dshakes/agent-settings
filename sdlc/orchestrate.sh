@@ -162,7 +162,10 @@ log "qa  (test suite)"
   elif [ -f go.mod ]; then go test ./...
   elif [ -f Cargo.toml ]; then cargo test
   elif [ -f package.json ]; then npm test --silent
-  elif [ -f pyproject.toml ] || [ -d tests ]; then pytest -q
+  elif [ -f pyproject.toml ] || [ -f conftest.py ] || [ -d tests ] \
+       || compgen -G 'test_*.py' >/dev/null 2>&1 || compgen -G '*_test.py' >/dev/null 2>&1 \
+       || compgen -G 'requirements*.txt' >/dev/null 2>&1; then
+    if command -v pytest >/dev/null 2>&1; then pytest -q; else python3 -m pytest -q; fi
   else echo "no recognized test setup — skipped"; fi
 } >"$RUN/qa.log" 2>&1; QA_RC=$?
 note "qa exit=$QA_RC (full log: $RUN/qa.log)"; tail -5 "$RUN/qa.log" | sed 's/^/    /'
