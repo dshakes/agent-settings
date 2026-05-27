@@ -78,15 +78,19 @@ if [ -f "$DIR/Cargo.toml" ]; then
   ALLOWED_BASH_TOOLS="${ALLOWED_BASH_TOOLS:+$ALLOWED_BASH_TOOLS,}Bash(cargo build:*),Bash(cargo test:*),Bash(cargo clippy:*),Bash(cargo fetch:*)"
 fi
 
-# Python
-if [ -f "$DIR/pyproject.toml" ] || [ -f "$DIR/requirements.txt" ]; then
+# Python (pyproject / setup / Pipfile / any requirements*.txt / or just .py files present)
+PY_REQ=""; for f in "$DIR"/requirements*.txt; do [ -f "$f" ] && { PY_REQ="$f"; break; }; done
+if [ -f "$DIR/pyproject.toml" ] || [ -f "$DIR/setup.py" ] || [ -f "$DIR/setup.cfg" ] \
+   || [ -f "$DIR/Pipfile" ] || [ -n "$PY_REQ" ] || compgen -G "$DIR/*.py" >/dev/null 2>&1; then
   STACKS="${STACKS:+$STACKS, }Python"
   if [ -f "$DIR/pyproject.toml" ]; then
     INSTALL_CMDS="${INSTALL_CMDS:+$INSTALL_CMDS; }uv sync 2>/dev/null || pip install -e ."
+  elif [ -n "$PY_REQ" ]; then
+    INSTALL_CMDS="${INSTALL_CMDS:+$INSTALL_CMDS; }pip install -r $(basename "$PY_REQ")"
   else
-    INSTALL_CMDS="${INSTALL_CMDS:+$INSTALL_CMDS; }pip install -r requirements.txt"
+    INSTALL_CMDS="${INSTALL_CMDS:+$INSTALL_CMDS; }pip install -e . 2>/dev/null || true"
   fi
-  ALLOWED_BASH_TOOLS="${ALLOWED_BASH_TOOLS:+$ALLOWED_BASH_TOOLS,}Bash(uv:*),Bash(pip:*),Bash(pytest:*),Bash(ruff:*)"
+  ALLOWED_BASH_TOOLS="${ALLOWED_BASH_TOOLS:+$ALLOWED_BASH_TOOLS,}Bash(uv:*),Bash(pip:*),Bash(pytest:*),Bash(ruff:*),Bash(python:*),Bash(python3:*)"
 fi
 
 # Elixir
@@ -170,7 +174,7 @@ if [ "$HAVE_JQ" = 1 ]; then
   TMPFILE="$(mktemp /tmp/compass-onboard-XXXXXX.json)"
   # Run from the target directory so the agent's relative paths resolve correctly.
   (cd "$DIR" && claude -p "$PROMPT" \
-    --model claude-sonnet-4-5 \
+    --model sonnet \
     --permission-mode acceptEdits \
     --allowedTools "$ALL_TOOLS" \
     --output-format json) >"$TMPFILE" 2>/dev/null || true
@@ -180,7 +184,7 @@ if [ "$HAVE_JQ" = 1 ]; then
   rm -f "$TMPFILE"
 else
   (cd "$DIR" && claude -p "$PROMPT" \
-    --model claude-sonnet-4-5 \
+    --model sonnet \
     --permission-mode acceptEdits \
     --allowedTools "$ALL_TOOLS" \
     --output-format text) || true
