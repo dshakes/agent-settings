@@ -23,15 +23,11 @@
 
 ## What is compass?
 
-You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Cursor**. Out of the box it's a blank slate: no taste, no guardrails, no sense of how *you* work. So you re-explain the same rules in every project, nothing stops it from running a destructive command, and it happily spends the expensive model on trivial work.
+You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Cursor**. Out of the box it's a blank slate: no taste, no guardrails, no memory of how *you* work — so you re-explain the same rules in every repo, nothing stops a destructive command, and it burns the pricey model on trivial work.
 
-**compass is one configuration that fixes that for every repo at once.** Everyone has the same models — the edge is the *configuration around them*. Install compass once and your assistant acts like a seasoned senior engineer **by default**: it reads the code before changing it, stays in scope, and verifies its work before claiming "done." It **hard-blocks** catastrophic commands (`rm -rf /`, secret writes, force-push to `main`), auto-formats every edit, and routes cheap work to cheap models so you spend less.
+**compass is one configuration that fixes that everywhere at once.** Install it once and your assistant acts like a senior engineer *by default* — reads before it changes, stays in scope, verifies before "done" — while **hard-blocking** the catastrophic (`rm -rf /`, secret writes, force-push to `main`), auto-formatting every edit, and routing cheap work to cheap models. It's not an app or a service — just small, **readable** config files you audit before trusting (no `curl | sh`). Everything past the basics — including a loop that **fixes its own PR review findings** — is **opt-in**, and *you* always merge.
 
-It's **not an app or a cloud service** — it's a small set of *readable* config files (an operating manual, safety hooks, specialist helpers, ready-made commands) that plug into the tools you already use. Read every line before you trust it; that's the whole point of shipping it as source — **no `curl | sh`, no fabricated "secret configs."**
-
-When you want more, it's all **opt-in**: a governed pipeline can review, security-check, test, and even **fix its own findings** on your pull requests — and *you* always click merge.
-
-> **Prerequisite:** compass *configures* an AI coding assistant; it doesn't replace one. Install **[Claude Code](https://code.claude.com)** (and, optionally, Codex or Gemini CLI) first.
+> **Prerequisite:** compass *configures* an AI coding assistant; it doesn't replace one. Install **[Claude Code](https://code.claude.com)** (optionally Codex or Gemini CLI) first.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -115,16 +111,12 @@ make doctor      # validate everything
 
 <br>
 
-A normal session, after `make install` — nothing extra to invoke:
+After `make install`, a normal session — nothing extra to invoke:
 
-1. **You open any repo and start Claude.** The operating manual, your guardrails, the 9 subagents and 11 commands are already loaded. The status line shows the model, branch, and live `$` spend.
-2. **You ask for a change.** Claude reads the relevant code first, states a 2–4 line plan, then implements — delegating the test run to a cheap Haiku subagent and saving Opus for the hard reasoning.
-3. **It tries something dangerous.** `rm -rf $HOME`, a secret write, a force-push to `main` → **blocked** by the guardrail hook before it runs. `rm -rf ./build` sails through.
-4. **Every file it touches is auto-formatted** (gofmt/ruff/prettier/…) — no "fix lint" round-trips.
-5. **You run `/ship`.** It tests, runs a fresh-context reviewer, and prepares a clean commit. You stay the merge gate.
-6. **You raise the PR.** Now the [Autonomous SDLC](#autonomous-sdlc) takes over: review, security, tests, and a cross-tool Codex audit run on the PR — and if the reviewer finds a Blocking issue, the Builder **fixes it on the branch and re-review until green**. You click merge.
-
-> No new vocabulary to learn — it's the same Claude Code / Codex you already use, with a senior engineer's defaults switched on.
+1. **Open any repo.** Manual, guardrails, 9 subagents, 11 commands, and the cost-aware status line are already loaded.
+2. **Ask for a change.** Claude plans, implements, and sends the test run to a cheap Haiku subagent — Opus stays for the hard parts. Every edit is auto-formatted.
+3. **Dangerous command?** `rm -rf $HOME`, a secret write, force-push to `main` → **blocked before it runs**. `rm -rf ./build` sails through.
+4. **`/ship`, then open the PR.** The [Autonomous SDLC](#autonomous-sdlc) reviews, security-checks, tests, and cross-audits — and **fixes its own Blocking findings** on the branch until green. You merge.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -327,8 +319,6 @@ flowchart TD
 
 </details>
 
-**The loop, in words:** open a PR → Reviewer (Claude) + Security (Claude opus) + Auditor (Codex) + QA all fire automatically. If the Reviewer finds Blocking issues it labels `agent:needs-fix`, which triggers the **Builder** to fix the code on the PR's own branch and push — which re-runs the Reviewer. This repeats until clean or the round cap (`SDLC_MAX_FIX_ROUNDS`, default 3), then `sdlc:needs-human` is applied. Required status checks (`review` + `qa`) gate the merge; **humans merge and deploy**.
-
 The loop auto-chains only with **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Contents+PRs write). Without it, review and one fix still run but the loop won't continue — GitHub blocks workflow-to-workflow recursion with the default token.
 
 ```bash
@@ -406,22 +396,11 @@ A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearl
 
 ## Status
 
-**Alpha.** The core (manual, hooks, subagents, commands, MCP, plugin/marketplace) is stable
-and dogfooded; the **SDLC pipeline** is newer — proven end-to-end on a pilot, but treat it as
-early. Known limits, by design:
-- **Humans merge & deploy** — agents stop at the PR (never auto-merge/deploy); required
-  checks + 1 code-owner approval enforce this.
-- **The fix loop needs `SDLC_BOT_TOKEN` to chain** — a fine-grained PAT (Contents+PRs write).
-  Without it, review + one fix run but the loop doesn't auto-continue (degrades to manual).
-- **Forks get review only** — the write-capable fix loop is gated to same-repo PRs; fork
-  PRs receive Reviewer, Security, and Auditor but never the Builder fix push.
-- **Round cap** — the loop repeats up to `SDLC_MAX_FIX_ROUNDS` (default 3), then labels
-  `sdlc:needs-human` and posts a comment.
-- **Cloud agents need a runner or credential** — keyless via a self-hosted runner (`claude
-  -p`), or a subscription token / API key for GitHub-hosted runners.
-- **Agent teams are interactive-only** — headless multi-agent coordination uses chained
-  `claude -p` + `codex exec`, not teams.
-- Pin to a tagged release (not `main`) for stability. Report issues via the templates.
+**Alpha.** The core (manual, hooks, subagents, commands, MCP, plugin) is stable and dogfooded; the **SDLC pipeline** is newer — proven end-to-end on a pilot, treat it as early. By design:
+- **You merge & deploy** — agents stop at the PR; required checks + 1 code-owner approval enforce it.
+- **The fix loop needs `SDLC_BOT_TOKEN`** to chain (GitHub blocks workflow recursion otherwise); without it, review + one fix still run.
+- **Forks get review only** — the write-capable Builder is gated to same-repo PRs.
+- Round cap `SDLC_MAX_FIX_ROUNDS` (default 3) → `sdlc:needs-human`. Pin a tagged release, not `main`. Full limits → [`docs/09-sdlc.md`](docs/09-sdlc.md).
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
