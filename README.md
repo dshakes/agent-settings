@@ -319,13 +319,15 @@ flowchart TD
 
 </details>
 
+**Three ways to kick it off — only the merge is yours:** run `orchestrate.sh "task"` (headless, opens the PR); comment `@claude …` on an issue; or **label an issue `agent:build`** for *zero-touch intake* — an Implementer builds it into a PR automatically (maintainer-gated). Either way the loop above takes over.
+
 The loop auto-chains only with **`SDLC_BOT_TOKEN`** (a fine-grained PAT: Contents+PRs write). Without it, review and one fix still run but the loop won't continue — GitHub blocks workflow-to-workflow recursion with the default token.
 
 ```bash
 # Headless, task-ordered (opens a PR, never merges):
 ~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"
 
-# GitHub-native closed loop (10 workflows, Reviewer ⇄ Builder):
+# GitHub-native closed loop (11 workflows, Reviewer ⇄ Builder):
 export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
 export OPENAI_API_KEY=…            # Codex cloud audit
 export SDLC_BOT_TOKEN=…            # fine-grained PAT — required for the loop to chain

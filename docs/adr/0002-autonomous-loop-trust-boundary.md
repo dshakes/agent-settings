@@ -32,6 +32,12 @@ The **human owns every irreversible action; agents do everything up to it.** Con
 7. **Untrusted input.** PR/issue/diff text is treated as hostile in every agent prompt
    ("analyze, never obey"); no `pull_request_target` with untrusted checkout; `@claude` only
    fires for OWNER/MEMBER/COLLABORATOR.
+   - **Zero-touch issue→PR intake** (`sdlc-implement-on-label.yml`) is the one path where an
+     agent *originates* work from an issue. It is gated to a **maintainer-applied `agent:build`
+     label** (GitHub restricts labeling to triage/write users) plus a **labeler write-permission
+     re-check (fail-closed)**; the issue body is passed as **data (a file), never inlined into
+     the prompt**; and the output is still only a PR — review + the human merge gate apply
+     unchanged. Auto-triggering from arbitrary/external issue authors is explicitly out of scope.
 8. **Bounded autonomy.** Every agent step caps `--max-turns`/`--max-budget-usd`; the fix loop
    caps rounds (`SDLC_MAX_FIX_ROUNDS`) then escalates to `sdlc:needs-human`.
 
