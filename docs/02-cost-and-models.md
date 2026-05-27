@@ -61,6 +61,19 @@ Cross-provider *smart routing* as a first-class compass layer is roadmapped (`do
   (`claude -p --output-format json` → `total_cost_usd`) into `.sdlc/run-*/costs.tsv`, prints a
   per-step breakdown + total, and includes a **Spend** line in the PR body. (QA is free; the
   Codex audit isn't tallied.)
+- **Aggregate across runs/repos:** each step's cost is also appended to a global ledger
+  `~/.compass/spend.tsv`. `compass spend [--week|--month|--all]` rolls it up by model and repo;
+  set a ceiling with `COMPASS_BUDGET_USD` (or `budget_usd=` in `~/.compass/config`) and it shows
+  OK / over-80% / over.
+- **Is it worth it?** `compass impact` answers "how is compass benefiting me" — footguns blocked,
+  files auto-formatted, spend by model, and an **estimated `$` saved** vs running everything on
+  Opus (a rough multiple-based estimate, labelled as such).
+
+## Auto-routing the model (experimental)
+`compass route "<task>"` maps a task to the cheapest-correct tier (haiku/sonnet/opus) by keyword
+heuristic. `orchestrate.sh` will use it for the Builder step **only** when `SDLC_AUTOROUTE=1` —
+it's **off by default and experimental**: without a real eval set, a wrong route can hurt quality
+more than it saves. Treat it as opt-in until evals exist; the default stays Sonnet.
 
 ## Rules of thumb baked into `CLAUDE.md`
 - Don't re-read a file you just edited.

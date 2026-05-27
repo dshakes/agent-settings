@@ -107,12 +107,22 @@ Adopt these as you get comfortable — each is opt-in:
 ```bash
 make doctor                 # JSON/TOML/frontmatter/symlinks/plugin-sync — should be 0 errors
 claude mcp list             # MCP servers healthy
-# open a repo, run claude → the status line shows model · branch · context · $cost
+# open a repo, run claude → the status line shows model · branch · context · $cost · 🧭 activity
 # try a guardrail:  ask it to `rm -rf $HOME` → it's blocked before running
+compass impact              # what compass has done for you: footguns blocked, $ saved, …
 ```
 
 Uninstall is clean and reversible: `make uninstall` removes only what compass created
 (backups in `~/.claude/backups/`).
+
+### New to a repo? Onboard in one command
+Put `~/compass/bin` on your PATH (or call it directly), then in any repo:
+```bash
+compass onboard             # detect stack → install deps → build+test green → grounded CLAUDE.md → codebase map
+```
+Or `/onboard` inside a Claude session. The `compass` CLI also has `spend` (cost dashboard +
+budget), `impact` (benefit dashboard), `schedule` (local cron routines), and `route` (model
+tier). Run `compass help`.
 
 ---
 

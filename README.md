@@ -40,6 +40,7 @@ You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Curs
 - **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
 - **It brings a crew.** 9 specialist subagents and 11 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model.
 - **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge gate. Turn on as little or as much as you want; nothing you don't enable ever runs.
+- **It sets you up, and proves it.** `compass onboard` makes you productive in a new repo in minutes; `compass impact` shows what it saved you (footguns blocked, `$` saved) — and the status line shows it working live.
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -85,6 +86,7 @@ make doctor      # validate everything
 - [What's inside](#whats-inside)
 - [The hooks](#the-hooks)
 - [Cost model](#cost-model)
+- [Local tools & impact](#local-tools--impact)
 - [MCP servers](#mcp-servers)
 - [Language servers (LSP)](#language-servers-lsp)
 - [New or existing repos](#new-or-existing-repos)
@@ -212,6 +214,24 @@ The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**
 | Deep | Opus 4.7 | `architect`, `security-auditor`, `debugger`, driver | architecture, security, subtle bugs |
 
 `/cost` re-plans any task to the cheapest-correct mix. → [Cost & models](docs/02-cost-and-models.md)
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Local tools & impact
+
+A `compass` CLI ([`bin/compass`](bin/compass) — put `bin/` on your PATH) for local agentic work, and a way to **see what compass is doing for you**:
+
+| Command | What |
+|---|---|
+| `compass onboard [dir]` | Onboard into a repo: detect stack, install deps, get build+test green, write a grounded `CLAUDE.md`, print a codebase map. (Also `/onboard` inside Claude.) |
+| `compass impact` | **How compass benefits you** — footguns blocked, files auto-formatted, spend by model, and estimated `$` saved vs running everything on Opus. |
+| `compass spend [--week\|--month]` | Aggregate agent cost by model/repo + budget (`COMPASS_BUDGET_USD`). |
+| `compass schedule add\|list\|run <routine>` | Run routines (dep-refresh · flaky-triage · doc-freshness · pr-babysit) locally on cron — no CI needed. |
+| `compass route "<task>"` | Cheapest-correct model tier. SDLC auto-routing is opt-in (`SDLC_AUTOROUTE=1`) and **experimental** — no evals yet. |
+
+The **status line** also shows live activity — `🧭 ⛊3 ⌗12` = 3 footguns blocked, 12 files auto-formatted today. Blocks/formats/spend log best-effort to `~/.compass`; nothing leaves your machine. → [Cost & models](docs/02-cost-and-models.md)
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
