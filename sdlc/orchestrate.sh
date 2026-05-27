@@ -31,6 +31,12 @@ SLUG="$(printf '%s' "$TASK" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-' | 
 BRANCH="sdlc/${SLUG:-task}-$TS"
 BUDGET="${SDLC_BUDGET:-8}"; STEP_BUDGET="$(awk "BEGIN{printf \"%.2f\", $BUDGET/4}")"
 BUILD_PERM="acceptEdits"; [ "${SDLC_YOLO:-0}" = 1 ] && BUILD_PERM="bypassPermissions"
+REPO="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")")"
+TASKTAG="$(printf '%s' "$TASK" | tr '\t\n' '  ' | cut -c1-60)"
+# Builder model: sonnet by default. SDLC_AUTOROUTE=1 auto-picks the cheapest-correct tier
+# via scripts/compass-route.sh — EXPERIMENTAL, no evals yet, so it's OFF by default.
+BUILD_MODEL="${SDLC_BUILD_MODEL:-sonnet}"
+[ "${SDLC_AUTOROUTE:-0}" = 1 ] && BUILD_MODEL="$("$SDLC_DIR/../scripts/compass-route.sh" "$TASK" 2>/dev/null || echo sonnet)"
 
 # Spec-driven (opt-in): if SDLC_SPEC points at a spec file, plan/build to it and review vs it.
 SPEC_CLAUSE=""
@@ -60,6 +66,9 @@ claude_step(){
     jq -r '.result // ""' "$j" 2>/dev/null | tee "$RUN/$name.md"
     local c; c="$(jq -r '.total_cost_usd // 0' "$j" 2>/dev/null || echo 0)"
     printf '%s\t%s\n' "$name" "$c" >>"$COSTS"
+    { mkdir -p "${COMPASS_HOME:-$HOME/.compass}" && printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REPO" "$TASKTAG" "$model" "$c" \
+        >>"${COMPASS_HOME:-$HOME/.compass}/spend.tsv"; } 2>/dev/null || true
     note "step spend: \$$(printf '%.4f' "$c" 2>/dev/null || echo "$c")"
   else
     claude -p "$prompt" --model "$model" --append-system-prompt-file "$ROLES/$role" \
@@ -90,7 +99,7 @@ REVIEW_TOOLS="Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)"
 REVIEW_PROMPT="Review the diff of branch $BRANCH against $BASE: run 'git diff $BASE...HEAD'. Report findings grouped Blocking / Should-fix / Nit. ${SDLC_SPEC:+Also read the spec at $SDLC_SPEC and verify the diff satisfies its Acceptance Criteria — treat any unmet criterion or out-of-scope change as Blocking. }End with EXACTLY one line: 'SDLC-VERDICT: BLOCKING' if there is any Blocking finding, else 'SDLC-VERDICT: CLEAN'."
 
 # 2 · BUILD (edits + commits on the feature branch)
-claude_step build builder.md sonnet "$BUILD_PERM" "$BUILD_TOOLS" \
+claude_step build builder.md "$BUILD_MODEL" "$BUILD_PERM" "$BUILD_TOOLS" \
   "Implement the plan in .sdlc/run-$TS/plan.md for this task: $TASK
 Stay on branch $BRANCH. Add tests. Build/test what you touch. Commit your work. Do not push or merge.$SPEC_CLAUSE"
 # safety net: capture any uncommitted work so the diff/PR is complete
@@ -107,7 +116,7 @@ if [ "${SDLC_CONVERGE:-0}" = 1 ]; then
   MAXR="${SDLC_MAX_FIX_ROUNDS:-3}"; r=1
   while grep -qiE '^SDLC-VERDICT: BLOCKING' "$RUN/review.md" 2>/dev/null && [ "$r" -le "$MAXR" ]; do
     log "converge round $r/$MAXR  (fix → re-review)"
-    claude_step "fix-$r" builder.md sonnet "$BUILD_PERM" "$BUILD_TOOLS" \
+    claude_step "fix-$r" builder.md "$BUILD_MODEL" "$BUILD_PERM" "$BUILD_TOOLS" \
       "Address every Blocking and Should-fix item in .sdlc/run-$TS/review.md on branch $BRANCH for task: $TASK.
 Edit the code, add/adjust tests, build/test what you touch, commit. Do not push or merge."
     if ! git diff --quiet || ! git diff --cached --quiet; then

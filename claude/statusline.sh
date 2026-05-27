@@ -76,11 +76,26 @@ case "$mode" in
   bypassPermissions) mode_seg="${C_DIRTY}[bypass]${C_RST}" ;;
 esac
 
+# compass activity today: footguns blocked + files auto-formatted (from the metrics log).
+# Proof compass is working for you, at a glance. Best-effort; omitted if nothing logged.
+compass_seg=""
+mfile="${COMPASS_HOME:-$HOME/.compass}/metrics.tsv"
+if [ -f "$mfile" ]; then
+  today="$(date -u +%Y-%m-%d)"
+  counts="$(awk -F'\t' -v d="$today" 'index($1,d)==1{if($2=="block")b++;else if($2=="format")f++} END{printf "%d\t%d",b+0,f+0}' "$mfile" 2>/dev/null)"
+  blk="${counts%%	*}"; fmtn="${counts##*	}"
+  seg=""
+  [ "${blk:-0}" -gt 0 ] 2>/dev/null && seg="${C_DIRTY}⛊${blk}${C_RST}"
+  [ "${fmtn:-0}" -gt 0 ] 2>/dev/null && seg="${seg:+$seg }${C_GIT}⌗${fmtn}${C_RST}"
+  [ -n "$seg" ] && compass_seg="${C_MODEL}🧭${C_RST} ${seg}"
+fi
+
 # Assemble, skipping empty segments.
 out="${C_MODEL}${model:-Claude}${C_RST}${SEP}${C_DIR}${dir_short}${C_RST}"
 [ -n "$git_seg" ]  && out="${out}${SEP}${git_seg}"
 [ -n "$ctx_seg" ]  && out="${out}${SEP}${ctx_seg}"
 [ -n "$cost_seg" ] && out="${out}${SEP}${cost_seg}"
+[ -n "$compass_seg" ] && out="${out}${SEP}${compass_seg}"
 [ -n "$mode_seg" ] && out="${out} ${mode_seg}"
 
 printf '%s' "$out"

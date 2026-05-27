@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# compass — one CLI for compass's local tools. Put bin/ on your PATH, or call
+# ~/compass/bin/compass directly. Each subcommand is a script in ../scripts.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$HERE")"
+SCRIPTS="$ROOT/scripts"
+
+cmd="${1:-help}"; [ "$#" -gt 0 ] && shift
+
+usage() {
+  cat <<EOF
+compass — local engineering tools
+
+usage: compass <command> [args]
+
+  onboard [DIR]            Onboard into a repo: detect stack, deps, build+test green,
+                           write a grounded CLAUDE.md, print a codebase map.
+  impact  [--week|--all]   What compass did for you: footguns blocked, files formatted,
+                           spend by model, estimated \$ saved vs all-Opus.
+  spend   [--week|--month] Agent cost dashboard + budget (set COMPASS_BUDGET_USD).
+  schedule add|list|remove|run <routine>
+                           Local scheduled agents (cron + claude -p): dep-refresh,
+                           flaky-triage, doc-freshness, pr-babysit.
+  route   "<task>"         Print the cheapest-correct model tier (experimental).
+  doctor                   Validate the compass install (make doctor).
+  help                     This message.
+
+Ledgers + config live in \${COMPASS_HOME:-~/.compass}. Everything is opt-in.
+EOF
+}
+
+run() { local s="$SCRIPTS/compass-$1.sh"; shift; [ -x "$s" ] || { echo "compass: missing $s" >&2; exit 1; }; exec "$s" "$@"; }
+
+case "$cmd" in
+  onboard)  run onboard "$@" ;;
+  impact)   run impact "$@" ;;
+  spend)    run spend "$@" ;;
+  schedule) run schedule "$@" ;;
+  route)    run route "$@" ;;
+  doctor)   exec make -C "$ROOT" doctor ;;
+  -h|--help|help) usage ;;
+  *) echo "compass: unknown command '$cmd'" >&2; echo; usage; exit 2 ;;
+esac

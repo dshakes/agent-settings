@@ -48,6 +48,7 @@ print(cur if isinstance(cur, str) else json.dumps(cur))
 # Usage: deny "human-readable reason"
 deny() {
   local reason="$1"
+  compass_log_metric block "$reason"
   cat <<JSON
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":$(json_string "$reason")}}
 JSON
@@ -79,3 +80,15 @@ json_string() {
 
 # True if a command exists.
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# Append a best-effort usage metric for the `compass impact` dashboard — e.g. a
+# footgun blocked or a file auto-formatted. Never fails the caller (hot path).
+# Columns: timestamp<TAB>event<TAB>repo<TAB>detail
+compass_log_metric() {
+  local event="$1" detail="${2:-}" home="${COMPASS_HOME:-$HOME/.compass}" repo
+  detail="${detail//$'\t'/ }"; detail="${detail//$'\n'/ }"
+  repo="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")")"
+  { mkdir -p "$home" 2>/dev/null && printf '%s\t%s\t%s\t%s\n' \
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$event" "$repo" "$detail" \
+      >>"$home/metrics.tsv"; } 2>/dev/null || true
+}

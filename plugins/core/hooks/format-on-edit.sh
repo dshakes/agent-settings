@@ -16,7 +16,7 @@ FILE="$(json_get "$INPUT" '.tool_input.file_path')"
 [ -z "$FILE" ] && exit 0
 [ -f "$FILE" ] || exit 0
 
-fmt() { "$@" >/dev/null 2>&1 || true; }
+fmt() { "$@" >/dev/null 2>&1 && _fmt_ran=1 || true; }
 
 case "$FILE" in
   *.go)
@@ -41,4 +41,5 @@ case "$FILE" in
     have buf && fmt buf format -w "$FILE" ;;
 esac
 
+[ -n "${_fmt_ran:-}" ] && compass_log_metric format "${FILE##*.}"
 exit 0
