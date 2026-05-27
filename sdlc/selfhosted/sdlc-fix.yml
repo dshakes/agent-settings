@@ -43,6 +43,11 @@ jobs:
         run: |
           set -uo pipefail
           labels="$(gh pr view "$PR" --json labels --jq '.labels[].name' 2>/dev/null || true)"
+          if printf '%s\n' "$labels" | grep -qx "sdlc:hold"; then
+            echo "PR is on hold (sdlc:hold) — skipping auto-fix until /resume."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           round=0
           for n in $(seq 1 50); do
             printf '%s\n' "$labels" | grep -qx "sdlc:round-$n" && round=$n

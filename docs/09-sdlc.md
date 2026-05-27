@@ -153,7 +153,7 @@ Knobs: `SDLC_NO_PR=1` (don't open the PR), `SDLC_YOLO=1` (Builder unattended),
 
 ### B · GitHub-native — agents on your PRs
 
-Nine workflows, all in `.github/workflows/` after `setup.sh`:
+Ten workflows, all in `.github/workflows/` after `setup.sh`:
 
 | Workflow | Trigger | Agent | Role in loop |
 |---|---|---|---|
@@ -166,6 +166,7 @@ Nine workflows, all in `.github/workflows/` after `setup.sh`:
 | `sdlc-implement.yml` | `@claude` comment | **Builder** (Claude · sonnet) | Ad-hoc implement; opens/updates PR |
 | `sdlc-implement-on-label.yml` | `agent:build` label on issue | **Implementer** (Claude · sonnet) | **Zero-touch intake**: builds a labeled issue into a PR (maintainer-gated), then the loop above runs |
 | `sdlc-release.yml` | `agent:release` label on PR | **Releaser** (Claude · sonnet) | CHANGELOG + version bump on branch; never tags/publishes |
+| `sdlc-control.yml` | `/revise` `/hold` `/resume` `/approve` PR comment | **you** (human-in-the-loop) | Steer the loop from the PR; keeps a sticky status panel current |
 
 Setup (one command):
 ```bash
@@ -204,6 +205,15 @@ private repos / trusted collaborators only. Full setup + warnings:
 4. **One-time manual**: Settings → Environments → `production` → Required reviewers.
 
 No agent has merge or deploy authority.
+
+### Steering the loop (human-in-the-loop)
+You don't have to hand-fix an agent PR or just reject it. From any PR comment
+(`sdlc-control.yml`, maintainers only):
+- `/revise <note>` — record your guidance and re-enter the fix loop (the Builder reads it, then the Reviewer re-runs).
+- `/hold` · `/resume` — pause / resume the auto-fix loop on that PR.
+- `/approve` — mark it merge-ready. With repo variable `SDLC_AUTO_MERGE=true` this queues auto-merge — but GitHub still merges only *after* the required code-owner approval + green checks, never before.
+
+A sticky **control panel** comment shows the loop's state, required-check status, and these moves at a glance — so the human checkpoint is one place, not a hunt through the thread.
 
 ---
 

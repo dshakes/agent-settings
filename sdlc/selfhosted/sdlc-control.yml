@@ -1,0 +1,118 @@
+# Human-in-the-loop control surface. Lets a maintainer STEER the autonomous loop from the
+# PR with one comment, and keeps a sticky status panel up to date. gh-only (no model), so it
+# works the same on hosted or self-hosted setups. NEVER merges on its own — the merge gate is
+# GitHub branch protection (required checks + code-owner approval); see ADR-0002.
+#
+# Commands (maintainers only):
+#   /revise <note>  → record your guidance + re-enter the fix loop (Builder → Reviewer)
+#   /hold · /resume → pause / resume the auto-fix loop on this PR
+#   /approve        → mark merge-ready (queues auto-merge AFTER approval+green if vars.SDLC_AUTO_MERGE=true)
+#   /status         → refresh the panel
+name: "sdlc · control (human-in-the-loop)"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write          # only used by /approve → enable auto-merge (still gated by branch protection)
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sdlc-control-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  control:
+    # PR comments only, from a maintainer, that start with a slash-command.
+    if: |
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: [self-hosted, compass]
+    env:
+      GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      PR: ${{ github.event.issue.number }}
+      BODY: ${{ github.event.comment.body }}
+      AUTO_MERGE: ${{ vars.SDLC_AUTO_MERGE }}
+    steps:
+      - name: Handle command
+        run: |
+          set -uo pipefail
+          cmd="$(printf '%s' "$BODY" | head -1 | awk '{print $1}')"
+          case "$cmd" in
+            /revise)
+              note="$RUNNER_TEMP/revise.md"
+              printf '%s' "$BODY" | sed '1s|^/revise[[:space:]]*||' > "$note"
+              if [ ! -s "$note" ]; then gh pr comment "$PR" --body "Usage: \`/revise <what to change>\`"; exit 0; fi
+              { echo "🧭 **Human revision request** (via \`/revise\`) — the Builder will address this:"; echo; cat "$note"; } > "$RUNNER_TEMP/revise-comment.md"
+              gh pr comment "$PR" --body-file "$RUNNER_TEMP/revise-comment.md"
+              gh pr edit "$PR" --remove-label "sdlc:hold" >/dev/null 2>&1 || true
+              gh label create "agent:needs-fix" --color d93f0b --force >/dev/null 2>&1 || true
+              gh pr edit "$PR" --add-label "agent:needs-fix" >/dev/null 2>&1 || true
+              ;;
+            /hold)
+              gh label create "sdlc:hold" --color 555555 --force >/dev/null 2>&1 || true
+              gh pr edit "$PR" --add-label "sdlc:hold" >/dev/null 2>&1 || true
+              gh pr comment "$PR" --body "⏸️ **Loop paused** — the auto-fix loop will skip this PR until \`/resume\`."
+              ;;
+            /resume)
+              gh pr edit "$PR" --remove-label "sdlc:hold" >/dev/null 2>&1 || true
+              gh pr comment "$PR" --body "▶️ **Resumed.** Push a commit or \`/revise <note>\` to re-enter the loop."
+              ;;
+            /approve)
+              gh label create "sdlc:approved" --color 0e8a16 --force >/dev/null 2>&1 || true
+              gh pr edit "$PR" --add-label "sdlc:approved" >/dev/null 2>&1 || true
+              if [ "${AUTO_MERGE:-}" = "true" ]; then
+                if gh pr merge "$PR" --auto --squash >/dev/null 2>&1; then
+                  msg="Auto-merge enabled — GitHub will merge once a code-owner approval + required checks are green."
+                else
+                  msg="Marked merge-ready (couldn't enable auto-merge — needs the repo's auto-merge setting on)."
+                fi
+              else
+                msg="Marked merge-ready. (Set repo variable \`SDLC_AUTO_MERGE=true\` to queue auto-merge after approval.)"
+              fi
+              gh pr comment "$PR" --body "✅ **$msg** Humans still own the merge gate."
+              ;;
+            /status) : ;;
+            *) echo "not a compass command: $cmd"; exit 0 ;;
+          esac
+      - name: Refresh the control panel
+        if: ${{ startsWith(github.event.comment.body, '/revise') || startsWith(github.event.comment.body, '/hold') || startsWith(github.event.comment.body, '/resume') || startsWith(github.event.comment.body, '/approve') || startsWith(github.event.comment.body, '/status') }}
+        run: |
+          set -uo pipefail
+          labels="$(gh pr view "$PR" --json labels --jq '.labels[].name' 2>/dev/null || true)"
+          has(){ printf '%s\n' "$labels" | grep -qx "$1"; }
+          state="🔵 reviewing…"
+          has "agent:reviewed-clean" && state="🟢 reviewed clean"
+          has "agent:needs-fix"      && state="🔴 needs-fix — Builder working"
+          has "sdlc:needs-human"     && state="🟠 needs a human — round cap hit"
+          has "sdlc:hold"            && state="⏸️ on hold"
+          has "sdlc:approved"        && state="✅ approved — the merge gate is yours"
+          round="$(printf '%s\n' "$labels" | grep -oE 'sdlc:round-[0-9]+' | tail -1 | sed 's/sdlc:round-/round /')"
+          checks="$(gh pr checks "$PR" 2>/dev/null | awk -F'\t' '{print $1": "$2}' | head -8 || true)"
+          panel="$RUNNER_TEMP/panel.md"
+          {
+            echo '<!-- compass-sdlc-panel -->'
+            echo '### 🧭 compass · SDLC control panel'
+            printf '**State:** %s %s\n\n' "$state" "${round:+· $round}"
+            echo '**Required checks**'
+            echo '```'
+            printf '%s\n' "${checks:-pending…}"
+            echo '```'
+            echo
+            echo '**Your moves** (maintainers) — agents stop at the PR; you own merge & deploy:'
+            echo '- `/revise <note>` — send the loop back with your guidance (re-runs Builder → Reviewer)'
+            echo '- `/hold` · `/resume` — pause / resume the auto-fix loop'
+            echo '- `/approve` — mark merge-ready (queues auto-merge after approval + green checks if `SDLC_AUTO_MERGE=true`)'
+            echo '- `/status` — refresh this panel'
+          } > "$panel"
+          cid="$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --jq '.[] | select(.body | contains("<!-- compass-sdlc-panel -->")) | .id' 2>/dev/null | head -1 || true)"
+          if [ -n "$cid" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$cid" -F body=@"$panel" >/dev/null && echo "panel updated (#$cid)"
+          else
+            gh pr comment "$PR" --body-file "$panel" && echo "panel created"
+          fi
