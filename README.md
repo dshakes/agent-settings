@@ -300,8 +300,12 @@ A pipeline of **named, governed agents** — Planner · Builder · Reviewer · *
 
 ```mermaid
 flowchart TD
-  pr["You open / push a PR"] --> onpush
-  subgraph onpush["Runs automatically on the PR"]
+  issue["📋 Issue · label: agent:build"]
+  push["👤 You push a PR"]
+  issue -->|"🤖 Implementer opens it"| pr["a PR"]
+  push --> pr
+  pr --> onpush
+  subgraph onpush["🤖 Runs automatically on the PR"]
     rev["Reviewer · Claude"]
     sec["Security · Claude opus"]
     qa["QA · runs tests"]
@@ -310,11 +314,19 @@ flowchart TD
   onpush --> verdict{"Reviewer<br/>verdict"}
   verdict -->|CLEAN| green["checks green<br/>label: reviewed-clean"]
   verdict -->|BLOCKING| needsfix["label: agent:needs-fix"]
-  needsfix --> builder["Builder fixes on the PR branch<br/>+ pushes via SDLC_BOT_TOKEN"]
+  needsfix --> builder["🤖 Builder fixes on the branch<br/>+ pushes via SDLC_BOT_TOKEN"]
   builder -->|"re-triggers the checks"| onpush
-  builder -.->|"round cap, default 3"| human["label: sdlc:needs-human"]
-  green --> gate["Human merge gate<br/>1 code-owner approval"]
-  gate --> ship["You merge and deploy"]
+  builder -.->|"round cap, default 3"| needshuman["label: sdlc:needs-human"]
+  green --> gate["👤 Human merge gate<br/>1 code-owner approval"]
+  gate --> ship["👤 You merge & deploy"]
+  you["👤 You — steer anytime"]
+  you -.->|"/revise"| needsfix
+  you -.->|"/hold · /resume"| builder
+  you -.->|"/approve"| gate
+  class rev,sec,qa,aud,builder agent
+  class push,gate,ship,you,needshuman human
+  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
+  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
 ```
 
 </details>
