@@ -10,6 +10,7 @@
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#cf222e"/></marker>
     <marker id="arp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A63D2"/></marker>
     <marker id="ary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e3b341"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
     <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <rect x="1" y="1" width="1198" height="538" rx="20" fill="url(#bg)" stroke="#30363d" stroke-width="2"/>
@@ -27,15 +28,24 @@
 
   <!-- ============ TOP ROW (happy path), all centered on y=250 ============ -->
 
-  <!-- PR node -->
+  <!-- INTAKE (zero-touch): a maintainer-labeled issue auto-opens the PR -->
+  <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.15s" dur="0.6s" fill="freeze"/>
+    <rect x="42" y="100" width="156" height="58" rx="12" fill="#161b22" stroke="#e3b341" stroke-width="1.8"/>
+    <text x="120" y="124" text-anchor="middle" font-size="13" font-weight="800" fill="#f0f6fc">📋 an issue</text>
+    <text x="120" y="143" text-anchor="middle" font-size="11.5" font-weight="700" fill="#e3b341">label: agent:build</text>
+  </g>
+  <path d="M120,158 V204" fill="none" stroke="#e3b341" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ary)"/>
+  <text x="128" y="185" text-anchor="start" font-size="10" fill="#8b949e">agent opens it</text>
+
+  <!-- PR node — pushed by you, OR opened by an agent from the labeled issue -->
   <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.3s" dur="0.6s" fill="freeze"/>
     <rect x="58" y="210" width="124" height="80" rx="14" fill="#161b22" stroke="#8A63D2" stroke-width="2"/>
-    <g transform="translate(120,229)" stroke="#a371f7" stroke-width="3" fill="none" stroke-linecap="round">
+    <g transform="translate(120,227)" stroke="#a371f7" stroke-width="3" fill="none" stroke-linecap="round">
       <circle cx="-11" cy="-7" r="3.6"/><circle cx="11" cy="-7" r="3.6"/><circle cx="0" cy="13" r="3.6"/>
       <path d="M-11,-3 Q-11,6 0,6 M11,-3 Q11,6 0,6 M0,6 V9.4"/>
     </g>
-    <text x="120" y="262" text-anchor="middle" font-size="14" font-weight="700" fill="#f0f6fc">you push</text>
-    <text x="120" y="280" text-anchor="middle" font-size="13" fill="#adbac7">a PR</text>
+    <text x="120" y="260" text-anchor="middle" font-size="14.5" font-weight="800" fill="#f0f6fc">a PR</text>
+    <text x="120" y="278" text-anchor="middle" font-size="10.5" fill="#adbac7">you push · or auto</text>
   </g>
   <line x1="184" y1="250" x2="208" y2="250" stroke="#8b949e" stroke-width="2.5" marker-end="url(#ar)"/>
   <circle r="3.5" fill="#a371f7" filter="url(#g)"><animateMotion path="M184,250 L202,250" dur="1.6s" repeatCount="indefinite"/></circle>
@@ -112,6 +122,15 @@
   <!-- tokens on the fix loop -->
   <circle r="3.5" fill="#ff6b6b" filter="url(#g)"><animateMotion path="M615,304 L615,320" dur="1.2s" begin="2.2s" repeatCount="indefinite"/></circle>
   <circle r="4" fill="#a371f7" filter="url(#g)"><animateMotion path="M473,411 C 405,411 360,406 360,353" dur="1.7s" repeatCount="indefinite"/></circle>
+
+  <!-- HUMAN-IN-THE-LOOP: steer the loop from the PR (re-enters the Builder) -->
+  <g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="2.4s" dur="0.6s" fill="freeze"/>
+    <rect x="778" y="416" width="306" height="80" rx="13" fill="#10161f" stroke="#58a6ff" stroke-width="1.8"/>
+    <text x="794" y="440" font-size="12.5" font-weight="800" fill="#58a6ff">👤 human-in-the-loop</text>
+    <text x="794" y="459" font-size="11" fill="#adbac7">steer anytime — never babysit:</text>
+    <text x="794" y="481" font-size="12" font-weight="700" fill="#e6edf3">/revise · /hold · /resume · /approve</text>
+  </g>
+  <path d="M778,440 C 770,428 764,420 760,414" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arb)"/>
 
   <!-- footer tagline -->
   <text x="600" y="514" text-anchor="middle" font-size="13" fill="#8b949e">open a PR  →  review · security · tests · cross-audit  →  <tspan fill="#ff6b6b" font-weight="700">it fixes its own blockers</tspan>  →  <tspan fill="#3fb950" font-weight="700">you merge &amp; deploy</tspan></text>
