@@ -23,8 +23,10 @@ compass — local engineering tools
 
 usage: compass <command> [args]
 
-  onboard [DIR]            Onboard into a repo: detect stack, deps, build+test green,
-                           write a grounded CLAUDE.md, print a codebase map.
+  status  [DIR]            Is compass enabled here? Global config + this-repo extras.
+  onboard [DIR] | --all <glob>
+                           Onboard into a repo: detect stack, deps, build+test green,
+                           write a grounded CLAUDE.md, print a codebase map. --all does many.
   impact  [--week|--all]   What compass did for you: footguns blocked, files formatted,
                            spend by model, estimated \$ saved vs all-Opus.
   spend   [--week|--month] Agent cost dashboard + budget (set COMPASS_BUDGET_USD).
@@ -42,6 +44,7 @@ EOF
 run() { local s="$SCRIPTS/compass-$1.sh"; shift; [ -x "$s" ] || { echo "compass: missing $s" >&2; exit 1; }; exec "$s" "$@"; }
 
 case "$cmd" in
+  status)   run status "$@" ;;
   onboard)  run onboard "$@" ;;
   impact)   run impact "$@" ;;
   spend)    run spend "$@" ;;

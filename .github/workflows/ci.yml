@@ -22,7 +22,7 @@ jobs:
         run: make doctor
 
       - name: shellcheck (errors fail the build)
-        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh install.sh claude/skills/*/*.sh sdlc/*.sh
+        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh bin/compass install.sh claude/skills/*/*.sh sdlc/*.sh
 
       - name: shellcheck (style — informational)
         run: shellcheck -S style claude/hooks/*.sh scripts/*.sh install.sh || true
@@ -36,6 +36,9 @@ jobs:
         run: |
           "$(go env GOPATH)/bin/actionlint" \
             .github/workflows/*.yml sdlc/workflows/*.yml sdlc/selfhosted/*.yml
+
+      - name: compass CLI tests (route · spend · impact · metric logger)
+        run: bash scripts/test-cli.sh
 
       - name: SDLC loop self-test (round cap + verdict parsing)
         run: bash sdlc/selftest.sh

@@ -227,7 +227,8 @@ The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**
 
 | Command | What |
 |---|---|
-| `compass onboard [dir]` | Onboard into a repo: detect stack, install deps, get build+test green, write a grounded `CLAUDE.md`, print a codebase map. (Also `/onboard` inside Claude.) |
+| `compass status [dir]` | **Is compass enabled here?** Shows the global config (every repo) + this repo's per-repo extras. |
+| `compass onboard [dir]` · `--all <glob>` | Onboard into a repo: detect stack, install deps, get build+test green, write a grounded `CLAUDE.md`, print a codebase map. `--all` does many (lists, estimates cost, confirms, per-repo budget cap, skips already-onboarded). Also `/onboard` inside Claude. |
 | `compass impact` | **How compass benefits you** — footguns blocked, files auto-formatted, spend by model, and estimated `$` saved vs running everything on Opus. |
 | `compass spend [--week\|--month]` | Aggregate agent cost by model/repo + budget (`COMPASS_BUDGET_USD`). |
 | `compass schedule add\|list\|run <routine>` | Run routines (dep-refresh · flaky-triage · doc-freshness · pr-babysit) locally on cron — no CI needed. |
