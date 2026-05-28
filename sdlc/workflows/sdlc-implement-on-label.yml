@@ -75,7 +75,8 @@ jobs:
           # PAT so opening the PR triggers the Reviewer (sdlc-review.yml). Without it the PR
           # opens but the review won't auto-run on it — see docs/09.
           github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
-          branch_prefix: "claude/issue-"
+          # No branch_prefix: in automation mode claude-code-action names the branch from the
+          # task and opens the PR itself — the PR (which Closes the issue) is what matters.
           prompt: |
             You are **Implementer** (agent:build) in an autonomous SDLC pipeline. A maintainer
             asked you to implement GitHub issue #${{ github.event.issue.number }}; the request
