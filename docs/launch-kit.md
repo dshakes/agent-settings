@@ -48,16 +48,28 @@ If any field didn't pre-fill, set it manually (verbatim — these match their dr
 > After `make install`, ask Claude to run `rm -rf $HOME` → it is **blocked** before executing, while `rm -rf ./build` is allowed. The autonomous loop is proven, not aspirational: on a live private repo, a buggy PR went review-**Blocking** → the Builder auto-fixed it on the branch → re-review **green** (human merge gate held); a `agent:build`-labeled issue had an agent write the change and open a PR; and a `/revise` comment steered the loop to add a requested test. Repeatable via `sdlc/SMOKETEST.md` + `scripts/smoketest-scaffold.sh`.
 
 ### Paste into "Additional Comments"
-> **How this differs from existing entries** (I checked the list): unlike config frameworks already listed — SuperClaude (commands/personas), Everything Claude Code (a pattern grab-bag), Claude Codex Settings (integration plugins, "not overly-opinionated") — compass pairs an *opinionated, single-source* config for **both** Claude Code and Codex (AGENTS.md ≙ CLAUDE.md) with a **governed, closed autonomous PR loop**: Claude reviews, **Codex independently cross-audits**, it **auto-fixes its own Blocking findings** and re-reviews until green, with **spec/intent verification** — and humans always own merge/deploy (enforced by branch protection, not trust). Standalone orchestrators (Auto-Claude, The Agentic Startup) do autonomous SDLC but aren't a config; claude-code-tools does Claude↔Codex *handoff* but not a shared config or a review loop. That intersection — cross-tool config + a cross-model governed loop that carries work from a *labeled issue* all the way to a merge-ready PR, is *steerable mid-flight* (`/revise`/`/hold`/`/approve`), and *reports its own impact* (`compass impact`: footguns blocked, `$` saved) — is the unique bit.
-> Alpha; security posture in README + SECURITY.md + ADRs; CI self-validates the config (actionlint/shellcheck/unit tests) and the loop is validated **live end-to-end** on a real repo. Ran your `evaluate-repository.md` rubric ahead of time.
+> **Unique within "Tooling: Config Managers"** — I checked the 3 current entries: **agnix** *lints* config files, **claude-rules-doctor** finds *dead* `.claude/rules/`, **ClaudeCTX** *switches* between configs. None is what compass is: an *opinionated, single-source* config for **Claude Code + Codex** (`AGENTS.md` ≙ `CLAUDE.md`, one source) that also runs an optional **governed, closed autonomous PR loop** — Claude reviews · **Codex cross-audits** · it **auto-fixes its own Blocking findings** with spec/intent verification · re-reviews until green; a labeled issue can become a PR, it's steerable mid-flight (`/revise`), and it reports its own impact (`compass impact`). Humans always merge (branch protection, not trust). (vs the broader entries: SuperClaude / Everything Claude Code are single-tool pattern frameworks; Auto-Claude / The Agentic Startup are standalone orchestrators, not a config; claude-code-tools does Claude↔Codex *handoff*, not a shared config + loop.)
+> **Focused, not a marketplace:** the core is just the operating manual + guardrail hooks — one `make install` and it works immediately; *everything else* (the loop, the CLI, cross-tool, local models) is opt-in and off until you switch it on.
+> **Security (your #1 concern):** no telemetry; **no `--dangerously-skip-permissions`** anywhere; **no auto-update** — you run `git pull` (no `npx @latest`); a network-egress table is in `SECURITY.md`; `install.sh` and the hooks are short and fully commented for review.
+> Alpha. The loop is validated **live end-to-end** on a real repo (review-Blocking → auto-fix → green; `agent:build` issue → agent PR; `/revise` steered in a test). CI self-validates the config (actionlint/shellcheck/unit tests). Ran your `evaluate-repository.md` rubric ahead of time.
 
 ### The required checklist (tick all — they're true)
 - [x] Not already submitted · [x] **over one week since first commit** (true on/after Jun 2) · [x] links work · [x] no other open issues in their repo · [x] human
 
-**Approval odds:** their own rubric scored compass 9/10 on security/transparency/quality; the only risk was *scope*, which the **"config manager"** framing above directly addresses. Format is airtight; approval is the maintainer's call.
+**Approval odds (honest, after scanning their live repo May 2026): ~75–85%.** In favor: the *Config Managers* subcategory has only 3 entries (a linter, a dead-rule detector, a config-switcher) and compass is genuinely distinct; security posture is strong (their stated #1 filter — egress table, no telemetry, no dangerous flags, commented scripts); clear install/uninstall, demos, and a *live-validated* loop give evidence; precedent shows broad configs (SuperClaude, claude-code-tools) get listed; format is airtight (human issue-form, 1-week age gate met Jun 2). The one real swing factor: CONTRIBUTING explicitly *"values focused resources… select a small subset"* and is wary of **bloat / complex systems with long onboarding** — compass is comprehensive. Mitigation is baked into the Description/Comments: lead with the single differentiator and "the core is tiny, everything else opt-in." The decision is the maintainer's subjective focused-vs-bloat call.
 
 ### Uniqueness check (done — compass is NOT a category-of-one, but it is differentiated)
 The list already has similar resources; the maintainer requires uniqueness, so lead with the real differentiator, not breadth.
+
+**Same subcategory — Tooling: Config Managers (the 3 current entries; this is the comparison the maintainer checks):**
+
+| Existing entry | What it is | How compass differs |
+|---|---|---|
+| **agnix** | a *linter/validator* for Claude config files (CLAUDE.md/AGENTS.md/SKILL.md/hooks/MCP) | compass *is* the config (a single source), not a linter for one |
+| **claude-rules-doctor** | CLI that finds *dead* `.claude/rules/` (globs that match nothing) | compass ships + governs the rules cross-tool; not a dead-file detector |
+| **ClaudeCTX** | *switches* your entire Claude config with one command | compass is one opinionated source + a governed loop, not a profile-switcher |
+
+**Broader-config entries (other subcategories), for context:**
 
 | Existing entry | What it is | Overlap | How compass differs |
 |---|---|---|---|
