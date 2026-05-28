@@ -109,6 +109,7 @@ make doctor                 # JSON/TOML/frontmatter/symlinks/plugin-sync — sho
 claude mcp list             # MCP servers healthy
 # open a repo, run claude → the status line shows model · branch · context · $cost · 🧭 activity
 # try a guardrail:  ask it to `rm -rf $HOME` → it's blocked before running
+compass status              # is compass enabled in THIS repo? (global config + per-repo extras)
 compass impact              # what compass has done for you: footguns blocked, $ saved, …
 ```
 
@@ -121,9 +122,9 @@ if you just installed). Then, in any repo:
 ```bash
 compass onboard             # detect stack → install deps → build+test green → grounded CLAUDE.md → codebase map
 ```
-Or `/onboard` inside a Claude session. The `compass` CLI also has `spend` (cost dashboard +
-budget), `impact` (benefit dashboard), `schedule` (local cron routines), and `route` (model
-tier). Run `compass help`.
+Or `/onboard` inside a Claude session. The full `compass` CLI: `status` (is it enabled here?),
+`onboard` (+ `--all <glob>` for many repos), `impact` (benefit dashboard), `spend` (cost +
+budget), `schedule` (local cron routines), `route` (model tier). Run `compass help` for the list.
 
 ---
 
