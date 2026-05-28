@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}    # no checkout in this job, so gh needs the repo explicitly
       PR: ${{ github.event.issue.number }}
       BODY: ${{ github.event.comment.body }}
       AUTO_MERGE: ${{ vars.SDLC_AUTO_MERGE }}
