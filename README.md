@@ -323,6 +323,11 @@ A pipeline of **named, governed agents** — Planner · Builder · Reviewer · *
   <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
 </p>
 
+<p align="center">
+  <img src="assets/loop.gif" alt="The autonomous loop on a real PR (#4): Reviewer flags Sub as Blocking + QA red → sdlc-fix Builder pushes fix commit 737d589 → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="760">
+</p>
+<p align="center"><sub>↑ a real run (PR #4): Reviewer flagged the bug → Builder pushed fix <code>737d589</code> → re-review green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it</a>)</sub></p>
+
 <br>
 
 <details><summary><b>Same loop as a text diagram (Mermaid)</b></summary>
