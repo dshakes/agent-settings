@@ -38,7 +38,7 @@ You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Curs
 - **Every agent, one config.** Claude Code, Codex, and Gemini — plus Cursor/Windsurf via the open `AGENTS.md` standard — follow the same senior-engineer playbook in *every* repo: understand first, stay in scope, verify before "done."
 - **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, `curl | sh`, and force-push to `main`; auto-formats every edit — silently, before anything runs.
 - **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
-- **It brings a crew.** 9 specialist subagents and 11 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model.
+- **It brings a crew.** 9 specialist subagents and 12 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model.
 - **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge gate. Turn on as little or as much as you want; nothing you don't enable ever runs.
 - **It sets you up, and proves it.** `compass onboard` makes you productive in a new repo in minutes; `compass impact` shows what it saved you (footguns blocked, `$` saved) — and the status line shows it working live.
 
@@ -108,7 +108,7 @@ Open a new shell (or `source` your rc) and the **`compass`** command is availabl
 <br>
 
 <p align="center">
-  <img src="demo/preview.gif" alt="Terminal demo: compass blocks 'rm -rf /' (red) while 'rm -rf ./build' is allowed (green), shows the cost-aware status line, then the autonomous PR loop — review · security · tests · Codex audit → BLOCKING auto-fixes on the branch and re-reviews → CLEAN → you merge — plus the 9-subagent / 11-command crew." width="760">
+  <img src="demo/preview.gif" alt="Terminal demo: compass blocks 'rm -rf /' (red) while 'rm -rf ./build' is allowed (green), shows the cost-aware status line, then the autonomous PR loop — review · security · tests · Codex audit → BLOCKING auto-fixes on the branch and re-reviews → CLEAN → you merge — plus the 9-subagent / 12-command crew." width="760">
 </p>
 
 <p align="center"><sub>Guardrails · cost-aware status line · the self-fixing PR loop · the crew — in ~25s. (<a href="demo/preview.gif">open full size</a>)</sub></p>
@@ -117,7 +117,7 @@ Open a new shell (or `source` your rc) and the **`compass`** command is availabl
 
 After `make install`, a normal session — nothing extra to invoke:
 
-1. **Open any repo.** Manual, guardrails, 9 subagents, 11 commands, and the cost-aware status line are already loaded.
+1. **Open any repo.** Manual, guardrails, 9 subagents, 12 commands, and the cost-aware status line are already loaded.
 2. **Ask for a change.** Claude plans, implements, and sends the test run to a cheap Haiku subagent — Opus stays for the hard parts. Every edit is auto-formatted.
 3. **Dangerous command?** `rm -rf $HOME`, a secret write, force-push to `main` → **blocked before it runs**. `rm -rf ./build` sails through.
 4. **`/ship`, then open the PR.** The [Autonomous SDLC](#autonomous-sdlc) reviews, security-checks, tests, and cross-audits — and **fixes its own Blocking findings** on the branch until green. You merge.
@@ -301,7 +301,7 @@ Commit a project `.claude/settings.json` so everyone who opens the repo gets the
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.7.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.8.0" } }
   },
   "enabledPlugins": { "core@compass": true }
 }

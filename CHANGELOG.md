@@ -5,23 +5,62 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
-### Added
-- **LLM/IDE-agnostic single source** — `./install.sh --gemini` feeds the same operating manual
-  to Gemini CLI (`~/.gemini/GEMINI.md`). Per-repo `AGENTS.md` (the Linux Foundation Agentic-AI
-  standard) is already read natively by Cursor, Windsurf, Copilot, Codex, Amp, Devin. New guide
-  `docs/12-every-agent.md` (verified + sourced) + README "Cross-tool" broadened.
-- **`SDLC_LITE=1`** for `orchestrate.sh` — fast/cheap governed run: skips the Codex cross-audit
-  and opus security pass, keeps Plan → Build → Review → QA → PR with the human merge gate.
-- **Roadmap Phase 4** (`docs/10-roadmap.md`) — cross-vendor (Gemini/IDE/MCP), cost+latency SDLC
-  (diff-size-gated models, dep caching, test-impact selection), and more governance/testing
-  (SBOM/dep-audit, coverage gate), each grounded in a real primitive with a maturity tag.
-- **Bring-your-own-model (Codex side)** — `codex/config.toml` ships opt-in, inert providers:
-  `--profile local` (Ollama/LM Studio, free + private) and `--profile router` (OpenRouter,
-  cost-route across models). Default tiers unchanged. Honest limit: Claude Code core runs
-  Claude/Bedrock/Vertex. Documented in `docs/02-cost-and-models.md`.
-- **Spend pre-estimate + post-run analysis** — `orchestrate.sh` prints the budget ceiling up
-  front and (with `jq`) tallies each step's real `total_cost_usd` into `costs.tsv` + a PR
-  "Spend" line. Architecture diagram in the README updated to show the multi-agent + model-routing reality.
+## [0.8.0] — 2026-05-27
+
+### Added — the `compass` CLI (local engineering tools)
+- **`compass` CLI**, baked into `make install` (symlinked to `~/.local/bin`, on PATH; `--no-cli` to skip):
+  - `compass status [dir]` — *is compass enabled here?* (global config + this repo's per-repo extras).
+  - `compass onboard [dir]` / `--all <glob>` — onboard into a repo: detect stack → install deps →
+    build+test green → grounded `CLAUDE.md` → codebase map. `--all` does many (lists, estimates cost,
+    confirms, per-repo budget cap, skips already-onboarded). Also a `/onboard` slash command.
+  - `compass impact` — *how is compass benefiting me*: footguns blocked · files auto-formatted ·
+    spend by model · estimated `$` saved vs running everything on Opus.
+  - `compass spend` — aggregate agent cost by model/repo + budget (`COMPASS_BUDGET_USD`).
+  - `compass schedule add|list|remove|run <routine>` — local scheduled routines via cron + `claude -p`.
+  - `compass route "<task>"` — cheapest-correct model tier; wired into `orchestrate.sh` behind the
+    opt-in, **experimental** `SDLC_AUTOROUTE=1` (off by default — no evals yet).
+- **Efficacy observability** — guardrail blocks + auto-formats log best-effort to
+  `~/.compass/metrics.tsv`; `orchestrate.sh` logs per-step cost to `~/.compass/spend.tsv`; the status line
+  gains a `🧭 🛡N 🧹N` activity segment (footguns blocked / files formatted today). All local, opt-in.
+
+### Added — autonomous SDLC: zero-touch intake + human-in-the-loop
+- **Zero-touch intake** (`sdlc-implement-on-label.yml`) — a maintainer labels an issue `agent:build` →
+  the Implementer writes the change and opens a PR (which Closes the issue) → the review loop runs.
+  Hard-gated: maintainer-applied label + a labeler write-permission re-check; the issue body is passed
+  as data (a file), never inlined into the prompt.
+- **Human-in-the-loop control** (`sdlc-control.yml`) — steer the loop from a PR comment: `/revise <note>`
+  (re-enter the fix loop with your guidance), `/hold` · `/resume`, `/approve`; a sticky status panel shows
+  loop state + the available moves. The auto-fix loop now respects `sdlc:hold`.
+
+### Added — from the prior cycle
+- **LLM/IDE-agnostic single source** — `./install.sh --gemini` feeds the same manual to Gemini CLI;
+  per-repo `AGENTS.md` (Linux Foundation standard) is read by Cursor/Windsurf/Copilot/Codex/Amp/Devin.
+  Guide `docs/12-every-agent.md`.
+- **`SDLC_LITE=1`** for `orchestrate.sh` — fast/cheap governed run (skips Codex audit + opus security).
+- **Bring-your-own-model (Codex side)** — opt-in `--profile local` (Ollama) / `--profile router` (OpenRouter).
+- **Spend pre-estimate + post-run analysis** in `orchestrate.sh`. **Roadmap Phase 4** (`docs/10-roadmap.md`).
+
+### Changed
+- `make install` installs the `compass` CLI on PATH; `make uninstall` + `make doctor` cover it.
+- Diagrams updated: `assets/sdlc-loop.svg` (intake + HITL + per-box 🤖/👤 glyphs + legend),
+  `assets/hero.svg` (adds Gemini + the CLI; corrected to 9 subagents · 12 commands), and the README
+  "How it fits together" Mermaid (compass CLI + observability path).
+
+### Fixed (each caught by live testing, not static checks)
+- `sdlc-control` failed without `GH_REPO` — the job has no checkout, so `gh` couldn't resolve the repo.
+- `schedule remove` left a stray blank line in the crontab — now `crontab -r` when nothing remains.
+- `orchestrate.sh` QA didn't detect root-level `pytest` — broadened detection + `python3 -m pytest` fallback.
+- `compass spend` crashed on shell values interpolated into an awk program — rewritten as a single awk pass.
+- `compass onboard` missed Python repos (`requirements*.txt`/`*.py`) and used a stale model id.
+- `sdlc-implement-on-label` had a misleading `branch_prefix` (claude-code-action names the branch itself) — removed.
+
+### Validation
+- **Cloud SDLC live-validated end-to-end** on a real private repo (Claude GitHub App + real secrets):
+  buggy PR → review BLOCKING + `agent:needs-fix` → Builder auto-fix (PAT chaining) → re-review CLEAN;
+  zero-touch intake (issue `agent:build` → Implementer PR → review clean); HITL `/revise` → Builder
+  addressed → re-review clean; the human merge gate (`enforce_admins` strict) held throughout.
+- **`scripts/test-cli.sh`** — 17 fixture tests for `route`/`spend`/`impact` + the metric logger, in CI;
+  `bin/compass` added to the shellcheck gate.
 
 ## [0.7.0] — 2026-05-25
 
@@ -222,6 +261,8 @@ First public release.
 - **Idempotent installer** with backups, `make doctor` validation, and `uninstall`.
 - **CI** — validates JSON, frontmatter, plugin sync, and shellcheck on every push.
 
+[0.8.0]: https://github.com/dshakes/compass/releases/tag/v0.8.0
+[0.7.0]: https://github.com/dshakes/compass/releases/tag/v0.7.0
 [0.6.1]: https://github.com/dshakes/compass/releases/tag/v0.6.1
 [0.6.0]: https://github.com/dshakes/compass/releases/tag/v0.6.0
 [0.5.0]: https://github.com/dshakes/compass/releases/tag/v0.5.0

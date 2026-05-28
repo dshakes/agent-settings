@@ -44,7 +44,7 @@ the why, and troubleshooting: [`09-sdlc.md`](09-sdlc.md). **Newest piece — tre
 - **Cloud PR automation** (the closed review⇄fix loop) needs the GitHub App + a
   `SDLC_BOT_TOKEN` PAT, or a self-hosted runner for the keyless path — see
   [`09-sdlc.md`](09-sdlc.md). The local pipeline above needs neither.
-- **Pin a release** (e.g. `v0.7.0`), not `main`, for stability.
+- **Pin a release** (e.g. `v0.8.0`), not `main`, for stability.
 - It's safe to uninstall: `make uninstall` removes only what it added (backups in `~/.claude/backups/`).
 
 ## Please report

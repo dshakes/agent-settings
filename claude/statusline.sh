@@ -2,7 +2,9 @@
 # statusline.sh — a dense, glanceable status line.
 #
 # Reads the statusline JSON on stdin and prints one line:
-#   <model> · <dir> · <git branch +dirty> · <ctx%> · <session cost>
+#   <model> · <dir> · <git branch +dirty> · <ctx%> · <session cost> · 🧭 <compass today>
+# The 🧭 segment shows today's compass activity — 🛡N footguns blocked, 🧹N files auto-formatted
+# (from ~/.compass/metrics.tsv). Omitted when there's nothing to show. Full benefit view: `compass impact`.
 #
 # Degrades gracefully: any missing field is simply omitted. No hard deps
 # beyond a JSON reader (jq preferred, python3 fallback).
@@ -85,8 +87,8 @@ if [ -f "$mfile" ]; then
   counts="$(awk -F'\t' -v d="$today" 'index($1,d)==1{if($2=="block")b++;else if($2=="format")f++} END{printf "%d\t%d",b+0,f+0}' "$mfile" 2>/dev/null)"
   blk="${counts%%	*}"; fmtn="${counts##*	}"
   seg=""
-  [ "${blk:-0}" -gt 0 ] 2>/dev/null && seg="${C_DIRTY}⛊${blk}${C_RST}"
-  [ "${fmtn:-0}" -gt 0 ] 2>/dev/null && seg="${seg:+$seg }${C_GIT}⌗${fmtn}${C_RST}"
+  [ "${blk:-0}" -gt 0 ] 2>/dev/null && seg="🛡${blk}"
+  [ "${fmtn:-0}" -gt 0 ] 2>/dev/null && seg="${seg:+$seg }🧹${fmtn}"
   [ -n "$seg" ] && compass_seg="${C_MODEL}🧭${C_RST} ${seg}"
 fi
 
