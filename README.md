@@ -22,7 +22,7 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 </p>
 
 <p align="center">
-  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
+  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="#the-autonomous-fleet">🛰️ the autonomous fleet</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
 </p>
 
 ---
@@ -32,6 +32,8 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 ### ⭐ The part people screenshot: it fixes its own PRs.
 
 Open a pull request and compass **reviews it, security-checks it, runs the tests, cross-audits it with a second model — then pushes its own fixes until it's green.** You just merge. *(Try it locally in 30 seconds, no tokens — [watch the loop ↓](#autonomous-sdlc).)*
+
+**…then it scales past one PR.** Turn on [**the autonomous fleet ↓**](#the-autonomous-fleet) and scheduled, governed agents keep **all your repos** patched, tested, and de-flaked — each fix forced through a test gate, rolled up to one panel you steer from your **phone**. You still own the merge.
 
 </div>
 
@@ -78,7 +80,7 @@ Everything above is on after a single install. Here's what's in the box, each li
 
 - ⭐ **It runs your PRs — and fixes its own review comments.** The headline: an optional [autonomous pipeline](#autonomous-sdlc) reviews, security-checks, tests, and cross-audits every change, then pushes its *own* fixes until it's green. You just merge. (Try it locally in 30 seconds, no tokens.) [→](#autonomous-sdlc)
 - ✅ **A senior crew on call.** 9 cost-tiered specialist subagents, 12 slash-commands, and 3 parallel "dynamic workflows" that review and audit in parallel and fact-check each other. [→](#the-crew-9-subagents-12-commands-3-workflows)
-- ✅ **A fleet that runs your repos — from your phone.** Scheduled, governed agents scan, security-fix, and test across *all* your repos; watch and approve from **GitHub Mobile, Slack/Telegram, or iMessage/WhatsApp**. You still merge. [→](#the-autonomous-fleet)
+- 🛰️ **A fleet that runs your repos — from your phone.** The second headline: scheduled, governed agents scan, security-fix, and test across *all* your repos, each fix forced through a test gate; watch and approve from **GitHub Mobile, Slack/Telegram, or iMessage/WhatsApp**. You still merge. [→](#the-autonomous-fleet)
 - ✅ **Every agent, one source.** Claude Code, Codex, Gemini — plus Cursor / Windsurf / Copilot via the open [`AGENTS.md`](https://agents.md/) standard — read the *same* playbook. Switch or mix vendors without rewriting a thing. [→](#connected-and-extensible)
 - ✅ **Guardrails that stay out of your way.** 4 hooks block disasters, format edits, and orient the agent — silently. [→](#guardrails-and-automation)
 - ✅ **It onboards you and proves its value.** `compass onboard` gets you productive in a new repo in minutes; `compass impact` shows what it saved. [→](#the-compass-cli)
