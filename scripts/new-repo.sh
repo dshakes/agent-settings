@@ -29,8 +29,11 @@ else
 fi
 
 # 2) AGENTS.md -> CLAUDE.md symlink (one source for Claude + Codex + others).
-if [ ! -e AGENTS.md ]; then ln -s CLAUDE.md AGENTS.md && echo "linked AGENTS.md -> CLAUDE.md"
-else echo "AGENTS.md exists — left as-is"; fi
+# Test -L too: a DANGLING symlink fails -e (target missing), so the old check would
+# try `ln -s` over it, hit "File exists", and abort under set -e. Treat any existing
+# path or symlink as present and leave it untouched.
+if [ -L AGENTS.md ] || [ -e AGENTS.md ]; then echo "AGENTS.md exists — left as-is"
+else ln -s CLAUDE.md AGENTS.md && echo "linked AGENTS.md -> CLAUDE.md"; fi
 
 # 3) Optional team plugin pin (committed project settings).
 if [ "$TEAM" = 1 ]; then

@@ -58,7 +58,7 @@ else
   done
   block+="$MARK_END"$'\n'
   if [ "$added" -gt 0 ]; then
-    if [ "$DRY" = 1 ]; then echo "  [dry-run] append $added server(s) to $CODEX"; else printf '\n%s\n' "$block" >>"$CODEX"; say "appended $added server(s) to ~/.codex/config.toml"; fi
+    if [ "$DRY" = 1 ]; then echo "  [dry-run] append $added server(s) to $CODEX"; else mkdir -p "$(dirname "$CODEX")"; printf '\n%s\n' "$block" >>"$CODEX"; say "appended $added server(s) to ~/.codex/config.toml"; fi
   fi
 fi
 

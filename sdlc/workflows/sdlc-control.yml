@@ -25,13 +25,12 @@ concurrency:
 
 jobs:
   control:
-    # PR comments only, from a maintainer, that start with a slash-command.
+    # PR comments that start with a slash-command. Write-permission is enforced by the
+    # Authorize step below, NOT here — author_association can't tell a maintainer from a
+    # read/triage collaborator (both report COLLABORATOR).
     if: |
       github.event.issue.pull_request != null &&
-      startsWith(github.event.comment.body, '/') &&
-      (github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR')
+      startsWith(github.event.comment.body, '/')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
@@ -40,6 +39,17 @@ jobs:
       BODY: ${{ github.event.comment.body }}
       AUTO_MERGE: ${{ vars.SDLC_AUTO_MERGE }}
     steps:
+      - name: Authorize — require repo WRITE permission (maintainers only)
+        env:
+          SENDER: ${{ github.event.comment.user.login }}
+        run: |
+          set -uo pipefail
+          perm="$(gh api "repos/$GH_REPO/collaborators/$SENDER/permission" --jq '.permission' 2>/dev/null || echo none)"
+          echo "commenter=$SENDER permission=$perm"
+          case "$perm" in
+            admin|maintain|write) echo "authorized" ;;
+            *) echo "::error::@$SENDER lacks write access — control commands are maintainers-only"; exit 1 ;;
+          esac
       - name: Handle command
         run: |
           set -uo pipefail

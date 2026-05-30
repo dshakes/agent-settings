@@ -122,14 +122,24 @@ def search(
     *,
     trust_env=None,
 ):
-    """Return learnings matching query, scoped to repos the caller may READ (tier != deny)."""
+    """Return learnings matching query, scoped to repos the caller may READ (tier != deny).
+
+    The trust/repo filter is applied to each candidate row BEFORE the limit is counted:
+    we stream rows newest-first and stop once `limit` *readable* ones are collected.
+    Applying SQL LIMIT first (the old behaviour) let deny-tier rows consume the budget
+    and silently starve out authorized results.
+    """
     pattern = f"%{_like_escape(query or '')}%"
-    rows = conn.execute(
-        "SELECT text, repo, tags, ts FROM mem WHERE text LIKE ? ESCAPE '\\' ORDER BY ts DESC LIMIT ?",
-        (pattern, max(1, min(limit, 100))),
-    ).fetchall()
-    return [
-        {"text": t, "repo": r, "tags": g, "ts": ts}
-        for (t, r, g, ts) in rows
-        if trust_tier(r, trust_env) != "deny" and (not repo or r == repo)
-    ]
+    cap = max(1, min(limit, 100))
+    out = []
+    cur = conn.execute(
+        "SELECT text, repo, tags, ts FROM mem WHERE text LIKE ? ESCAPE '\\' ORDER BY ts DESC",
+        (pattern,),
+    )
+    for t, r, g, ts in cur:
+        if trust_tier(r, trust_env) == "deny" or (repo and r != repo):
+            continue
+        out.append({"text": t, "repo": r, "tags": g, "ts": ts})
+        if len(out) >= cap:
+            break
+    return out

@@ -117,5 +117,23 @@ check(
 # M2 — LIKE wildcard is escaped (literal %, not match-all)
 check("wildcard query is literal", store.search(conn, "%", trust_env=TRUST), [])
 
+# Trust filter is applied BEFORE the limit: newer deny-tier rows must not starve out
+# older readable ones (regression — old code applied SQL LIMIT first).
+c2 = store.connect(":memory:")
+for i in range(3):  # readable, older
+    c2.execute(
+        "INSERT INTO mem(text,repo,tags,ts) VALUES('widget note', 'lantern', '', ?)",
+        (float(i),),
+    )
+for i in range(5):  # deny-tier, NEWER (would win ORDER BY ts DESC + LIMIT)
+    c2.execute(
+        "INSERT INTO mem(text,repo,tags,ts) VALUES('widget note', 'evil', '', ?)",
+        (float(10 + i),),
+    )
+c2.commit()
+res = store.search(c2, "widget", limit=3, trust_env=TRUST)
+check("limit counts readable rows only", len(res), 3)
+check("no deny rows leak past the limit", [h for h in res if h["repo"] == "evil"], [])
+
 print(f"\nstore tests: {P} passed, {F} failed")
 sys.exit(0 if F == 0 else 1)

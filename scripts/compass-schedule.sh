@@ -257,16 +257,24 @@ cmd_run() {
 
   local ts; ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-  # Run claude and capture JSON output.
-  local out
+  # Run claude — BOUNDED. This is unattended on a cron, so cap turns + budget and
+  # wrap in `timeout`; a runaway/hung routine must not spin unbounded cost or wall-clock.
+  # Capture the exit code (|| rc=...) so a failure/cap still logs partial spend below
+  # instead of aborting under set -e.
+  local maxturns="${COMPASS_ROUTINE_MAX_TURNS:-30}" budget="${COMPASS_ROUTINE_BUDGET:-1.00}"
+  local tmo="${COMPASS_ROUTINE_TIMEOUT:-30m}" rc=0 out
   out="$(
     cd "$dir" || exit 1
-    claude -p "$(cat "$pf")" \
+    if command -v timeout >/dev/null 2>&1; then to() { timeout "$tmo" "$@"; }; else to() { "$@"; }; fi
+    to claude -p "$(cat "$pf")" \
       --model sonnet \
       --permission-mode acceptEdits \
+      --max-turns "$maxturns" \
+      --max-budget-usd "$budget" \
       --output-format json \
       --allowedTools "$ALLOWED_TOOLS"
-  )"
+  )" || rc=$?
+  [ "$rc" -ne 0 ] && printf 'compass-schedule: claude exited %s (turn/budget cap, timeout, or error) — recording partial spend\n' "$rc" >&2
 
   # Parse cost from JSON output (jq preferred, python3 fallback, else 0).
   local cost_usd="0"
