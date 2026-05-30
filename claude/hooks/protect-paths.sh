@@ -40,6 +40,11 @@ esac
 # --- Bash: block catastrophic / hard-to-reverse commands -------------------
 if [ "$TOOL" = "Bash" ]; then
   CMD="$(json_get "$INPUT" '.tool_input.command')"
+  # Fail safe: only when NEITHER jq NOR python3 exists can json_get's grep fallback
+  # truncate the command at an escaped quote (hiding a footgun after it). In that rare
+  # case, also fold in the raw payload so the danger checks see the whole string —
+  # erring toward a block (the safe direction), never toward a silent allow.
+  if ! have jq && ! have python3; then CMD="$CMD $INPUT"; fi
   norm="$(printf '%s' "$CMD" | tr -s ' ')"
 
   # Recursive force-delete of root or home — but NOT of subpaths like /tmp/x,

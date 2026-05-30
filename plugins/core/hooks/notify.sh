@@ -21,7 +21,14 @@ case "$EVENT" in
 esac
 
 if have osascript; then
-  osascript -e "display notification \"${msg//\"/}\" with title \"${title//\"/}\" sound name \"Glass\"" >/dev/null 2>&1 || true
+  # Pass the strings as argv to `on run {m,t}` — never interpolate untrusted text
+  # (.message / repo-path basename) into the AppleScript SOURCE, where a stray quote
+  # or trailing backslash could break out into arbitrary AppleScript/shell.
+  osascript /dev/stdin "$msg" "$title" >/dev/null 2>&1 <<'OSA' || true
+on run {m, t}
+  display notification m with title t sound name "Glass"
+end run
+OSA
 elif have notify-send; then
   notify-send "$title" "$msg" >/dev/null 2>&1 || true
 fi

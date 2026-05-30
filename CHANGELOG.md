@@ -5,6 +5,31 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Fixed — self-audit (`/compass-audit` run on the repo, findings triaged + verified)
+- **Security · `notify.sh` AppleScript injection** — untrusted `.message`/repo-path text was
+  interpolated into the `osascript -e` source (a trailing `\` or `"` could break out into
+  arbitrary AppleScript/shell). Now passed as **argv** to `on run {m,t}`. Injection test added.
+- **Cost-safety · unattended cron `claude -p`** (`compass-schedule.sh`) — the scheduled routine
+  ran with **no turn/budget cap or timeout**. Now bounded by `--max-turns`/`--max-budget-usd`
+  (env-overridable) + `timeout`, and a failure/cap no longer aborts before spend is logged.
+- **GitHub Actions authz** — `sdlc-control.yml`, `sdlc-implement.yml` (hosted + self-hosted)
+  gated privileged actions on `author_association`, which can't distinguish a maintainer from a
+  read/triage collaborator. Replaced with a real **`gh api …/collaborators/{user}/permission`**
+  check (admin|maintain|write), mirroring `sdlc-implement-on-label.yml`. Added the **fork guard**
+  the self-hosted implement workflow's own header promised (refuses cross-repo PR code on the runner).
+- **`store.py` (compass-memory)** — `search()` applied the SQL `LIMIT` before the trust-tier
+  filter, so newer deny-tier rows could starve out readable ones. Now filters per-row, stopping
+  at `limit` **readable** results. Regression test added.
+- **`orchestrate.sh`** — a red QA suite still opened a normal PR; now opens a **draft** with a
+  CAUTION banner. Swallowed step/commit failures (`|| true`, empty output) are now surfaced.
+- **`compass-audit.js`** — title-based dedup let rephrasings through, so the loop never converged
+  (burned every round). Now dedups on file + normalized-title and feeds finders the seen-list.
+  **`compass-plan.js`** — guards the all-agents-failed case instead of an opaque `TypeError`.
+- **Robustness** — `sync-plugin.sh` (`--check` now catches hooks deleted from source; temp-dir
+  leak removed), `new-repo.sh` (dangling `AGENTS.md` symlink no longer aborts), `setup-mcp.sh`
+  (`mkdir -p ~/.codex`), `protect-paths.sh` (raw-payload fail-safe when no JSON parser is present).
+- CLI tests 24→36; memory tests 20→22. All gates green.
+
 ### Added — dynamic workflows (parallel, adversarially-verified subagent orchestration)
 - **Three workflow commands** in `claude/workflows/` (Claude Code's new dynamic-workflows
   primitive, research preview, `v2.1.154+`) — each routes stages to compass's **own

@@ -85,6 +85,7 @@ printf '%sT10:00:00Z\tblock\tr\trm\n%sT10:01:00Z\tformat\tr\tgo\n%sT10:02:00Z\tp
 printf '%sT10:00:00Z\tr\tt\tsonnet\t0.20\n%sT10:01:00Z\tr\tt\thaiku\t0.05\n' "$TODAY" "$TODAY" > "$TMP/spend.tsv"
 SL="$(printf '{"model":{"display_name":"Opus 4.8"},"workspace":{"current_dir":"%s"}}' "$ROOT" | bash "$ROOT/claude/statusline.sh")"
 has "footgun + policy segments" "$SL" "🛡1"
+has "format segment (middle column of the 3-way split)" "$SL" "🧹1"
 has "policy nudge segment"      "$SL" "💡1"
 has "live \$-saved today (.20*4 + .05*17 = 1.65)" "$SL" '$1.65'
 # 📉 must be ABSENT when there's no spend ledger (guards the threshold/empty path).
@@ -104,6 +105,33 @@ echo "quickstart — non-interactive dry-run is side-effect-free:"
 QS="$("$ROOT/quickstart.sh" --dry-run --yes 2>&1)"; QSRC=$?
 eq  "quickstart --dry-run --yes exit 0" "$QSRC" 0
 has "quickstart reaches the on-ramp"    "$QS" "next 60 seconds"
+
+echo "notify.sh — no command injection via untrusted notification text:"
+rm -f "$TMP/pwned"
+printf '{"hook_event_name":"Notification","cwd":"%s","message":"%s"}' "$ROOT" 'x\" ) \ndo shell script \"touch '"$TMP"'/pwned\" \n--' | bash "$ROOT/claude/hooks/notify.sh"; NRC=$?
+eq  "notify exits 0 on hostile input" "$NRC" 0
+if [ -f "$TMP/pwned" ]; then no "notify.sh executed injected payload"; else ok "no injection executed"; fi
+if grep -q 'osascript /dev/stdin' "$ROOT/claude/hooks/notify.sh"; then ok "uses osascript argv form"; else no "notify.sh regressed to -e string interpolation"; fi
+
+echo "compass-schedule — unattended cron run is bounded:"
+if grep -q -- '--max-turns' "$ROOT/scripts/compass-schedule.sh" && grep -q -- '--max-budget-usd' "$ROOT/scripts/compass-schedule.sh"; then
+  ok "cron claude -p has turn + budget caps"; else no "cron claude -p is missing turn/budget caps"; fi
+
+echo "new-repo — a dangling AGENTS.md symlink does not abort (set -e):"
+if command -v git >/dev/null 2>&1; then
+  NR="$(mktemp -d)"
+  ( cd "$NR" && git init -q && : > CLAUDE.md && ln -s CLAUDE.md AGENTS.md && rm CLAUDE.md )  # AGENTS.md now dangles
+  if "$ROOT/scripts/new-repo.sh" "$NR" >/dev/null 2>&1; then ok "new-repo exits 0 with a dangling AGENTS.md"; else no "new-repo aborted on a dangling symlink"; fi
+  [ -L "$NR/AGENTS.md" ] && ok "dangling AGENTS.md left as-is (not clobbered)" || no "AGENTS.md not preserved"
+  rm -rf "$NR"
+else no "git unavailable — cannot test new-repo"; fi
+
+echo "sync-plugin — --check flags a hook deleted from source:"
+STRAY="$ROOT/plugins/core/hooks/_audittest_stale.sh"
+cp "$ROOT/claude/hooks/notify.sh" "$STRAY"
+if "$ROOT/scripts/sync-plugin.sh" --check >/dev/null 2>&1; then no "stale plugin hook not detected"; else ok "stale plugin hook (deleted from source) flagged"; fi
+rm -f "$STRAY"
+if "$ROOT/scripts/sync-plugin.sh" --check >/dev/null 2>&1; then ok "back in sync after cleanup"; else no "sync-plugin --check still dirty after cleanup"; fi
 
 echo
 printf 'cli tests: %d passed, %d failed\n' "$pass" "$fail"

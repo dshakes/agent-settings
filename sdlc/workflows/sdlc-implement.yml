@@ -17,15 +17,25 @@ permissions:
 
 jobs:
   implement:
-    # Only act on an explicit @claude from someone with repo write access.
-    # (claude-code-action additionally verifies author association.)
-    if: |
-      contains(github.event.comment.body, '@claude') &&
-      (github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR')
+    # Act on an explicit @claude. Write-permission is enforced by the Authorize step
+    # below — author_association (COLLABORATOR) does NOT distinguish a maintainer from a
+    # read/triage collaborator, so it must not be the gate for a code-writing agent.
+    if: contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
     steps:
+      - name: Authorize — require repo WRITE permission
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          SENDER: ${{ github.event.comment.user.login }}
+        run: |
+          set -uo pipefail
+          perm="$(gh api "repos/$GH_REPO/collaborators/$SENDER/permission" --jq '.permission' 2>/dev/null || echo none)"
+          echo "commenter=$SENDER permission=$perm"
+          case "$perm" in
+            admin|maintain|write) echo "authorized" ;;
+            *) echo "::error::@$SENDER lacks write access — @claude implement is maintainers-only"; exit 1 ;;
+          esac
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0

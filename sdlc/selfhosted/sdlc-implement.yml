@@ -7,8 +7,8 @@
 #                 the Reviewer (sdlc-review.yml) — closing the loop.
 #   Issue comment → creates a new `claude/issue-N` branch + opens a PR (existing behaviour).
 #
-# Only fires for trusted commenters (OWNER/MEMBER/COLLABORATOR).
-# NEVER merges. See sdlc/selfhosted/README.md for security notes.
+# Only fires for commenters with repo WRITE access (verified via the GitHub API, not
+# author_association) and refuses fork PRs. NEVER merges. See sdlc/selfhosted/README.md.
 #
 # ⚠️  SECURITY — READ THIS:
 #   Self-hosted runners execute workflow code on YOUR machine. Use ONLY on PRIVATE repos
@@ -29,15 +29,25 @@ permissions:
 
 jobs:
   implement:
-    # Only act on an explicit @claude from someone with repo write access.
-    # For PR review comments, use the correct association field.
-    if: |
-      contains(github.event.comment.body, '@claude') &&
-      (github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR')
+    # Act on an explicit @claude. Self-hosted = code runs on YOUR machine, so authorization
+    # is enforced by the Authorize step (real write permission, not author_association) AND a
+    # fork guard below — both fail-closed before any untrusted code is fetched or run.
+    if: contains(github.event.comment.body, '@claude')
     runs-on: [self-hosted, compass]
     steps:
+      - name: Authorize — require repo WRITE permission
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          SENDER: ${{ github.event.comment.user.login }}
+        run: |
+          set -uo pipefail
+          perm="$(gh api "repos/$GH_REPO/collaborators/$SENDER/permission" --jq '.permission' 2>/dev/null || echo none)"
+          echo "commenter=$SENDER permission=$perm"
+          case "$perm" in
+            admin|maintain|write) echo "authorized" ;;
+            *) echo "::error::@$SENDER lacks write access — @claude implement is maintainers-only"; exit 1 ;;
+          esac
       - name: Determine context (PR or issue)
         id: ctx
         env:
@@ -52,6 +62,7 @@ jobs:
           is_pr_comment="false"
           pr_num=""
           pr_head_ref=""
+          is_fork="false"
           if [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
             is_pr_comment="true"
             pr_num="${PR_NUMBER}"
@@ -65,11 +76,22 @@ jobs:
               pr_head_ref="$(gh pr view "$pr_num" --json headRefName --jq '.headRefName')"
             fi
           fi
+          # Fork detection: a cross-repo PR head is untrusted code we must NOT check out
+          # and run on a self-hosted runner (arbitrary code execution).
+          if [ "$is_pr_comment" = "true" ] && [ -n "$pr_num" ]; then
+            is_fork="$(gh pr view "$pr_num" --json isCrossRepository --jq '.isCrossRepository' 2>/dev/null || echo true)"
+          fi
           {
             echo "is_pr_comment=$is_pr_comment"
             echo "pr_num=$pr_num"
             echo "pr_head_ref=$pr_head_ref"
+            echo "is_fork=$is_fork"
           } >> "$GITHUB_OUTPUT"
+      - name: Refuse fork PRs (self-hosted ACE guard)
+        if: steps.ctx.outputs.is_pr_comment == 'true' && steps.ctx.outputs.is_fork != 'false'
+        run: |
+          echo "::error::Refusing @claude on a fork PR — self-hosted runners must never check out or execute fork code."
+          exit 1
       - name: Checkout (PR mode — existing head branch)
         if: steps.ctx.outputs.is_pr_comment == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

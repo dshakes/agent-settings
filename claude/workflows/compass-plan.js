@@ -57,6 +57,9 @@ const scored = await pipeline(
 )
 
 const ranked = scored.filter(Boolean).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+// Every draft/judge agent can fail (or be skipped) — guard before dereferencing the
+// winner, or the workflow dies with an opaque TypeError instead of a clear message.
+if (!ranked.length) return { error: 'compass-plan: every draft/judge agent failed — no plan produced. Re-run, narrow the task, or check the model/tool allowlist.' }
 const winner = ranked[0]
 const grafts = ranked.slice(1).map(r => r.bestIdea).filter(Boolean)
 

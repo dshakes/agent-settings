@@ -52,27 +52,38 @@ const VOTE_SCHEMA = {
   },
 }
 
-const key = b => `${(b.file || '').toLowerCase()}::${(b.title || '').toLowerCase()}`
+// Dedup key collapses *rephrasings* of the same defect: file WITHOUT line number
+// (different finders cite slightly different lines) + the first 8 significant title
+// words. Keying on the full verbatim title (as before) let round-to-round rewordings
+// slip through as "fresh", which reset the dry counter and burned every round.
+const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 8).join(' ')
+const key = b => `${(b.file || '').split(':')[0].toLowerCase()}::${norm(b.title)}`
 
 const seen = new Set()
+const seenTitles = []   // human-readable list fed back to finders so they stop re-reporting
 const confirmed = []
 let dry = 0
 let round = 0
 
 while (dry < MAX_DRY && round < MAX_ROUNDS) {
   round++
+  // Tell finders what's already been found so they don't re-surface it under new
+  // wording (the thing that prevented convergence). Cap the list so the prompt stays small.
+  const already = seenTitles.length
+    ? `\n\nAlready found in earlier rounds — do NOT report these or trivial rewordings of them; only report genuinely NEW defects:\n- ${seenTitles.slice(-40).join('\n- ')}`
+    : ''
   // Barrier: collect this round's finders together so we can dedup against
   // everything seen so far before paying for confirmation.
   const found = (await parallel(FINDERS.map(f => () =>
     agent(
-      `Search ${PATH} for: ${f.hunt}. Read real code — grep for the risky patterns, then open the files. Report only defects you can point to a specific line for. Round ${round}; if you are confident the area is clean for your class, return an empty array.`,
+      `Search ${PATH} for: ${f.hunt}. Read real code — grep for the risky patterns, then open the files. Report only defects you can point to a specific line for. Round ${round}; if you are confident the area is clean for your class, return an empty array.${already}`,
       { label: `sweep:${f.key}#${round}`, phase: 'Sweep', schema: BUGS_SCHEMA },
     )))).filter(Boolean).flatMap(r => r.bugs || [])
 
   const fresh = found.filter(b => b.file && !seen.has(key(b)))
   if (!fresh.length) { dry++; log(`round ${round}: no new findings (dry ${dry}/${MAX_DRY})`); continue }
   dry = 0
-  fresh.forEach(b => seen.add(key(b)))
+  fresh.forEach(b => { seen.add(key(b)); seenTitles.push(`${b.title} (${(b.file || '').split(':')[0]})`) })
   log(`round ${round}: ${fresh.length} fresh findings → 3-lens confirmation`)
 
   // Perspective-diverse confirmation: three lenses, not three clones. A finding
