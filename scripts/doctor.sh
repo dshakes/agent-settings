@@ -55,6 +55,16 @@ if [ -d "$REPO"/claude/workflows ]; then
   else fail "workflow scripts invalid — run: scripts/check-workflows.sh"; fi
 fi
 
+# Fleet / mobile: notify smoke + the listener's command parser.
+if printf '%s' "$(COMPASS_NOTIFY_SLACK='https://hooks.test/x' "$REPO"/scripts/compass-notify.sh --dry-run 'doctor smoke' 2>&1)" | grep -q 'slack: POST'; then
+  pass "compass notify dry-run works (channel-agnostic)"
+else fail "compass notify smoke failed"; fi
+if command -v node >/dev/null 2>&1; then
+  if node --check "$REPO"/scripts/compass-listen.mjs 2>/dev/null && node "$REPO"/scripts/test-listen.mjs >/dev/null 2>&1; then
+    pass "compass listen valid + command parser passes"
+  else fail "compass listen invalid or parser test failed"; fi
+else note "node not installed — skipping listener checks"; fi
+
 # Installed symlinks
 echo "Installed state (~/.claude):"
 for n in settings.json CLAUDE.md statusline.sh agents commands skills workflows hooks output-styles; do

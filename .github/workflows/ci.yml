@@ -35,10 +35,14 @@ jobs:
           SHELLCHECK_OPTS: --severity=error   # match the repo's error-level gate
         run: |
           "$(go env GOPATH)/bin/actionlint" \
-            .github/workflows/*.yml sdlc/workflows/*.yml sdlc/selfhosted/*.yml
+            .github/workflows/*.yml sdlc/workflows/*.yml sdlc/selfhosted/*.yml \
+            sdlc/routines/*.yml sdlc/fleet/*.yml
 
-      - name: compass CLI tests (route · spend · impact · metric logger)
+      - name: compass CLI tests (route · spend · impact · notify · listen parser)
         run: bash scripts/test-cli.sh
+
+      - name: Listener command parser (compass listen)
+        run: node scripts/test-listen.mjs
 
       - name: Workflow scripts (shape + JS syntax)
         run: bash scripts/check-workflows.sh

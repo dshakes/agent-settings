@@ -23,6 +23,7 @@
 // (Node 22 built-in fetch + WebSocket — zero npm dependencies.)
 
 import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_REPO = process.env.COMPASS_FLEET_REPO || "";
 const PREFIX = process.env.COMPASS_CMD_PREFIX || "/";
@@ -37,7 +38,7 @@ const gh = (args) => new Promise((res) =>
   execFile("gh", args, { timeout: 30000, maxBuffer: 1 << 20 }, (e, out, err) =>
     res({ ok: !e, out: (out || "").trim(), err: (err || "").trim() })));
 
-function parseRepoAndNum(args) {
+export function parseRepoAndNum(args) {
   let repo = DEFAULT_REPO, num = "";
   for (const a of args) {
     if (/^#?\d+$/.test(a)) num = a.replace(/^#/, "");
@@ -46,44 +47,57 @@ function parseRepoAndNum(args) {
   return { repo, num };
 }
 
-// Shared command handler. `reply(text)` is the transport-specific responder.
-async function handle(text, reply) {
+// PURE: map a DM line to an intent (no side effects, no gh, no network) — so it's unit-testable.
+//   {kind:"ignore"}                          not a command / unknown → do nothing
+//   {kind:"reply", text}                     a usage/help/error message
+//   {kind:"status", repo}                    fetch + format open PRs for repo
+//   {kind:"gh", gh:[...argv], ok}            run `gh <argv>`; reply ok on success
+export function plan(text) {
   const body = String(text || "").trim();
-  if (!body.startsWith(PREFIX)) return;                          // not a command
+  if (!body.startsWith(PREFIX)) return { kind: "ignore" };
   const [rawCmd, ...args] = body.slice(PREFIX.length).trim().split(/\s+/);
   const cmd = (rawCmd || "").toLowerCase().replace(/@\w+$/, ""); // strip @botname (Telegram groups)
   const { repo, num } = parseRepoAndNum(args);
-  const needNum = () => num && repo;
-
+  const needNum = num && repo;
   switch (cmd) {
     case "status": {
       const target = repo || DEFAULT_REPO;
-      if (!target) return reply("⚠️ set COMPASS_FLEET_REPO or pass owner/repo.");
-      const r = await gh(["pr", "list", "-R", target, "--state", "open", "--json", "number,title,labels", "--limit", "20"]);
-      if (!r.ok) return reply(`⚠️ status failed: ${r.err.slice(0, 200)}`);
-      let prs = []; try { prs = JSON.parse(r.out); } catch { /* ignore */ }
-      if (!prs.length) return reply(`🟢 ${target}: no open PRs.`);
-      const line = (p) => {
-        const L = (p.labels || []).map((x) => x.name);
-        const st = L.includes("sdlc:needs-human") ? "🟠" : L.includes("agent:needs-fix") ? "🔴" : L.includes("agent:reviewed-clean") ? "🟢" : "🔵";
-        return `${st} #${p.number} ${p.title.slice(0, 40)}`;
-      };
-      return reply(`🧭 ${target}\n` + prs.map(line).join("\n"));
+      if (!target) return { kind: "reply", text: "⚠️ set COMPASS_FLEET_REPO or pass owner/repo." };
+      return { kind: "status", repo: target };
     }
-    case "approve": case "hold": case "resume": {
-      if (!needNum()) return reply(`⚠️ usage: ${PREFIX}${cmd} #<n> [owner/repo]`);
-      const r = await gh(["pr", "comment", "-R", repo, num, "--body", `/${cmd}`]); // governed by sdlc-control.yml
-      return reply(r.ok ? `✅ relayed /${cmd} to ${repo}#${num}.` : `⚠️ failed: ${r.err.slice(0, 200)}`);
-    }
-    case "build": {
-      if (!needNum()) return reply(`⚠️ usage: ${PREFIX}build #<issue> [owner/repo]`);
-      const r = await gh(["issue", "edit", "-R", repo, num, "--add-label", "agent:build"]);
-      return reply(r.ok ? `🤖 dispatched ${repo}#${num} to the build loop.` : `⚠️ failed: ${r.err.slice(0, 200)}`);
-    }
+    case "approve": case "hold": case "resume":
+      if (!needNum) return { kind: "reply", text: `⚠️ usage: ${PREFIX}${cmd} #<n> [owner/repo]` };
+      return { kind: "gh", gh: ["pr", "comment", "-R", repo, num, "--body", `/${cmd}`], ok: `✅ relayed /${cmd} to ${repo}#${num}.` };
+    case "build":
+      if (!needNum) return { kind: "reply", text: `⚠️ usage: ${PREFIX}build #<issue> [owner/repo]` };
+      return { kind: "gh", gh: ["issue", "edit", "-R", repo, num, "--add-label", "agent:build"], ok: `🤖 dispatched ${repo}#${num} to the build loop.` };
     case "help": case "":
-      return reply(`compass commands:\n${PREFIX}status [repo]\n${PREFIX}approve|hold|resume #n [repo]\n${PREFIX}build #issue [repo]`);
+      return { kind: "reply", text: `compass commands:\n${PREFIX}status [repo]\n${PREFIX}approve|hold|resume #n [repo]\n${PREFIX}build #issue [repo]` };
     default:
-      return; // unknown → ignore so normal DMs aren't echoed at
+      return { kind: "ignore" }; // unknown → don't echo at normal DMs
+  }
+}
+
+// Execute a plan against GitHub and respond via the transport's `reply`.
+async function handle(text, reply) {
+  const p = plan(text);
+  if (p.kind === "ignore") return;
+  if (p.kind === "reply") return reply(p.text);
+  if (p.kind === "status") {
+    const r = await gh(["pr", "list", "-R", p.repo, "--state", "open", "--json", "number,title,labels", "--limit", "20"]);
+    if (!r.ok) return reply(`⚠️ status failed: ${r.err.slice(0, 200)}`);
+    let prs = []; try { prs = JSON.parse(r.out); } catch { /* ignore */ }
+    if (!prs.length) return reply(`🟢 ${p.repo}: no open PRs.`);
+    const line = (pr) => {
+      const L = (pr.labels || []).map((x) => x.name);
+      const st = L.includes("sdlc:needs-human") ? "🟠" : L.includes("agent:needs-fix") ? "🔴" : L.includes("agent:reviewed-clean") ? "🟢" : "🔵";
+      return `${st} #${pr.number} ${pr.title.slice(0, 40)}`;
+    };
+    return reply(`🧭 ${p.repo}\n` + prs.map(line).join("\n"));
+  }
+  if (p.kind === "gh") {
+    const r = await gh(p.gh);
+    return reply(r.ok ? p.ok : `⚠️ failed: ${r.err.slice(0, 200)}`);
   }
 }
 
@@ -130,9 +144,13 @@ function runBridge() {
   connect();
 }
 
-if (TG_TOKEN && TG_CHAT) runTelegram();
-else if (L_URLS.length && L_TOKEN) runBridge();
-else {
-  console.error("compass listen: configure a transport — Telegram (COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT) or an iMessage/WhatsApp bridge (COMPASS_NOTIFY_URL + _TOKEN).");
-  process.exit(1);
+// Start the daemon only when run directly (so `import`-ing for tests stays side-effect-free).
+const isMain = process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
+  if (TG_TOKEN && TG_CHAT) runTelegram();
+  else if (L_URLS.length && L_TOKEN) runBridge();
+  else {
+    console.error("compass listen: configure a transport — Telegram (COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT) or an iMessage/WhatsApp bridge (COMPASS_NOTIFY_URL + _TOKEN).");
+    process.exit(1);
+  }
 }

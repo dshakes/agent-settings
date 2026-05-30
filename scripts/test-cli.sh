@@ -124,6 +124,11 @@ CLEANENV() { env -u COMPASS_NOTIFY_URL -u COMPASS_NOTIFY_SLACK -u COMPASS_NOTIFY
 if CLEANENV "$COMPASS" notify 'hi' >/dev/null 2>&1; then ok "no backend = graceful no-op (exit 0)"; else no "unconfigured notify should exit 0"; fi
 if CLEANENV "$COMPASS" notify --require 'hi' >/dev/null 2>&1; then no "--require should fail when unconfigured"; else ok "--require errors when unconfigured"; fi
 
+echo "compass listen — command parser (pure plan(), no gh/network):"
+if command -v node >/dev/null 2>&1; then
+  if node "$ROOT/scripts/test-listen.mjs" >/dev/null 2>&1; then ok "listener command parser (11 cases)"; else no "listener parser test failed (run: node scripts/test-listen.mjs)"; fi
+else ok "node absent — skipping listener parser test"; fi
+
 echo "compass-schedule — unattended cron run is bounded:"
 if grep -q -- '--max-turns' "$ROOT/scripts/compass-schedule.sh" && grep -q -- '--max-budget-usd' "$ROOT/scripts/compass-schedule.sh"; then
   ok "cron claude -p has turn + budget caps"; else no "cron claude -p is missing turn/budget caps"; fi
