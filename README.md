@@ -18,11 +18,7 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 </div>
 
 <p align="center">
-  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Under the hood, all opt-in: guardrails · cost-tiered (local/router) · subagents/commands/MCP · scheduled agents · spec-driven · dynamic workflows · cross-model audit · human merge gate." width="900">
-</p>
-
-<p align="center">
-  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
+  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="assets/explainer.svg">📐 the big picture</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
 </p>
 
 ---
