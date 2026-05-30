@@ -286,6 +286,13 @@ Everything logs best-effort to `~/.compass/` ledgers, locally — nothing is upl
 
 **An AI engineering team that opens your PRs, fixes its own review comments, and stops at the merge button.**
 
+> **Do you need this? Most people don't — at first.** The [base install](#install) already gives you the senior-engineer behavior, guardrails, and crew in every repo, with **no tokens**. Think of it as a ladder:
+> 1. **Base install** — senior-engineer defaults everywhere. *(no tokens)*
+> 2. **Try the pipeline locally** — `~/compass/sdlc/orchestrate.sh "<task>"` (or `/sdlc`) runs the whole plan→build→review→audit→security→QA pipeline and opens a PR, using just your logged-in CLI. *(no tokens)*
+> 3. **The always-on GitHub loop** — wire it up *(below)* only when you want PRs reviewed, tested, and **auto-fixed on every push, automatically**. *(this is the only rung that needs tokens)*
+>
+> **Climb to rung 3 when** you use GitHub PRs and want review/security/tests/auto-fix without driving. **Stay on 1–2 if** you just want the local defaults or would rather not manage tokens.
+
 *Optional, opt-in — and the part people screenshot.* Turn it on and compass becomes a pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test a change. When the Reviewer flags something **Blocking**, the **Builder fixes it on the branch and pushes**, and the Reviewer runs again — looping until it's green or it hits a round cap and asks for a human. Agents stop at the PR. **You keep the merge and deploy gates.**
 
 <p align="center">
