@@ -126,6 +126,7 @@ if [ "$DO_CLAUDE" = 1 ]; then
   place "$CLAUDE_SRC/agents"          "$CLAUDE_DST/agents"
   place "$CLAUDE_SRC/commands"        "$CLAUDE_DST/commands"
   place "$CLAUDE_SRC/skills"          "$CLAUDE_DST/skills"
+  place "$CLAUDE_SRC/workflows"       "$CLAUDE_DST/workflows"
   place "$CLAUDE_SRC/hooks"           "$CLAUDE_DST/hooks"
   place "$CLAUDE_SRC/output-styles"   "$CLAUDE_DST/output-styles"
   chmodx "$CLAUDE_SRC/hooks"; chmodx "$CLAUDE_SRC/skills"

@@ -13,7 +13,10 @@ human merge/deploy gate is untouched). Per-item status:
 | 5 | Forked-subagent triage | ✅ shipped (opt-in) | `debugger` + `CLAUDE_CODE_FORK_SUBAGENT=1` |
 | 6 | Cross-repo memory | 🔵 ADR + reference scaffold (not enabled) | `docs/adr/0001` · `mcp/compass-memory/` |
 | 7 | WIP checkpointing | ✅ shipped (opt-in hook) | `claude/hooks/checkpoint-wip.sh` |
-| 8 | Hooks-as-policy | ✅ shipped (opt-in hook) | `claude/hooks/route-intent.sh` |
+| 8 | Hooks-as-policy | ✅ shipped (opt-in hooks) | `route-intent.sh` + `require-tests.sh` (test-diff gate) |
+| + | **Dynamic workflows** (parallel, adversarially-verified subagents) | ✅ shipped (research preview) | `claude/workflows/` → `/compass-review` `/compass-audit` `/compass-plan` · [docs](13-workflows.md) |
+| + | **Router eval harness** (autoroute, measured) | ✅ shipped | `scripts/route-evalset.tsv` · `compass route --eval` (CI-gated) |
+| + | **One-command quickstart** | ✅ shipped | `./quickstart.sh` · `compass quickstart` |
 | + | Spec/intent-driven mode | ✅ shipped | `/spec` + `orchestrate.sh` `SDLC_SPEC=` |
 | + | Browser agent | ✅ shipped (opt-in MCP) | `mcp/servers.json` → `browser` |
 | + | Human-gated auto-merge | ✅ shipped (opt-in) | `setup.sh --protect` → `gh pr merge --auto` |
@@ -23,7 +26,8 @@ rest of the pipeline (lint, shellcheck, selftest, CI). Cross-repo memory stays A
 
 **Maturity legend:** 🟢 stable primitive · 🟡 experimental primitive · 🔵 needs external infra (MCP/runner).
 **Version note:** some primitives below require a recent Claude Code (`/schedule`, `/goal`,
-`claude agents` ≈ v2.1.139+). Check `claude --version`; treat anything unverified on your
+`claude agents` ≈ v2.1.139+; **dynamic workflows** ≈ v2.1.154+ and **Opus 4.8** / `/effort
+ultracode` from 2026-05-28). Check `claude --version`; treat anything unverified on your
 build as aspirational.
 
 ---
@@ -96,6 +100,22 @@ For the `debugger`/`triage` paths: fork N isolated subagents to test competing r
 hypotheses in parallel, return the one that reproduces+fixes. Bounded fan-out, cheap models.
 **Status:** opt-in flag; not used by our agents yet. 🟡
 
+### 5b. Dynamic workflows 🟡  *(shipped — research preview, `v2.1.154+`)*
+The evolution of agent teams (§3): instead of Claude orchestrating subagents turn-by-turn,
+the plan lives in a **script** the runtime executes in the background — fanning out tens to
+hundreds of subagents, with loops/branching/intermediate-results in script variables, not the
+chat context. The leverage isn't just *more* agents; it's the **quality pattern** — agents
+adversarially verify each other before anything is reported.
+**Shipped:** three workflows in `claude/workflows/`, each routing stages to compass's own
+cost-tiered subagents (`agentType`): `/compass-review` (parallel dimensions → adversarial
+verify → one verdict), `/compass-audit` (multi-modal finders → loop-until-dry → 2-of-3 vote),
+`/compass-plan` (N angles → judge panel → grafted synthesis). Shape + JS syntax validated in
+CI (`scripts/check-workflows.sh`). Full design + limits: [`docs/13-workflows.md`](13-workflows.md).
+**Tradeoffs.** Research preview (the save path + runtime are still moving); a run spends real
+tokens across many agents → it buys thoroughness, not free coverage. Off-switch:
+`CLAUDE_CODE_DISABLE_WORKFLOWS=1`. The human still merges.
+**Status:** shipped, research-preview-gated. 🟡
+
 ---
 
 ## Phase 3 — needs external infra
@@ -123,12 +143,18 @@ can snapshot state before context compaction.
 new infra.
 **Status:** designed; not built. 🟢
 
-### 8. Hooks-as-policy 🟢
-Beyond today's guardrail: a `UserPromptSubmit` hook that **routes** ("this looks like a
+### 8. Hooks-as-policy 🟢  *(shipped, opt-in)*
+Beyond the guardrail: a `UserPromptSubmit` hook that **routes** ("this looks like a
 migration → load the `/adr` skill first"), and a `PostToolUse` hook that **enforces**
-("a code edit landed with no test diff → require one"). CLAUDE.md *advises*; only a hook can
-*enforce*.
-**Status:** current hooks are guardrail-only; policy hooks not shipped. 🟢
+("a code edit landed with no test diff → nudge for one"). CLAUDE.md *advises*; only a hook
+fires deterministically every time.
+**Shipped:** `claude/hooks/route-intent.sh` (intent → ADR/spec/security nudge) and
+`claude/hooks/require-tests.sh` (source edited with no test file in the diff → one-line
+nudge; silent once any test is touched; tested in `scripts/test-cli.sh`). Both are
+**advisory** (add context, never block) and **opt-in** — wire under `hooks.UserPromptSubmit`
+/ `hooks.PostToolUse` in `settings.json` when you want them. We keep them advisory on
+purpose: a hard block on every untested edit fights the natural write-code-then-test flow.
+**Status:** shipped, opt-in. 🟢
 
 ---
 
@@ -153,6 +179,11 @@ reviewers only where they apply, and **round caps** bound spend.
   **bring-your-own-model** (`codex --profile local` → Ollama, `--profile router` → OpenRouter)
   for the cheap tier; **spend pre-estimate + post-run analysis** (per-step `total_cost_usd` →
   `costs.tsv` + PR "Spend" line). See [`docs/02-cost-and-models.md`](02-cost-and-models.md).
+- **Shipped since:** the **router is now measured** — `compass route --eval` scores the
+  deterministic tier-picker against `scripts/route-evalset.tsv` and **CI gates** on an accuracy
+  floor, so `SDLC_AUTOROUTE` is a checked claim. **Prompt caching** is documented + structurally
+  exploited (stable system prefixes, byte-identical converge-loop prompts) in
+  [`docs/02`](02-cost-and-models.md).
 - **Next:** diff-size-gated model selection (haiku review for ≤N-line diffs); GitHub Actions
   dependency caching in `sdlc-qa.yml`; **test-impact selection** (run only tests affected by the
   diff) for low-latency QA; a **first-class smart router** (cross-provider, cost-aware) and a

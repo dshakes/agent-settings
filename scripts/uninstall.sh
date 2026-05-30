@@ -2,7 +2,7 @@
 # uninstall.sh — remove symlinks this repo created. Leaves backups untouched.
 set -euo pipefail
 removed=0
-for n in settings.json CLAUDE.md statusline.sh agents commands skills hooks output-styles; do
+for n in settings.json CLAUDE.md statusline.sh agents commands skills workflows hooks output-styles; do
   t="$HOME/.claude/$n"
   if [ -L "$t" ]; then rm -f "$t"; echo "removed ~/.claude/$n"; removed=$((removed+1)); fi
 done

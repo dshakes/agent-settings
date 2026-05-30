@@ -11,11 +11,12 @@ speed.
 |---|---|---|---|
 | **Cheap** | Haiku 4.5 | `test-runner` subagent | run tests, parse failures, triage logs, mechanical edits, "find all callers" sweeps |
 | **Standard** | Sonnet 4.6 | `code-reviewer`, `go-engineer`, `rust-engineer`, `docs-writer`, `k8s-operator` | most feature coding, refactors, reviews, docs |
-| **Deep** | Opus 4.7 | driver session + `architect`, `security-auditor`, `debugger` | architecture, security, subtle debugging |
+| **Deep** | Opus 4.8 | driver session + `architect`, `security-auditor`, `debugger` | architecture, security, subtle debugging |
 
-Change a subagent's tier by editing the `model:` line in its
-`claude/agents/<name>.md`. Accepted values: a model ID
-(`claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`) or `inherit`.
+The deep tier tracks the **newest** Opus — bumped to **Opus 4.8** (`claude-opus-4-8`,
+shipped 2026-05-28) day one. Change a subagent's tier by editing the `model:` line in
+its `claude/agents/<name>.md`. Accepted values: a model ID
+(`claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`) or `inherit`.
 
 ## How the savings actually happen
 - **Delegation keeps the driver's context small.** A subagent reads 20 files and
@@ -29,6 +30,26 @@ Change a subagent's tier by editing the `model:` line in its
 `effortLevel: "high"` in `settings.json` buys deeper reasoning per turn (worth it
 on the Opus driver). Subagents on cheaper models implicitly cost less per turn;
 you can also dial Codex reasoning per profile (`deep`/`standard`/`cheap`).
+
+**`/effort ultracode`** (Opus 4.8+) goes further: `xhigh` reasoning *plus* automatic
+[dynamic-workflow](13-workflows.md) orchestration — Claude plans a fan-out workflow for
+each substantive task instead of working turn-by-turn. It's the most expensive setting
+(several workflows can run for one request), so reach for it on genuinely hard, wide
+problems and drop back with `/effort high` for routine work.
+
+## Prompt caching (automatic)
+Claude Code **prompt-caches** the system prompt, tool definitions, and conversation
+prefix automatically — you don't toggle it. compass is structured to maximize the hit
+rate rather than fight it:
+- **Stable system prefixes.** Each `orchestrate.sh` step passes a fixed role file via
+  `--append-system-prompt-file` (`sdlc/roles/*.md`), and the operating manual is one
+  unchanging file — a long, identical prefix that caches across steps and sessions.
+- **Byte-identical loop prompts.** The converge loop (`SDLC_CONVERGE=1`) re-issues the
+  *same* reviewer prompt every round, so each re-review reuses the cached prefix — a
+  big reason iterating to green stays cheap.
+- Keep your project `CLAUDE.md` lean (philosophy §3): a smaller stable prefix is both
+  cheaper to cache and higher-signal. Building on the API directly? The `claude-api`
+  skill bakes in `cache_control` so apps cache by default.
 
 ## Bring your own model — local LLMs & cost routers (Codex side)
 The cheapest token is one you don't pay for. Codex talks to **any OpenAI-compatible endpoint**,
@@ -69,11 +90,25 @@ Cross-provider *smart routing* as a first-class compass layer is roadmapped (`do
   files auto-formatted, spend by model, and an **estimated `$` saved** vs running everything on
   Opus (a rough multiple-based estimate, labelled as such).
 
-## Auto-routing the model (experimental)
-`compass route "<task>"` maps a task to the cheapest-correct tier (haiku/sonnet/opus) by keyword
-heuristic. `orchestrate.sh` will use it for the Builder step **only** when `SDLC_AUTOROUTE=1` —
-it's **off by default and experimental**: without a real eval set, a wrong route can hurt quality
-more than it saves. Treat it as opt-in until evals exist; the default stays Sonnet.
+## Auto-routing the model — now measured
+`compass route "<task>"` maps a task to the cheapest-correct tier (haiku/sonnet/opus) by a
+deterministic keyword heuristic. `orchestrate.sh` uses it for the Builder step **only** when
+`SDLC_AUTOROUTE=1` (off by default; the default stays Sonnet).
+
+The honest caveat used to be "no eval set, so a wrong route can hurt quality more than it
+saves." That gap is now closed: a labeled ground-truth set lives at
+[`scripts/route-evalset.tsv`](../scripts/route-evalset.tsv), and
+
+```bash
+compass route --eval        # score the router; per-tier recall + accuracy
+```
+
+scores the router against it. **CI gates on it** — a routing change that drops below the floor
+(`COMPASS_ROUTE_MIN_ACCURACY`, default 90%) fails the build, so accuracy is a checked claim, not
+a vibe. The set also documents the heuristic's limits honestly: a couple of context-dependent
+tasks (e.g. "a backward-compatible proto contract change") are irreducible misses for *keyword*
+routing — which is exactly why `SDLC_AUTOROUTE` stays opt-in. Add real mis-routes to the set as
+they surface; that's how it earns its keep.
 
 ## Rules of thumb baked into `CLAUDE.md`
 - Don't re-read a file you just edited.
