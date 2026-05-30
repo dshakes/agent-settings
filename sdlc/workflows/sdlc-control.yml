@@ -33,14 +33,23 @@ jobs:
       startsWith(github.event.comment.body, '/')
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
       GH_REPO: ${{ github.repository }}    # no checkout in this job, so gh needs the repo explicitly
       PR: ${{ github.event.issue.number }}
       BODY: ${{ github.event.comment.body }}
       AUTO_MERGE: ${{ vars.SDLC_AUTO_MERGE }}
     steps:
+      # Org-wide identity (optional): a GitHub App on the org mints the token for the control
+      # actions (label, comment, queue auto-merge). Falls back to SDLC_BOT_TOKEN, then default.
+      - name: Mint GitHub App token
+        id: apptoken
+        if: ${{ vars.SDLC_APP_ID != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.SDLC_APP_ID }}
+          private-key: ${{ secrets.SDLC_APP_PRIVATE_KEY }}
       - name: Authorize — require repo WRITE permission (maintainers only)
         env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token || secrets.SDLC_BOT_TOKEN || github.token }}
           SENDER: ${{ github.event.comment.user.login }}
         run: |
           set -uo pipefail
@@ -51,6 +60,8 @@ jobs:
             *) echo "::error::@$SENDER lacks write access — control commands are maintainers-only"; exit 1 ;;
           esac
       - name: Handle command
+        env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token || secrets.SDLC_BOT_TOKEN || github.token }}
         run: |
           set -uo pipefail
           cmd="$(printf '%s' "$BODY" | head -1 | awk '{print $1}')"
@@ -93,6 +104,8 @@ jobs:
           esac
       - name: Refresh the control panel
         if: ${{ startsWith(github.event.comment.body, '/revise') || startsWith(github.event.comment.body, '/hold') || startsWith(github.event.comment.body, '/resume') || startsWith(github.event.comment.body, '/approve') || startsWith(github.event.comment.body, '/status') }}
+        env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token || secrets.SDLC_BOT_TOKEN || github.token }}
         run: |
           set -uo pipefail
           labels="$(gh pr view "$PR" --json labels --jq '.labels[].name' 2>/dev/null || true)"

@@ -26,16 +26,26 @@ jobs:
   poll:
     runs-on: ubuntu-latest
     env:
-      # FLEET_TOKEN must have Issues: write on the target repos (to swap labels, which fires intake).
-      GH_TOKEN: ${{ secrets.FLEET_TOKEN }}
       REPOS_FILE: ${{ vars.FLEET_REPOS_FILE || 'fleet/repos.txt' }}
       MAX_PER_RUN: ${{ inputs.max_per_run || '5' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # Org-wide identity (recommended): a GitHub App installed on the org → token with Issues:write
+      # on the target repos. Set FLEET_APP_ID + FLEET_APP_PRIVATE_KEY. Falls back to FLEET_TOKEN.
+      - name: Mint GitHub App token
+        id: apptoken
+        if: ${{ vars.FLEET_APP_ID != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.FLEET_APP_ID }}
+          private-key: ${{ secrets.FLEET_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Dispatch agent:autofix issues into each repo's build loop
+        env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token || secrets.FLEET_TOKEN }}
         run: |
           set -uo pipefail
-          [ -n "$GH_TOKEN" ] || { echo "::error::FLEET_TOKEN not set — see docs/14-fleet.md"; exit 1; }
+          [ -n "$GH_TOKEN" ] || { echo "::error::set FLEET_APP_ID+key or FLEET_TOKEN — see docs/14-fleet.md"; exit 1; }
           [ -f "$REPOS_FILE" ] || { echo "::error::$REPOS_FILE missing"; exit 1; }
           dispatched=0
           while IFS= read -r repo; do

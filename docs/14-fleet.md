@@ -310,6 +310,35 @@ privilege.
 
 Missed cron ticks are recovered by the next run (both workflows are idempotent).
 
+### Org-wide identity with a GitHub App (recommended over a PAT)
+
+Instead of a long-lived PAT per repo, install **one GitHub App** on your org (or account)
+and every workflow mints a **short-lived, least-privilege, auto-rotating** token per run.
+It's the clean org-wide identity — set it **once**, not per repo, and there's no PAT to
+rotate. compass supports it everywhere the bot token is used; **it's opt-in and falls back
+to the PAT/default token** if the App vars aren't set, so nothing breaks.
+
+1. **Create the App** — GitHub → Settings → Developer settings → GitHub Apps → New. Permissions:
+   *Contents: read/write*, *Pull requests: read/write*, *Issues: read/write*. No webhook needed.
+   Generate a **private key** (a `.pem`).
+2. **Install it** on your org (all repos, or the fleet repos).
+3. **Wire it** — two values:
+   - the per-repo loop (review/fix/implement/control): var `SDLC_APP_ID` + secret `SDLC_APP_PRIVATE_KEY`
+   - the cross-repo fleet (`fleet-digest`/`issue-poller`): var `FLEET_APP_ID` + secret `FLEET_APP_PRIVATE_KEY`
+
+   Set them **once at the org level** (Org → Settings → Secrets and variables → Actions):
+   ```bash
+   gh variable set SDLC_APP_ID --org your-org --body "123456"  --visibility all
+   gh secret   set SDLC_APP_PRIVATE_KEY --org your-org --visibility all < app-private-key.pem
+   # same pattern for FLEET_APP_ID / FLEET_APP_PRIVATE_KEY on the control repo's org
+   ```
+
+> **Plan note (honest):** the GitHub **App itself is free** on any account. Storing its
+> *private key as an org secret* shared with **selected private repos** still needs GitHub
+> **Team/Enterprise**; on a **Free** org you share it with **all** repos (or store the two
+> values per-repo). So the App removes the per-repo *PAT*, but org-secret visibility tiers
+> are GitHub's, not compass's — pick *all-repos* on Free, or *selected* on Team+.
+
 ---
 
 ## Governance

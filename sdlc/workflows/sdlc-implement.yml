@@ -36,6 +36,15 @@ jobs:
             admin|maintain|write) echo "authorized" ;;
             *) echo "::error::@$SENDER lacks write access — @claude implement is maintainers-only"; exit 1 ;;
           esac
+      # Org-wide bot identity (optional): a GitHub App on the org mints the token whose push
+      # triggers the Reviewer. Falls back to SDLC_BOT_TOKEN, then the default token.
+      - name: Mint GitHub App token
+        id: apptoken
+        if: ${{ vars.SDLC_APP_ID != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.SDLC_APP_ID }}
+          private-key: ${{ secrets.SDLC_APP_PRIVATE_KEY }}
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
@@ -45,9 +54,9 @@ jobs:
           # Uses your Claude SUBSCRIPTION (no API credits). For a pay-per-use key, replace with:
           #   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # PAT so the resulting push triggers the Reviewer (sdlc-review.yml). Falls back to
-          # the default token, in which case the review won't auto-run on this push (see docs/09).
-          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          # The App token (or SDLC_BOT_TOKEN) so the resulting push triggers the Reviewer.
+          # Falls back to the default token, in which case the review won't auto-run (see docs/09).
+          github_token: ${{ steps.apptoken.outputs.token || secrets.SDLC_BOT_TOKEN || github.token }}
           branch_prefix: "claude/"
           claude_args: |
             --model sonnet

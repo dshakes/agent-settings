@@ -51,6 +51,10 @@ All notable changes to this project are documented here. Format loosely follows
   self-chat — pause the bot if needed.
 - **ADR-0003** (`docs/adr/0003-auto-approve-trust-boundary.md`) — records the governance
   decision for the auto-approve trust boundary.
+- **GitHub App org identity** (optional) — `sdlc-review/fix/implement/implement-on-label/control` +
+  `fleet-digest/issue-poller` mint a short-lived token via `actions/create-github-app-token` when
+  `SDLC_APP_ID`/`FLEET_APP_ID` (+ private-key secret) are set; falls back to the PAT/default token.
+  Set one App per org instead of a PAT per repo. Docs: `docs/14-fleet.md`.
 
 ## [0.9.0] — 2026-05-30
 
