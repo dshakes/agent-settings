@@ -41,7 +41,8 @@ usage: compass <command> [args]
   notify  "<message>"      DM your phone via lantern's iMessage/WhatsApp bridge
                            (set COMPASS_NOTIFY_URL/_TOKEN; --dry-run to preview).
   listen                   Run the command listener: act on /status /approve /hold /build
-                           sent from your iMessage/WhatsApp DM (long-running; needs gh + bridge).
+                           from your phone DM via Telegram (free) or lantern iMessage/WhatsApp
+                           (long-running daemon; needs gh + a configured transport).
   doctor                   Validate the compass install (make doctor).
   help                     This message.
 

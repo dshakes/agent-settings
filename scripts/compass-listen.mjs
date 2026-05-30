@@ -1,56 +1,41 @@
 #!/usr/bin/env node
-// compass-listen — turn your iMessage/WhatsApp into a control surface for the fleet.
+// compass-listen — turn a phone DM into a control surface for the fleet. Two transports,
+// one command grammar. Pick by which env you set:
 //
-// Subscribes to lantern's bridge WebSocket (the bridge already broadcasts inbound DMs as
-// {type:"message", data:{from,text,isGroup}} — see lantern session.ts), and when YOU send a
-// slash-command in your DM, it relays it to GitHub and replies in the same thread.
+//   Telegram (universal, free, no lantern) — COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT
+//   lantern  (iMessage/WhatsApp, premium)  — COMPASS_NOTIFY_URL + _TOKEN (+ _TENANT)
 //
-//   /status [owner/repo]            → a one-line state of open PRs
-//   /approve #<n> [owner/repo]      → posts "/approve" on the PR (the governed sdlc-control
-//   /hold #<n> [owner/repo]           workflow does the actual, policy-gated action — ADR-0003)
+// When YOU send a slash-command in your DM, it relays to GitHub and replies in-thread:
+//   /status [owner/repo]            → one-line open-PR state
+//   /approve #<n> [owner/repo]      → posts "/approve" on the PR — the GOVERNED sdlc-control
+//   /hold #<n> [owner/repo]           workflow does the actual policy-gated action (ADR-0003)
 //   /resume #<n> [owner/repo]
 //   /build #<n> [owner/repo]        → labels issue #n agent:build (governed zero-touch intake)
 //
 // It NEVER merges or approves directly — it relays a comment/label; the existing governed
-// workflows enforce the gates. Requires `gh` authenticated on this machine + a reachable bridge.
+// workflows enforce every gate. Requires `gh` authenticated on this machine.
 //
-// Config (env):
-//   COMPASS_NOTIFY_URL     bridge base URL (first entry used), e.g. http://127.0.0.1:3100
-//   COMPASS_NOTIFY_TOKEN   bridge bearer token
-//   COMPASS_NOTIFY_TENANT  tenant id (default the dev tenant)
-//   COMPASS_FLEET_REPO     default owner/repo when a command omits one
-//   COMPASS_CMD_PREFIX     command prefix (default "/")
+//   Telegram bot: message @BotFather → /newbot → token; DM the bot once, then read your chat id
+//     from  https://api.telegram.org/bot<token>/getUpdates  (message.chat.id).
+//   Run as a local daemon (launchd/systemd/tmux):  compass listen
 //
-// Run it as a local daemon (launchd/systemd/tmux): node scripts/compass-listen.mjs  (or: compass listen)
-// NOTE: lantern's bridge may ALSO auto-reply to your DMs with its own assistant — pause the bot for
-// your self-chat (lantern: /session/<tenant>/bot/pause) so commands aren't double-handled.
+// Other config: COMPASS_FLEET_REPO (default owner/repo), COMPASS_CMD_PREFIX (default "/").
+// (Node 22 built-in fetch + WebSocket — zero npm dependencies.)
 
 import { execFile } from "node:child_process";
 
-const URLS = (process.env.COMPASS_NOTIFY_URL || process.env.LANTERN_BRIDGE_URL || "").split(/[, ]+/).filter(Boolean);
-const TOKEN = process.env.COMPASS_NOTIFY_TOKEN || process.env.LANTERN_BRIDGE_TOKEN || "";
-const TENANT = process.env.COMPASS_NOTIFY_TENANT || process.env.LANTERN_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
 const DEFAULT_REPO = process.env.COMPASS_FLEET_REPO || "";
 const PREFIX = process.env.COMPASS_CMD_PREFIX || "/";
 
-if (!URLS.length || !TOKEN) {
-  console.error("compass listen: set COMPASS_NOTIFY_URL and COMPASS_NOTIFY_TOKEN (the lantern bridge).");
-  process.exit(1);
-}
-const base = URLS[0].replace(/\/$/, "");
-const wsUrl = `${base.replace(/^http/, "ws")}/ws?tenantId=${encodeURIComponent(TENANT)}&token=${encodeURIComponent(TOKEN)}`;
+const TG_TOKEN = process.env.COMPASS_NOTIFY_TELEGRAM_TOKEN || "";
+const TG_CHAT = process.env.COMPASS_NOTIFY_TELEGRAM_CHAT || "";
+const L_URLS = (process.env.COMPASS_NOTIFY_URL || process.env.LANTERN_BRIDGE_URL || "").split(/[, ]+/).filter(Boolean);
+const L_TOKEN = process.env.COMPASS_NOTIFY_TOKEN || process.env.LANTERN_BRIDGE_TOKEN || "";
+const L_TENANT = process.env.COMPASS_NOTIFY_TENANT || process.env.LANTERN_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
 
-const sh = (cmd, args) => new Promise((res) =>
-  execFile(cmd, args, { timeout: 30000, maxBuffer: 1 << 20 }, (e, out, err) => res({ ok: !e, out: (out || "").trim(), err: (err || "").trim() })));
-
-async function reply(text) {
-  // Reply in the same thread via the bridge self-send endpoint.
-  const r = await sh("curl", ["-fsS", "-m", "15", "-X", "POST",
-    `${base}/session/${TENANT}/send-self`,
-    "-H", `Authorization: Bearer ${TOKEN}`, "-H", "Content-Type: application/json",
-    "--data-binary", JSON.stringify({ message: text })]);
-  if (!r.ok) console.error("reply failed:", r.err);
-}
+const gh = (args) => new Promise((res) =>
+  execFile("gh", args, { timeout: 30000, maxBuffer: 1 << 20 }, (e, out, err) =>
+    res({ ok: !e, out: (out || "").trim(), err: (err || "").trim() })));
 
 function parseRepoAndNum(args) {
   let repo = DEFAULT_REPO, num = "";
@@ -61,18 +46,20 @@ function parseRepoAndNum(args) {
   return { repo, num };
 }
 
-async function handle(text) {
-  const body = text.trim();
-  if (!body.startsWith(PREFIX)) return; // not a command
-  const [cmd, ...args] = body.slice(PREFIX.length).trim().split(/\s+/);
+// Shared command handler. `reply(text)` is the transport-specific responder.
+async function handle(text, reply) {
+  const body = String(text || "").trim();
+  if (!body.startsWith(PREFIX)) return;                          // not a command
+  const [rawCmd, ...args] = body.slice(PREFIX.length).trim().split(/\s+/);
+  const cmd = (rawCmd || "").toLowerCase().replace(/@\w+$/, ""); // strip @botname (Telegram groups)
   const { repo, num } = parseRepoAndNum(args);
   const needNum = () => num && repo;
 
-  switch ((cmd || "").toLowerCase()) {
+  switch (cmd) {
     case "status": {
       const target = repo || DEFAULT_REPO;
       if (!target) return reply("⚠️ set COMPASS_FLEET_REPO or pass owner/repo.");
-      const r = await sh("gh", ["pr", "list", "-R", target, "--state", "open", "--json", "number,title,labels", "--limit", "20"]);
+      const r = await gh(["pr", "list", "-R", target, "--state", "open", "--json", "number,title,labels", "--limit", "20"]);
       if (!r.ok) return reply(`⚠️ status failed: ${r.err.slice(0, 200)}`);
       let prs = []; try { prs = JSON.parse(r.out); } catch { /* ignore */ }
       if (!prs.length) return reply(`🟢 ${target}: no open PRs.`);
@@ -85,35 +72,67 @@ async function handle(text) {
     }
     case "approve": case "hold": case "resume": {
       if (!needNum()) return reply(`⚠️ usage: ${PREFIX}${cmd} #<n> [owner/repo]`);
-      // Relay as a PR comment — the governed sdlc-control workflow enforces the gate (ADR-0003).
-      const r = await sh("gh", ["pr", "comment", "-R", repo, num, "--body", `/${cmd}`]);
+      const r = await gh(["pr", "comment", "-R", repo, num, "--body", `/${cmd}`]); // governed by sdlc-control.yml
       return reply(r.ok ? `✅ relayed /${cmd} to ${repo}#${num}.` : `⚠️ failed: ${r.err.slice(0, 200)}`);
     }
     case "build": {
       if (!needNum()) return reply(`⚠️ usage: ${PREFIX}build #<issue> [owner/repo]`);
-      const r = await sh("gh", ["issue", "edit", "-R", repo, num, "--add-label", "agent:build"]);
+      const r = await gh(["issue", "edit", "-R", repo, num, "--add-label", "agent:build"]);
       return reply(r.ok ? `🤖 dispatched ${repo}#${num} to the build loop.` : `⚠️ failed: ${r.err.slice(0, 200)}`);
     }
-    case "help": case undefined: case "":
+    case "help": case "":
       return reply(`compass commands:\n${PREFIX}status [repo]\n${PREFIX}approve|hold|resume #n [repo]\n${PREFIX}build #issue [repo]`);
     default:
-      return; // unknown → ignore (so normal DMs aren't echoed at)
+      return; // unknown → ignore so normal DMs aren't echoed at
   }
 }
 
-let backoff = 1000;
-function connect() {
-  const ws = new WebSocket(wsUrl);
-  ws.addEventListener("open", () => { backoff = 1000; console.error(`compass listen: connected to ${base} (tenant ${TENANT})`); });
-  ws.addEventListener("message", (ev) => {
-    let m; try { m = JSON.parse(String(ev.data)); } catch { return; }
-    if (m?.type !== "message") return;
-    const d = m.data || {};
-    if (d.isGroup) return;                 // DMs only
-    if (typeof d.text !== "string") return;
-    handle(d.text).catch((e) => console.error("handle error:", e?.message));
-  });
-  ws.addEventListener("close", () => { setTimeout(connect, backoff); backoff = Math.min(backoff * 2, 30000); });
-  ws.addEventListener("error", () => { try { ws.close(); } catch { /* ignore */ } });
+// ── Telegram transport (long-poll getUpdates) ─────────────────────────────────
+async function runTelegram() {
+  const api = (m) => `https://api.telegram.org/bot${TG_TOKEN}/${m}`;
+  const send = (t) => fetch(api("sendMessage"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: TG_CHAT, text: t }) }).catch(() => {});
+  console.error(`compass listen: Telegram bot, chat ${TG_CHAT}`);
+  let offset = 0;
+  for (;;) {
+    try {
+      const r = await fetch(api(`getUpdates?timeout=30&offset=${offset}`));
+      const j = await r.json();
+      if (j && j.ok) for (const u of j.result) {
+        offset = u.update_id + 1;
+        const m = u.message || u.channel_post;
+        if (!m || typeof m.text !== "string") continue;
+        if (String(m.chat?.id) !== String(TG_CHAT)) continue; // only the authorized chat
+        await handle(m.text, send).catch((e) => console.error("handle:", e?.message));
+      }
+    } catch (e) { console.error("telegram poll:", e?.message); await new Promise((r) => setTimeout(r, 3000)); }
+  }
 }
-connect();
+
+// ── lantern transport (bridge WebSocket) ──────────────────────────────────────
+function runLantern() {
+  const base = L_URLS[0].replace(/\/$/, "");
+  const wsUrl = `${base.replace(/^http/, "ws")}/ws?tenantId=${encodeURIComponent(L_TENANT)}&token=${encodeURIComponent(L_TOKEN)}`;
+  const send = (t) => fetch(`${base}/session/${L_TENANT}/send-self`, { method: "POST", headers: { Authorization: `Bearer ${L_TOKEN}`, "content-type": "application/json" }, body: JSON.stringify({ message: t }) }).catch(() => {});
+  let backoff = 1000;
+  const connect = () => {
+    const ws = new WebSocket(wsUrl);
+    ws.addEventListener("open", () => { backoff = 1000; console.error(`compass listen: lantern bridge ${base} (tenant ${L_TENANT})`); });
+    ws.addEventListener("message", (ev) => {
+      let m; try { m = JSON.parse(String(ev.data)); } catch { return; }
+      if (m?.type !== "message") return;
+      const d = m.data || {};
+      if (d.isGroup || typeof d.text !== "string") return;
+      handle(d.text, send).catch((e) => console.error("handle:", e?.message));
+    });
+    ws.addEventListener("close", () => { setTimeout(connect, backoff); backoff = Math.min(backoff * 2, 30000); });
+    ws.addEventListener("error", () => { try { ws.close(); } catch { /* ignore */ } });
+  };
+  connect();
+}
+
+if (TG_TOKEN && TG_CHAT) runTelegram();
+else if (L_URLS.length && L_TOKEN) runLantern();
+else {
+  console.error("compass listen: configure a transport — Telegram (COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT) or lantern (COMPASS_NOTIFY_URL + _TOKEN).");
+  process.exit(1);
+}

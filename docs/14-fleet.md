@@ -227,10 +227,19 @@ today without extra setup:
 **File:** `scripts/compass-listen.mjs`
 **Invoked as:** `compass listen` (long-running local daemon; Node 22, zero npm deps)
 
-The listener subscribes to lantern's bridge WebSocket (`/ws?tenantId=&token=`),
-which broadcasts inbound DMs as `{type:"message",data:{from,text,isGroup}}`. When
-you send a slash-command in your own iMessage or WhatsApp DM, it relays the action
-to GitHub and replies in-thread:
+The listener has **two transports — pick by which env you set** — sharing one command
+grammar, so every user gets native DM control whether or not they run lantern:
+
+- **Telegram (universal, free, no lantern):** set `COMPASS_NOTIFY_TELEGRAM_TOKEN` + `_CHAT`.
+  Make a bot via `@BotFather`, DM it once, read your chat id from
+  `https://api.telegram.org/bot<token>/getUpdates`. The listener long-polls `getUpdates`
+  and only acts on messages from your authorized chat. **This is the recommended open-source
+  path.**
+- **lantern (premium, iMessage/WhatsApp):** set `COMPASS_NOTIFY_URL` + `_TOKEN`. The listener
+  subscribes to the bridge WebSocket (`/ws?tenantId=&token=`), which broadcasts inbound DMs as
+  `{type:"message",data:{from,text,isGroup}}`.
+
+When you send a slash-command in your DM, it relays the action to GitHub and replies in-thread:
 
 | Command | What it does |
 |---|---|
@@ -247,19 +256,19 @@ the existing governed `sdlc-control.yml` workflow (ADR-0003) then executes.
 
 | Variable | Purpose |
 |---|---|
-| `COMPASS_NOTIFY_URL` | lantern bridge base URL (the WebSocket origin) |
-| `COMPASS_NOTIFY_TOKEN` | bridge bearer token |
-| `COMPASS_NOTIFY_TENANT` | tenant ID |
+| `COMPASS_NOTIFY_TELEGRAM_TOKEN` + `_CHAT` | Telegram transport (universal, free) |
+| `COMPASS_NOTIFY_URL` + `_TOKEN` (+ `_TENANT`) | lantern bridge transport (iMessage/WhatsApp) |
 | `COMPASS_FLEET_REPO` | default `owner/repo` when not specified in command |
 | `COMPASS_CMD_PREFIX` | command prefix character (default `/`) |
 
 **Honest constraints:**
 
-- Requires `gh` authenticated locally and a reachable bridge.
-- lantern's bridge may also auto-reply with its own assistant on your self-chat.
-  Pause the bot or use a dedicated DM thread if that collides.
-- The daemon is verified for JS syntax and design but **UNVERIFIED end-to-end** —
-  a live bridge and authenticated `gh` are needed to confirm the full path.
+- Requires `gh` authenticated locally and a reachable transport (Telegram needs only outbound
+  HTTPS; lantern needs the bridge on your machine/LAN).
+- lantern's bridge may also auto-reply with its own assistant on your self-chat — pause the bot
+  or use a dedicated thread if that collides. (Telegram has no such conflict.)
+- The daemon is verified for JS syntax and design but **UNVERIFIED end-to-end** — a live
+  transport and authenticated `gh` are needed to confirm the full path.
 
 ---
 

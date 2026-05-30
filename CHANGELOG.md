@@ -41,11 +41,13 @@ All notable changes to this project are documented here. Format loosely follows
   autonomous dispatch via `issue-poller`; the poller swaps it to `agent:build` so each issue
   dispatches exactly once.
 - **`compass listen` daemon** (`scripts/compass-listen.mjs`, Phase 2 — shipped) — long-running
-  local Node 22 process (zero npm deps); subscribes to lantern's bridge WebSocket and relays
-  your iMessage/WhatsApp slash-commands (`/status`, `/approve|/hold|/resume #N`, `/build #N`)
+  local Node 22 process (zero npm deps) with **two transports, one command grammar**:
+  **Telegram** (universal, free, no lantern — `COMPASS_NOTIFY_TELEGRAM_TOKEN`+`_CHAT`, long-polls
+  getUpdates on your authorized chat) **or lantern** (iMessage/WhatsApp bridge WebSocket). Relays
+  your DM slash-commands (`/status`, `/approve|/hold|/resume #N`, `/build #N`)
   to GitHub. Posts PR comments (enforced by the existing governed `sdlc-control.yml`) — never
-  approves or merges directly. Config: `COMPASS_NOTIFY_URL/_TOKEN/_TENANT`,
-  `COMPASS_FLEET_REPO`, `COMPASS_CMD_PREFIX`. Requires `gh` authenticated locally + reachable
+  approves or merges directly. Config: transport env + `COMPASS_FLEET_REPO`,
+  `COMPASS_CMD_PREFIX`. Requires `gh` authenticated locally + reachable
   bridge. **UNVERIFIED end-to-end** (needs a live bridge); lantern's bridge may auto-reply on
   self-chat — pause the bot if needed.
 - **ADR-0003** (`docs/adr/0003-auto-approve-trust-boundary.md`) — records the governance
