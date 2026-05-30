@@ -1,0 +1,78 @@
+# Routine: vuln-remediate — scan for vulnerabilities, auto-remediate the SAFE ones into a PR,
+# file an issue for the rest. NEVER merges (ADR-0002); every fix is test-gated (ADR-0003).
+# Opt-in. Install with `sdlc/setup.sh --routines`.
+name: "routine · vuln-remediate"
+
+on:
+  schedule:
+    - cron: "0 4 * * *"     # nightly 04:00 UTC — note: GitHub cron is best-effort, may be delayed/skipped
+  workflow_dispatch:
+    inputs:
+      remediate:
+        description: "Open remediation PRs for safe fixes (false = scan + issue only)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write          # only to push a routine/security-* feature branch (never a protected branch)
+  pull-requests: write
+  issues: write
+  security-events: read    # read Dependabot + code-scanning alerts if enabled
+
+concurrency:
+  group: routine-vuln-remediate
+  cancel-in-progress: false
+
+jobs:
+  scan-remediate:
+    runs-on: ubuntu-latest
+    env:
+      REMEDIATE: ${{ github.event_name == 'schedule' || inputs.remediate }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Scan and remediate
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # PAT so the remediation push re-triggers the Reviewer/QA on the new PR (else default token won't chain).
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          prompt: |
+            You are **Vuln Remediator**, a governed security agent. Two jobs: scan, then remediate ONLY the safe fixes.
+
+            ## 1. Scan (read-only)
+            Detect what's present and run it; do not install heavy tooling beyond the ecosystem's own:
+            - Dependencies: `govulncheck ./...` (Go), `npm audit --json` / `pnpm audit` (Node), `pip-audit` (Python),
+              `cargo audit` (Rust) — whichever match the repo's manifests.
+            - GitHub-native: `gh api repos/${{ github.repository }}/dependabot/alerts --paginate` and
+              `gh api repos/${{ github.repository }}/code-scanning/alerts --paginate` (ignore 403/404 — feature may be off).
+            - Read the findings; record severity, the vulnerable package/line, and the fixed version if one exists.
+
+            ## 2. Triage — SAFE-to-auto-fix vs NEEDS-HUMAN
+            SAFE (remediate): a dependency bump to a known patched version with a non-breaking semver delta, or a
+            trivially-correct, well-understood fix. NEEDS-HUMAN: anything with a breaking upgrade, a code-logic
+            security fix, a config/secret change, or where you are not confident the fix is correct.
+
+            ## 3a. Remediate the safe ones (only if REMEDIATE=${{ env.REMEDIATE }} is true)
+            - Create a branch `routine/security-${{ github.run_id }}`.
+            - Apply the safe fixes (bump the manifest + lockfile; minimal code edits).
+            - **TEST GATE (mandatory):** build and run the test suite. If the repo has the `test-architect`
+              subagent available, use it to add/adjust tests and validate; otherwise add a regression test
+              yourself where it makes sense. If tests do not pass, DO NOT open the PR for that fix — move it to
+              the issue instead. A fix with no passing tests does not ship.
+            - Commit and open ONE PR (`gh pr create`) titled "security: remediate N vulnerabilities (<date>)",
+              body listing each CVE/advisory, the bump, and the test result. Do NOT merge; do NOT touch protected branches.
+
+            ## 3b. File the rest
+            - Open OR update ONE de-duped issue "Security sweep — <date>" listing the NEEDS-HUMAN findings with
+              severity, location, and suggested remediation. De-dupe against existing open "Security sweep" issues.
+            - If there is a CRITICAL/HIGH finding, prefix the issue title with "🚨" so the digest/notifier surfaces it.
+
+            Be concise. The human reviews and merges everything — you only prepare.
+          claude_args: |
+            --model sonnet
+            --max-turns 40
+            --max-budget-usd 5.00
+            --permission-mode acceptEdits
+            --allowedTools "Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push:*),Bash(go build:*),Bash(go test:*),Bash(go vet:*),Bash(govulncheck:*),Bash(npm:*),Bash(pnpm:*),Bash(pip-audit:*),Bash(pytest:*),Bash(cargo:*),Bash(make:*),Bash(gh pr create:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh api:*)"

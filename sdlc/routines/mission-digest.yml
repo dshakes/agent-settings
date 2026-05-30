@@ -1,0 +1,91 @@
+# Routine: mission-digest — keeps ONE pinned "fleet panel" issue up to date with every open
+# PR's state, and @mentions the maintainer when a PR newly needs a human. gh-only (no model):
+# deterministic, free, idempotent (reconciles full state each run — GitHub cron is best-effort,
+# so never assume the last tick ran). The mobile glance + control surface. Opt-in.
+name: "routine · mission-digest"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # best-effort; may be delayed or skipped under load. Also dispatchable.
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: routine-mission-digest
+  cancel-in-progress: true
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+      MAINTAINER: ${{ vars.FLEET_MAINTAINER }}   # e.g. dshakes — who gets @mentioned on needs-human
+      MARKER: "<!-- compass-fleet-panel -->"
+    steps:
+      - name: Build / update the fleet panel
+        run: |
+          set -uo pipefail
+          tmp="$(mktemp)"; nh=""   # nh = space-separated PR numbers needing a human this run
+
+          # Reconcile FULL state every run (idempotent).
+          {
+            echo "$MARKER"
+            echo "### 🧭 compass · fleet panel — ${GH_REPO}"
+            echo
+            printf '_Updated %s UTC · this is a live panel (re-painted each tick)._\n\n' "$(date -u '+%Y-%m-%d %H:%M')"
+            echo "| PR | State | Title | Checks |"
+            echo "|---|---|---|---|"
+          } > "$tmp"
+
+          prs="$(gh pr list --state open --json number,title,labels,statusCheckRollup --limit 100 2>/dev/null || echo '[]')"
+          count="$(printf '%s' "$prs" | jq 'length')"
+          for i in $(seq 0 $((count - 1))); do
+            n="$(printf '%s' "$prs" | jq -r ".[$i].number")"
+            t="$(printf '%s' "$prs" | jq -r ".[$i].title" | cut -c1-50)"
+            labs="$(printf '%s' "$prs" | jq -r ".[$i].labels[].name" 2>/dev/null | tr '\n' ' ')"
+            checks="$(printf '%s' "$prs" | jq -r '[.['"$i"'].statusCheckRollup[]?.conclusion // .['"$i"'].statusCheckRollup[]?.state] | unique | join(",")' 2>/dev/null)"
+            # State precedence (mirrors sdlc-control.yml).
+            st="🔵 reviewing"
+            case " $labs " in *" agent:reviewed-clean "*) st="🟢 clean" ;; esac
+            case " $labs " in *" agent:approve-eligible "*) st="🟢 approve-eligible" ;; esac
+            case " $labs " in *" agent:needs-fix "*) st="🔴 needs-fix" ;; esac
+            case " $labs " in *" sdlc:hold "*) st="⏸️ hold" ;; esac
+            case " $labs " in *" sdlc:approved "*) st="✅ approved" ;; esac
+            case " $labs " in *" sdlc:needs-human "*) st="🟠 needs-human"; nh="$nh $n" ;; esac
+            printf '| #%s | %s | %s | %s |\n' "$n" "$st" "$t" "${checks:-—}" >> "$tmp"
+          done
+          [ "$count" -eq 0 ] && echo "| — | 🟢 all clear | no open PRs | — |" >> "$tmp"
+
+          nh="$(echo "$nh" | xargs || true)"   # normalize spacing
+          {
+            echo
+            printf '**Needs you:** %s\n\n' "${nh:+#${nh// / #}}"; [ -z "$nh" ] && echo '**Needs you:** none right now ✓'
+            echo "<sub>Steer from your phone: comment \`/hold #N\` · \`/resume #N\` · \`/approve #N\` · \`/status\`. Panel by compass mission-digest.</sub>"
+            printf '\n<!-- needs-human: %s -->\n' "$nh"
+          } >> "$tmp"
+
+          # Find the existing panel issue (by hidden marker) or create it.
+          pid="$(gh issue list --state open --search "in:body $MARKER" --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -z "$pid" ] || [ "$pid" = "null" ]; then
+            pid="$(gh issue create --title "🧭 compass · fleet panel" --body-file "$tmp" --json number --jq '.number' 2>/dev/null \
+                  || gh issue create --title "🧭 compass · fleet panel" --body-file "$tmp" | grep -oE '[0-9]+$' | tail -1)"
+            echo "created panel issue #$pid"; exit 0
+          fi
+
+          # Detect NEWLY needs-human PRs vs the previous panel state (self-contained; no external store).
+          prev="$(gh issue view "$pid" --json body --jq '.body' | sed -n 's/.*<!-- needs-human: \(.*\) -->.*/\1/p' | tr -d '\r')"
+          gh issue edit "$pid" --body-file "$tmp" >/dev/null && echo "panel #$pid updated"
+
+          # Page the maintainer ONLY for PRs that JUST entered needs-human (a fresh @mention pushes reliably).
+          if [ -n "$nh" ] && [ -n "$MAINTAINER" ]; then
+            fresh=""
+            for n in $nh; do case " $prev " in *" $n "*) : ;; *) fresh="$fresh #$n" ;; esac; done
+            fresh="$(echo "$fresh" | xargs || true)"
+            [ -n "$fresh" ] && gh issue comment "$pid" --body "@${MAINTAINER} 🟠 needs you: ${fresh} hit the round cap / asked for a human. \`/hold\` or \`/approve\` from your phone." \
+              && echo "paged @$MAINTAINER for $fresh"
+          fi

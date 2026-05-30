@@ -17,6 +17,18 @@ Names are stable; `tag` is the machine label that drives the pipeline.
 | **Security** | Secrets / authz / injection / tenancy. Advisory (does not gate merge). | Claude · opus | `agent:security` | Read, Grep, Glob, Bash(git diff) | — | GitHub-native + local |
 | **QA** | Run the test suite; fail the check on test failure. | auto-detect | `agent:qa` | test runner (go/cargo/npm/pytest/make) | **required check** (red on failure) | GitHub-native + local |
 | **Releaser** | Changelog + version bump on the PR branch. Never tags, publishes, or merges. | Claude · sonnet | `agent:release` | Read, Edit, Bash(git, gh) | **human approve** | GitHub-native |
+| **Test-architect** | Generate unit + e2e tests for a change, run + validate them; the **safety gate** — no adequate tests, no approve/merge. | Claude · sonnet | (gate) | Read, Edit, Write, Grep, Glob, Bash(build/test/cov) | **gates** approve/merge | subagent / local |
+
+## Fleet & routines (scheduled / cross-repo agents)
+
+Opt-in, scheduled or comment-driven. Same prime directive: **no agent merges or deploys.** See [`docs/14-fleet.md`](../docs/14-fleet.md).
+
+| Agent | Mandate | Engine | Trigger | Tools (scoped) | Gate | Governs |
+|---|---|---|---|---|---|---|
+| **vuln-remediate** | Scan deps + SAST + GitHub alerts; auto-fix only the SAFE ones into a **test-gated PR**, file an issue for the rest. | Claude · sonnet | nightly cron + dispatch | scan tools + Bash(build/test/git/gh), branch `routine/security-*` only | never merges; **tests must pass** | per-repo |
+| **mission-digest** | Maintain ONE pinned "fleet panel" issue of every PR's state; @mention the maintainer on new `needs-human`. | gh-only (no model) | `*/30` cron (best-effort) + dispatch | Bash(gh pr/issue read+edit) | read + one issue | per-repo (Phase 1: cross-repo) |
+| **auto-approve** | Mark a reviewed-clean PR `agent:approve-eligible` if it passes the allowlist. **Comment + label only; never a GitHub Approval; never merges.** | gh-only (no model) | `pull_request: labeled` | Bash(gh pr comment/edit) | **[ADR-0003](../docs/adr/0003-auto-approve-trust-boundary.md)**; off by default | per-repo |
+| **dep-refresh · flaky-triage · doc-freshness · babysit-prs** | (existing routines) — dep bumps, flake clustering, doc drift, PR nudges. | Claude · sonnet/haiku | weekly/nightly/6h cron | per [routines README](routines/README.md) | issue/PR only | per-repo |
 
 ## The closed loop (review ⇄ fix)
 

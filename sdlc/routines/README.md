@@ -10,6 +10,14 @@ they're not installed by `setup.sh --all`.
 | `dep-refresh.yml` | weekly (Mon) | bump deps, test, summarize | a branch | a PR |
 | `flaky-triage.yml` | nightly | cluster recent CI failures into flakes | — | an issue |
 | `doc-freshness.yml` | weekly (Mon) | fix docs that drifted from code | a branch | a PR |
+| `vuln-remediate.yml` | nightly (04:00 UTC) | scan deps (govulncheck/npm audit/pip-audit/cargo audit) + Dependabot/code-scanning alerts; auto-fix SAFE ones into a test-gated PR on `routine/security-*`; file one de-duped issue for the rest | a branch | a PR + an issue |
+| `mission-digest.yml` | `*/30` best-effort | maintain ONE pinned "fleet panel" issue of every open PR's state; @mention `FLEET_MAINTAINER` only on a NEW `needs-human` transition; gh-only (no model) | — | an issue (once; updates it each run) |
+
+> **`auto-approve`** (`sdlc/workflows/sdlc-autoapprove.yml`) — policy-gated eligibility
+> signal that fires when a PR is labeled `agent:reviewed-clean`. Off by default; enable
+> with repo variable `SDLC_AUTOAPPROVE=on`. Never calls `gh pr review --approve` and
+> never merges — comment + label only. Governed by ADR-0003. Installed by `setup.sh --all`
+> (not `--routines`), because it is a workflow-trigger workflow, not a scheduled routine.
 
 ## Install
 ```bash

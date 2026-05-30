@@ -5,6 +5,33 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Added — autonomous fleet + mobile mission-control
+
+- **`test-architect` subagent** (`claude/agents/test-architect.md`) — safety gate for the
+  autonomous loops: writes unit + e2e tests, runs them, validates each test actually fails
+  without the change. `TEST-GATE: FAIL` blocks a fix from advancing to a PR or
+  `agent:approve-eligible`. No adequate tests → no approve/merge.
+- **`vuln-remediate` routine** (`sdlc/routines/vuln-remediate.yml`) — nightly + dispatch;
+  scans deps (govulncheck / npm audit / pip-audit / cargo audit) and GitHub
+  Dependabot/code-scanning alerts; auto-fixes SAFE findings into a test-gated PR on
+  `routine/security-*`; files one de-duped issue for the rest; never merges.
+- **`mission-digest` routine** (`sdlc/routines/mission-digest.yml`) — `*/30` best-effort
+  cron + dispatch; gh-only (no model); maintains ONE pinned "fleet panel" issue of every open
+  PR's state; @mentions `FLEET_MAINTAINER` only on a NEW `sdlc:needs-human` transition.
+- **`auto-approve` workflow** (`sdlc/workflows/sdlc-autoapprove.yml`, ADR-0003) — off by
+  default (`SDLC_AUTOAPPROVE=on` to enable); on a `agent:reviewed-clean` PR, evaluates a
+  fail-closed allowlist (trusted author, green checks, allowlisted paths default docs/+*.md,
+  150-line cap, tests present) and marks it `agent:approve-eligible` with a comment. Comment +
+  label only — never calls `gh pr review --approve`, never merges.
+- **`compass notify` / lantern bridge** (`scripts/compass-notify.sh`) — POSTs to lantern's
+  `/session/<tenant>/send-self` endpoint to DM you via iMessage or WhatsApp. Config:
+  `COMPASS_NOTIFY_URL`, `COMPASS_NOTIFY_TOKEN`, `COMPASS_NOTIFY_TENANT`. Unconfigured =
+  graceful no-op.
+- **`sdlc/fleet/` scaffolding** — `repos.txt.example` for cross-repo orchestration (Phase 1;
+  needs `FLEET_TOKEN` fine-grained PAT scoped to those repos).
+- **ADR-0003** (`docs/adr/0003-auto-approve-trust-boundary.md`) — records the governance
+  decision for the auto-approve trust boundary.
+
 ## [0.9.0] — 2026-05-30
 
 ### Added — install, packaging & versioning (consumer-grade)

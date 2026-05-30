@@ -461,6 +461,7 @@ compass is built to be **trusted before it's run** — and honest about its limi
 | [10 · Roadmap](docs/10-roadmap.md) | where it's going, grounded in real harness primitives |
 | [12 · Every agent](docs/12-every-agent.md) | one manual for Claude Code, Codex, Gemini, Cursor, Copilot |
 | [13 · Dynamic workflows](docs/13-workflows.md) | parallel, adversarially-verified subagent orchestration |
+| [14 · Fleet](docs/14-fleet.md) | autonomous agent fleet + mobile mission-control (lantern iMessage/WhatsApp · GitHub Mobile) |
 | [ADRs](docs/adr/) | load-bearing decisions (cross-repo memory; autonomous-loop trust boundary) |
 
 <div align="center"><br><sub>MIT · built to be shared · contributions welcome</sub></div>

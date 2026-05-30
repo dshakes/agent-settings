@@ -1,0 +1,7 @@
+# compass fleet — the repos the cross-repo orchestrators operate on.
+# Copy to `repos.txt` in your control repo. One `owner/name` per line; `#` comments.
+# The orchestration-plane workflows (Phase 1) loop this list with `gh`. Scope your
+# FLEET_TOKEN (fine-grained PAT or GitHub App) to EXACTLY these repos — least privilege.
+dshakes/lantern
+dshakes/compass
+# dshakes/syntax

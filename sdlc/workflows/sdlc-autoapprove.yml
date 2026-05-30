@@ -1,0 +1,89 @@
+# Policy-gated auto-approve (ADR-0003). OFF BY DEFAULT. When a PR is reviewed-clean, this
+# evaluates an allowlist and, if every condition holds, marks it `agent:approve-eligible` +
+# comments. It NEVER authors a GitHub Approval and NEVER merges — the human approval + merge
+# gate (ADR-0002) is untouched. gh-only; no model. Enable with repo var SDLC_AUTOAPPROVE=on.
+name: "sdlc · auto-approve (policy-gated)"
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: read
+
+concurrency:
+  group: sdlc-autoapprove-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  eligibility:
+    # Only when the Reviewer marks it clean, same-repo only (never a fork), and the kill switch is on.
+    if: |
+      github.event.label.name == 'agent:reviewed-clean' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.SDLC_AUTOAPPROVE == 'on'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      AUTHOR: ${{ github.event.pull_request.user.login }}
+      # Configurable allowlist (repo vars override the conservative defaults).
+      TRUSTED_AUTHORS: ${{ vars.SDLC_AUTOAPPROVE_AUTHORS || 'claude[bot],compass-agent,app/claude' }}
+      PATH_ALLOW: ${{ vars.SDLC_AUTOAPPROVE_PATHS || 'docs/,README,CHANGELOG,.md' }}
+      MAX_LINES: ${{ vars.SDLC_AUTOAPPROVE_MAX_LINES || '150' }}
+    steps:
+      - name: Evaluate auto-approve policy (allowlist, all conditions AND-ed)
+        run: |
+          set -uo pipefail
+          deny() { echo "auto-approve: NOT eligible — $1"; exit 0; }   # not eligible is a clean no-op
+
+          # Kill switch on the PR itself.
+          labels="$(gh pr view "$PR" --json labels --jq '.labels[].name' 2>/dev/null || true)"
+          printf '%s\n' "$labels" | grep -qx 'sdlc:hold' && deny "on hold (sdlc:hold)"
+
+          # 1. Author allowlist — never a human's in-progress PR.
+          case ",$TRUSTED_AUTHORS," in *",$AUTHOR,"*) : ;; *) deny "author '$AUTHOR' not in the trusted set" ;; esac
+
+          # 2. Green checks only.
+          rollup="$(gh pr view "$PR" --json statusCheckRollup --jq '[.statusCheckRollup[]?.conclusion // .statusCheckRollup[]?.state] | unique | join(",")' 2>/dev/null || echo unknown)"
+          case "$rollup" in
+            SUCCESS|success|"SUCCESS,"*|*",SUCCESS") : ;;
+            *) printf '%s' "$rollup" | grep -qiE 'fail|error|pending|cancel' && deny "checks not all green ($rollup)" ;;
+          esac
+
+          # 3. Diff-scope allowlist + fail-closed destructive globs.
+          files="$(gh pr view "$PR" --json files --jq '.files[].path')"
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            case "$f" in
+              .github/*|*/secrets/*|*.tf|*Formula/*|*/migrations/*) deny "touches a fail-closed path: $f" ;;
+            esac
+            ok=0; for pat in ${PATH_ALLOW//,/ }; do case "$f" in *"$pat"*) ok=1 ;; esac; done
+            [ "$ok" = 1 ] || deny "path not in allowlist: $f"
+          done <<EOF
+          $files
+          EOF
+
+          # 4. Size cap.
+          add="$(gh pr view "$PR" --json additions --jq '.additions')"
+          del="$(gh pr view "$PR" --json deletions --jq '.deletions')"
+          [ "$((add + del))" -le "$MAX_LINES" ] || deny "diff $((add + del)) lines > cap $MAX_LINES"
+
+          # 5. Tests-present: a source change with NO test file in the diff is never eligible.
+          src=0; tst=0
+          while IFS= read -r f; do
+            case "$f" in *_test.go|*.test.ts|*.test.tsx|*.spec.ts|test_*.py|*_test.py|*_spec.rb|*/tests/*|*/test/*) tst=1 ;; esac
+            case "$f" in *.go|*.ts|*.tsx|*.js|*.py|*.rs|*.rb|*.java) [ "$tst" = 1 ] || src=$((src+1)) ;; esac
+          done <<EOF
+          $files
+          EOF
+          [ "$src" -eq 0 ] || [ "$tst" = 1 ] || deny "source changed with no test diff (test-architect gate)"
+
+          # Eligible: comment + a DISTINCT label. NEVER `gh pr review --approve`; NEVER merge.
+          gh label create "agent:approve-eligible" --color 0e8a16 --force >/dev/null 2>&1 || true
+          gh pr edit "$PR" --add-label "agent:approve-eligible" >/dev/null 2>&1 || true
+          gh pr comment "$PR" --body "✅ **Auto-approve eligible** — green checks, allowlisted scope ($((add + del)) lines), tests present, trusted author. A maintainer still gives the GitHub approval; \`/hold #$PR\` to veto. (Policy: ADR-0003.)"
+          echo "auto-approve: marked PR #$PR eligible."
