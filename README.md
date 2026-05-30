@@ -18,7 +18,11 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 </div>
 
 <p align="center">
-  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="assets/explainer.svg">📐 the big picture</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
+  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Under the hood, all opt-in: guardrails · cost-tiered (local/router) · subagents/commands/MCP · scheduled agents · spec-driven · dynamic workflows · cross-model audit · human merge gate." width="900">
+</p>
+
+<p align="center">
+  <b><a href="#install">Install in one command ↓</a></b> &nbsp;·&nbsp; <a href="demo/preview.gif">▶ 30-second demo</a> &nbsp;·&nbsp; <a href="#autonomous-sdlc">🔁 the self-fixing PR loop</a> &nbsp;·&nbsp; <a href="docs/11-using-compass.md">📚 start here</a>
 </p>
 
 ---
@@ -27,14 +31,9 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 
 ### ⭐ The part people screenshot: it fixes its own PRs.
 
-Open a pull request and compass **reviews it, security-checks it, runs the tests, cross-audits it with a second model — then pushes its own fixes until it's green.** You just merge. *(Try it locally in 30 seconds, no tokens — [jump to it ↓](#autonomous-sdlc).)*
+Open a pull request and compass **reviews it, security-checks it, runs the tests, cross-audits it with a second model — then pushes its own fixes until it's green.** You just merge. *(Try it locally in 30 seconds, no tokens — [watch the loop ↓](#autonomous-sdlc).)*
 
 </div>
-
-<p align="center">
-  <a href="#autonomous-sdlc"><img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="820"></a>
-</p>
-<p align="center"><sub>A real run (PR #4): Reviewer flagged the bug → Builder pushed the fix → re-review went green → you merge.</sub></p>
 
 ---
 
@@ -187,7 +186,12 @@ Opus 4.8 · myrepo · main* · 45k ctx · $1.23 · 🧭 🛡1 🧹2 💡1 📉~$
   <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
 </p>
 
-<p align="center"><sub>↑ the architecture. The same loop running on a <b>real PR</b> is the animation at the top of this page — Reviewer flagged a bug → Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it yourself</a>)</sub></p>
+<p align="center"><sub>↑ the architecture. Below, the same loop on a <b>real PR</b>:</sub></p>
+
+<p align="center">
+  <img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="820">
+</p>
+<p align="center"><sub>↑ a real run (PR #4): Reviewer flagged the bug → Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it yourself</a>)</sub></p>
 
 **Three ways to kick it off — only the merge is ever yours:**
 
