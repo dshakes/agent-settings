@@ -45,7 +45,7 @@ No app. No service. No `curl | sh`. Just files you can read, audit, and `git pul
 
 <div id="contents"></div>
 
-**Contents** &nbsp;·&nbsp; [Why compass?](#why-compass) &nbsp;·&nbsp; [What you get](#what-you-get) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [See it work](#see-it-work) &nbsp;·&nbsp; [How it fits together](#how-it-fits-together) &nbsp;·&nbsp; [The crew](#the-crew-9-subagents-12-commands-3-workflows) &nbsp;·&nbsp; [Guardrails](#guardrails-and-automation) &nbsp;·&nbsp; [The compass CLI](#the-compass-cli) &nbsp;·&nbsp; [Autonomous SDLC](#autonomous-sdlc) &nbsp;·&nbsp; [Connected & extensible](#connected-and-extensible) &nbsp;·&nbsp; [Cost model](#cost-model) &nbsp;·&nbsp; [Safety & status](#safety-honesty-and-status) &nbsp;·&nbsp; [Docs](#docs)
+**Contents** &nbsp;·&nbsp; [Why compass?](#why-compass) &nbsp;·&nbsp; [What you get](#what-you-get) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [See it work](#see-it-work) &nbsp;·&nbsp; [Autonomous SDLC](#autonomous-sdlc) &nbsp;·&nbsp; [How it fits together](#how-it-fits-together) &nbsp;·&nbsp; [The crew](#the-crew-9-subagents-12-commands-3-workflows) &nbsp;·&nbsp; [Guardrails](#guardrails-and-automation) &nbsp;·&nbsp; [The compass CLI](#the-compass-cli) &nbsp;·&nbsp; [Connected & extensible](#connected-and-extensible) &nbsp;·&nbsp; [Cost model](#cost-model) &nbsp;·&nbsp; [Safety & status](#safety-honesty-and-status) &nbsp;·&nbsp; [Docs](#docs)
 
 ---
 
@@ -66,10 +66,10 @@ The whole point is **less friction and fewer nasty surprises**, in every repo, f
 
 Everything above is on after a single install. Here's what's in the box, each link jumps to the detail:
 
+- ⭐ **It runs your PRs — and fixes its own review comments.** The headline: an optional [autonomous pipeline](#autonomous-sdlc) reviews, security-checks, tests, and cross-audits every change, then pushes its *own* fixes until it's green. You just merge. (Try it locally in 30 seconds, no tokens.) [→](#autonomous-sdlc)
+- ✅ **A senior crew on call.** 9 cost-tiered specialist subagents, 12 slash-commands, and 3 parallel "dynamic workflows" that review and audit in parallel and fact-check each other. [→](#the-crew-9-subagents-12-commands-3-workflows)
 - ✅ **Every agent, one source.** Claude Code, Codex, Gemini — plus Cursor / Windsurf / Copilot via the open [`AGENTS.md`](https://agents.md/) standard — read the *same* playbook. Switch or mix vendors without rewriting a thing. [→](#connected-and-extensible)
-- ✅ **A senior crew on call.** 9 cost-tiered specialist subagents, 12 slash-commands, and 3 parallel "dynamic workflows." [→](#the-crew-9-subagents-12-commands-3-workflows)
 - ✅ **Guardrails that stay out of your way.** 4 hooks block disasters, format edits, and orient the agent — silently. [→](#guardrails-and-automation)
-- ✅ **It can run your PRs.** An optional autonomous pipeline reviews, security-checks, tests, cross-audits, and fixes its own findings. [→](#autonomous-sdlc)
 - ✅ **It onboards you and proves its value.** `compass onboard` gets you productive in a new repo in minutes; `compass impact` shows what it saved. [→](#the-compass-cli)
 - ✅ **Cheaper by design, measurably.** Model routing is now scored against an eval set and gated in CI. [→](#cost-model)
 
@@ -155,6 +155,103 @@ Opus 4.8 · myrepo · main* · 45k ctx · $1.23 · 🧭 🛡1 🧹2 💡1 📉~$
 ```
 
 <sub>model · directory · git branch · context size · session spend — then today's compass activity: **🛡** footguns blocked · **🧹** files auto-formatted · **💡** policy nudges · **📉~$** estimated saved versus running everything on Opus. Each piece shows only when there's something to report, and nothing ever leaves your machine.</sub>
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Autonomous SDLC
+
+**An AI engineering team that opens your PRs, fixes its own review comments, and stops at the merge button.**
+
+> **This is the headline — and you can watch it work in 30 seconds, with no tokens and no GitHub setup.** It scales in two steps:
+> 1. **Run it locally, right now** — `~/compass/sdlc/orchestrate.sh "<task>"` (or `/sdlc`) runs the whole plan→build→review→audit→security→QA pipeline and opens a PR, using just your logged-in CLI. *No tokens.* This is the fastest way to feel it.
+> 2. **Make it always-on** — wire up the GitHub loop *(below)* and it runs on **every PR automatically**, fixing its own review findings until green. *Adds tokens.*
+>
+> Either way it stops at the PR — **you keep the merge.** (Already sold? Jump to [turn it on](#what-youll-need-to-turn-it-on).)
+
+*Opt-in, and the part people screenshot.* Turn it on and compass becomes a pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test a change. When the Reviewer flags something **Blocking**, the **Builder fixes it on the branch and pushes**, and the Reviewer runs again — looping until it's green or it hits a round cap and asks for a human. Agents stop at the PR. **You keep the merge and deploy gates.**
+
+<p align="center">
+  <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
+</p>
+
+<p align="center">
+  <img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="780">
+</p>
+<p align="center"><sub>↑ a real run: the Reviewer flagged a bug → the Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it</a>)</sub></p>
+
+**Three ways to kick it off — only the merge is ever yours:**
+
+- **Locally:** `~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"` runs the whole pipeline and opens a PR.
+- **From a comment:** drop `@claude <task>` on an issue or PR.
+- **Zero-touch:** label an issue **`agent:build`** and an Implementer turns it into a PR automatically (maintainer-gated).
+
+**Steer it from any PR comment, don't babysit it:** `/revise <note>` sends it back with your guidance, `/hold` · `/resume` pause and continue, `/approve` marks it merge-ready. A sticky status panel always shows the loop's state and what's waiting on you.
+
+**Pick where it runs:**
+
+| Way to run it | Runs on | Auth | API credits? | Manage a box? |
+|---|---|---|---|---|
+| **Hosted + subscription token** *(simplest)* | GitHub's runners | `CLAUDE_CODE_OAUTH_TOKEN` | **No** | No |
+| **Self-hosted, keyless** | your runner (VM / laptop) | logged-in `claude -p` | No | Yes |
+| **Hosted + API key** | GitHub's runners | `ANTHROPIC_API_KEY` | Yes (pay-per-use) | No |
+| **Local, no cloud** | your machine | your CLI login | No | No |
+
+#### What you'll need to turn it on
+
+The local `orchestrate.sh` path needs none of these — just your logged-in CLI. The always-on GitHub loop needs:
+
+| What | Why | How to get it |
+|---|---|---|
+| A **GitHub repo** + the **`gh`** CLI | the loop lives in GitHub Actions on your PRs | `gh auth login`; hosted runs also need the [Claude GitHub App](https://github.com/apps/claude) installed |
+| **`CLAUDE_CODE_OAUTH_TOKEN`** | auth for Claude in the workflows — uses your **subscription, no API credits** | run `claude setup-token` |
+| **`SDLC_BOT_TOKEN`** | a fine-grained **PAT** so the Builder's push re-triggers the Reviewer (the loop *chains*) | GitHub → Settings → fine-grained PAT, scoped to the repo, **Contents + Pull requests: write** |
+| **`ANTHROPIC_API_KEY`** *(alt)* | use a pay-per-use API key instead of the subscription token | [console.anthropic.com](https://console.anthropic.com) |
+| **`OPENAI_API_KEY`** *(optional)* | only for the **Codex** cross-audit step | [platform.openai.com](https://platform.openai.com) |
+
+```bash
+# GitHub-native closed loop (Reviewer ⇄ Builder until green):
+export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
+export SDLC_BOT_TOKEN=…            # fine-grained PAT (Contents + Pull requests: write) — lets the loop chain
+export OPENAI_API_KEY=…            # optional — the Codex cross-audit
+~/compass/sdlc/setup.sh --all      # labels + workflows + CODEOWNERS + secrets + branch protection
+```
+
+`setup.sh` prompts for and stores these as repo secrets for you. The loop auto-chains **only** with `SDLC_BOT_TOKEN` (GitHub blocks workflow-to-workflow recursion with the default token); without it, the review and one fix still run. Validated end-to-end on a live repo — see [`sdlc/SMOKETEST.md`](sdlc/SMOKETEST.md). Roster, gates, security posture, and troubleshooting: [`docs/09-sdlc.md`](docs/09-sdlc.md).
+
+**The same loop, as a text diagram:**
+
+```mermaid
+flowchart TD
+  issue["📋 Issue · label: agent:build"]
+  push["👤 You push a PR"]
+  issue -->|"🤖 Implementer opens it"| pr["a PR"]
+  push --> pr
+  pr --> onpush
+  subgraph onpush["🤖 Runs automatically on the PR"]
+    rev["Reviewer · Claude"]
+    sec["Security · Claude opus"]
+    qa["QA · runs tests"]
+    aud["Auditor · Codex"]
+  end
+  onpush --> verdict{"Reviewer<br/>verdict"}
+  verdict -->|CLEAN| green["checks green<br/>label: reviewed-clean"]
+  verdict -->|BLOCKING| needsfix["label: agent:needs-fix"]
+  needsfix --> builder["🤖 Builder fixes on the branch<br/>+ pushes via SDLC_BOT_TOKEN"]
+  builder -->|"re-triggers the checks"| onpush
+  builder -.->|"round cap, default 3"| needshuman["label: sdlc:needs-human"]
+  green --> gate["👤 Human merge gate<br/>1 code-owner approval"]
+  gate --> ship["👤 You merge & deploy"]
+  you["👤 You — steer anytime"]
+  you -.->|"/revise"| needsfix
+  you -.->|"/hold · /resume"| builder
+  you -.->|"/approve"| gate
+  class rev,sec,qa,aud,builder agent
+  class push,gate,ship,you,needshuman human
+  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
+  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
+```
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -277,102 +374,6 @@ Hooks are the part that runs *for* you on every action — the difference betwee
 | **`compass doctor`** | Validate the whole install (JSON, hooks, plugin sync, executability). |
 
 Everything logs best-effort to `~/.compass/` ledgers, locally — nothing is uploaded anywhere.
-
-<div align="right"><a href="#contents">↑ top</a></div>
-
----
-
-## Autonomous SDLC
-
-**An AI engineering team that opens your PRs, fixes its own review comments, and stops at the merge button.**
-
-> **Do you need this? Most people don't — at first.** The [base install](#install) already gives you the senior-engineer behavior, guardrails, and crew in every repo, with **no tokens**. Think of it as a ladder:
-> 1. **Base install** — senior-engineer defaults everywhere. *(no tokens)*
-> 2. **Try the pipeline locally** — `~/compass/sdlc/orchestrate.sh "<task>"` (or `/sdlc`) runs the whole plan→build→review→audit→security→QA pipeline and opens a PR, using just your logged-in CLI. *(no tokens)*
-> 3. **The always-on GitHub loop** — wire it up *(below)* only when you want PRs reviewed, tested, and **auto-fixed on every push, automatically**. *(this is the only rung that needs tokens)*
->
-> **Climb to rung 3 when** you use GitHub PRs and want review/security/tests/auto-fix without driving. **Stay on 1–2 if** you just want the local defaults or would rather not manage tokens.
-
-*Optional, opt-in — and the part people screenshot.* Turn it on and compass becomes a pipeline of **named, governed agents** — Planner · Builder · Reviewer · **Auditor (Codex)** · Security · QA · Releaser — that plan, build, review, cross-audit, security-check, and test a change. When the Reviewer flags something **Blocking**, the **Builder fixes it on the branch and pushes**, and the Reviewer runs again — looping until it's green or it hits a round cap and asks for a human. Agents stop at the PR. **You keep the merge and deploy gates.**
-
-<p align="center">
-  <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
-</p>
-
-<p align="center">
-  <img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="780">
-</p>
-<p align="center"><sub>↑ a real run: the Reviewer flagged a bug → the Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it</a>)</sub></p>
-
-**Three ways to kick it off — only the merge is ever yours:**
-
-- **Locally:** `~/compass/sdlc/orchestrate.sh "Add rate limiting to the login endpoint"` runs the whole pipeline and opens a PR.
-- **From a comment:** drop `@claude <task>` on an issue or PR.
-- **Zero-touch:** label an issue **`agent:build`** and an Implementer turns it into a PR automatically (maintainer-gated).
-
-**Steer it from any PR comment, don't babysit it:** `/revise <note>` sends it back with your guidance, `/hold` · `/resume` pause and continue, `/approve` marks it merge-ready. A sticky status panel always shows the loop's state and what's waiting on you.
-
-**Pick where it runs:**
-
-| Way to run it | Runs on | Auth | API credits? | Manage a box? |
-|---|---|---|---|---|
-| **Hosted + subscription token** *(simplest)* | GitHub's runners | `CLAUDE_CODE_OAUTH_TOKEN` | **No** | No |
-| **Self-hosted, keyless** | your runner (VM / laptop) | logged-in `claude -p` | No | Yes |
-| **Hosted + API key** | GitHub's runners | `ANTHROPIC_API_KEY` | Yes (pay-per-use) | No |
-| **Local, no cloud** | your machine | your CLI login | No | No |
-
-**What you'll need to turn it on** (the local `orchestrate.sh` path needs none of these — just your logged-in CLI):
-
-| What | Why | How to get it |
-|---|---|---|
-| A **GitHub repo** + the **`gh`** CLI | the loop lives in GitHub Actions on your PRs | `gh auth login`; hosted runs also need the [Claude GitHub App](https://github.com/apps/claude) installed |
-| **`CLAUDE_CODE_OAUTH_TOKEN`** | auth for Claude in the workflows — uses your **subscription, no API credits** | run `claude setup-token` |
-| **`SDLC_BOT_TOKEN`** | a fine-grained **PAT** so the Builder's push re-triggers the Reviewer (the loop *chains*) | GitHub → Settings → fine-grained PAT, scoped to the repo, **Contents + Pull requests: write** |
-| **`ANTHROPIC_API_KEY`** *(alt)* | use a pay-per-use API key instead of the subscription token | [console.anthropic.com](https://console.anthropic.com) |
-| **`OPENAI_API_KEY`** *(optional)* | only for the **Codex** cross-audit step | [platform.openai.com](https://platform.openai.com) |
-
-```bash
-# GitHub-native closed loop (Reviewer ⇄ Builder until green):
-export CLAUDE_CODE_OAUTH_TOKEN=…   # from `claude setup-token` — subscription, no API credits
-export SDLC_BOT_TOKEN=…            # fine-grained PAT (Contents + Pull requests: write) — lets the loop chain
-export OPENAI_API_KEY=…            # optional — the Codex cross-audit
-~/compass/sdlc/setup.sh --all      # labels + workflows + CODEOWNERS + secrets + branch protection
-```
-
-`setup.sh` prompts for and stores these as repo secrets for you. The loop auto-chains **only** with `SDLC_BOT_TOKEN` (GitHub blocks workflow-to-workflow recursion with the default token); without it, the review and one fix still run. Validated end-to-end on a live repo — see [`sdlc/SMOKETEST.md`](sdlc/SMOKETEST.md). Roster, gates, security posture, and troubleshooting: [`docs/09-sdlc.md`](docs/09-sdlc.md).
-
-**The same loop, as a text diagram:**
-
-```mermaid
-flowchart TD
-  issue["📋 Issue · label: agent:build"]
-  push["👤 You push a PR"]
-  issue -->|"🤖 Implementer opens it"| pr["a PR"]
-  push --> pr
-  pr --> onpush
-  subgraph onpush["🤖 Runs automatically on the PR"]
-    rev["Reviewer · Claude"]
-    sec["Security · Claude opus"]
-    qa["QA · runs tests"]
-    aud["Auditor · Codex"]
-  end
-  onpush --> verdict{"Reviewer<br/>verdict"}
-  verdict -->|CLEAN| green["checks green<br/>label: reviewed-clean"]
-  verdict -->|BLOCKING| needsfix["label: agent:needs-fix"]
-  needsfix --> builder["🤖 Builder fixes on the branch<br/>+ pushes via SDLC_BOT_TOKEN"]
-  builder -->|"re-triggers the checks"| onpush
-  builder -.->|"round cap, default 3"| needshuman["label: sdlc:needs-human"]
-  green --> gate["👤 Human merge gate<br/>1 code-owner approval"]
-  gate --> ship["👤 You merge & deploy"]
-  you["👤 You — steer anytime"]
-  you -.->|"/revise"| needsfix
-  you -.->|"/hold · /resume"| builder
-  you -.->|"/approve"| gate
-  class rev,sec,qa,aud,builder agent
-  class push,gate,ship,you,needshuman human
-  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
-  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
-```
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
