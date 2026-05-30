@@ -12,7 +12,9 @@
 #   ./install.sh --gemini         # ALSO feed the same manual to Gemini CLI (~/.gemini/GEMINI.md)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# COMPASS_REPO_ROOT lets a packaged install (Homebrew) point the symlink sources at a
+# stable path that survives upgrades. Unset → resolve from our own location (git clone).
+REPO="${COMPASS_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 CLAUDE_SRC="$REPO/claude"
 CODEX_SRC="$REPO/codex"
 CLAUDE_DST="$HOME/.claude"

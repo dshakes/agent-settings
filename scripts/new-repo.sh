@@ -44,7 +44,7 @@ if [ "$TEAM" = 1 ]; then
     cat > .claude/settings.json <<'JSON'
 {
   "extraKnownMarketplaces": {
-    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.6.0" } }
+    "compass": { "source": { "source": "github", "repo": "dshakes/compass", "ref": "v0.9.0" } }
   },
   "enabledPlugins": { "core@compass": true }
 }

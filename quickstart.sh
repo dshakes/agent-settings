@@ -9,7 +9,9 @@
 #
 # Also reachable post-install from any repo as: compass quickstart
 set -euo pipefail
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# COMPASS_REPO_ROOT lets a packaged install (Homebrew) pin the repo root to a stable
+# path that survives upgrades. Unset → resolve from our own location (git clone).
+REPO="${COMPASS_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 cd "$REPO"
 
 YES=0; DO_MCP=0; PASS=()

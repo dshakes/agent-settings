@@ -5,6 +5,22 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-05-30
+
+### Added — install, packaging & versioning (consumer-grade)
+- **Homebrew install** — `brew tap dshakes/compass https://github.com/dshakes/compass`
+  then `brew install dshakes/compass/compass`. Versioned (installs the latest release tag;
+  `--HEAD` tracks main), `brew upgrade`-safe. Formula in [`Formula/compass.rb`](Formula/compass.rb).
+- **Four documented install paths**, all reversible and `curl|sh`-free: Homebrew (managed),
+  `git clone` + `quickstart.sh` (own/edit your config), the Claude Code plugin (no terminal),
+  and by-hand `make`. Each is version-pinnable (tag / `--HEAD` / plugin pin).
+- **`COMPASS_REPO_ROOT`** override in `bin/compass`, `install.sh`, `quickstart.sh` — lets a
+  packaged install pin the repo root to a stable path so the `~/.claude` symlinks survive a
+  `brew upgrade`. Backward-compatible (unset → resolve from the script's own location).
+- **README rewritten** as a benefit-first, product-grade front door (problem→fix framing,
+  every feature visible, prerequisites + token requirements spelled out); team plugin pin
+  bumped to `v0.9.0`.
+
 ### Fixed — self-audit (`/compass-audit` run on the repo, findings triaged + verified)
 - **Security · `notify.sh` AppleScript injection** — untrusted `.message`/repo-path text was
   interpolated into the `osascript -e` source (a trailing `\` or `"` could break out into

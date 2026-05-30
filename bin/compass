@@ -12,7 +12,9 @@ while [ -L "$SRC" ]; do
   case "$SRC" in /*) ;; *) SRC="$dir/$SRC" ;; esac
 done
 HERE="$(cd -P "$(dirname "$SRC")" && pwd)"
-ROOT="$(dirname "$HERE")"
+# COMPASS_REPO_ROOT lets a packaged install (e.g. Homebrew) pin the repo root to a
+# stable path that survives upgrades. Unset → resolve from our own location (git clone).
+ROOT="${COMPASS_REPO_ROOT:-$(dirname "$HERE")}"
 SCRIPTS="$ROOT/scripts"
 
 cmd="${1:-help}"; [ "$#" -gt 0 ] && shift
