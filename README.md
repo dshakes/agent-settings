@@ -283,13 +283,69 @@ flowchart TD
 | ✅ **auto-approve** *(off by default)* | Marks a green, allowlisted, *tested* PR as fast-track-eligible — comment + label only, **never** a bot approval or merge. Governed by [ADR-0003](docs/adr/0003-auto-approve-trust-boundary.md). | on review-clean |
 | 🧭 **mission-digest / fleet-digest** | One pinned **"fleet panel"** of every PR's state across every repo; pings you only when something *newly* needs a human. | ~30 min |
 
+```mermaid
+flowchart LR
+  cron(["⏰ schedule · or dispatch"]) --> agents
+  subgraph agents["🤖 fleet agents · GitHub Actions"]
+    vuln["vuln-remediate"]
+    poll["issue-poller"]
+    dig["mission · fleet-digest"]
+  end
+  subgraph repos["your repos · fleet/repos.txt"]
+    rA["repo A"]; rB["repo B"]; rC["repo C"]
+  end
+  agents --> repos
+  vuln -->|"test-gated PR · issue"| loop
+  poll -->|"agent:autofix → build"| loop
+  loop["🟢 review · QA · test-architect"] --> merge["👤 you merge"]
+  dig --> panel["📌 fleet panel · 🔔 needs-you"] --> phone["📱 your phone"]
+  class vuln,poll,dig,loop agent
+  class merge,phone human
+  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
+  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
+```
+
+**The safety gate — why autonomy is safe here:** every fix passes `test-architect` before it can advance, and auto-approve only ever *signals*; the human approval + merge never move.
+
+```mermaid
+flowchart TD
+  fix["🤖 agent fix"] --> ta["🧪 test-architect<br/>generate + run unit + e2e"]
+  ta -->|"TEST-GATE: FAIL"| stop["⛔ not a PR — an issue"]
+  ta -->|"PASS · coverage held"| rev["🟢 review · QA"]
+  rev --> elig{"allowlisted<br/>+ tested?"}
+  elig -->|no| h1["👤 normal human review"]
+  elig -->|"yes (opt-in)"| sig["✅ approve-eligible<br/>signal only · ADR-0003"]
+  sig --> merge["👤 you approve + merge"]
+  class fix,ta,rev,sig agent
+  class h1,merge,stop human
+  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
+  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
+```
+
 ### Run it from your phone
 
 The fleet's control plane is GitHub itself, so you steer it from anywhere — three tiers, **none required, no lock-in:**
 
 - **GitHub Mobile** *(zero setup, universal)* — push when you're needed, view runs/logs, **approve · merge · comment**, trigger any workflow, and `/hold` · `/approve` from a comment.
 - **Any chat app** — `compass notify` pushes digests + "needs you" alerts to **Slack, Discord, Telegram, ntfy, or a webhook** (free, 2-minute setup).
-- **Two-way DM control** — `compass listen` lets you reply `/status` · `/approve #42` · `/build #7` from **Telegram** (free) or a local **iMessage/WhatsApp** bridge; it relays to GitHub where the same governed gates apply.
+- **Two-way DM control** — `compass listen` lets you reply `/status` · `/approve #42` · `/build #7` from a local **iMessage/WhatsApp** bridge or **Telegram** (free); it relays to GitHub where the same governed gates apply.
+
+```mermaid
+flowchart LR
+  agents["🤖 fleet agents"] -->|"compass notify"| out
+  subgraph out["push to your phone — pick any, none required"]
+    gm["GitHub Mobile"]; chat["Slack · Discord · Telegram · ntfy"]; dm["iMessage · WhatsApp"]
+  end
+  out --> you["📱 you"]
+  you -->|"/status · /approve #N · /hold"| relay["GitHub comment · compass listen"]
+  relay --> ctrl["sdlc-control.yml<br/>governed · ADR-0003"]
+  ctrl --> act["label · comment · queue"]
+  act --> gate["👤 human merge gate · unmoved"]
+  class agents,relay,ctrl,act agent
+  class you,gate human
+  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
+  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
+```
 
 Every action is still a commit, label, or comment — fully auditable, and the merge gate never moves. → **[Fleet & mobile mission-control](docs/14-fleet.md)**
 
