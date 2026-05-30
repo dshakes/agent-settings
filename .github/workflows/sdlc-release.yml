@@ -1,0 +1,51 @@
+# Releaser (Claude · sonnet) — release PREP only. Triggered by the `agent:release` label
+# on a PR. Updates CHANGELOG + version on the PR's branch and pushes; it NEVER tags,
+# publishes, merges, or deploys — a human does the irreversible steps (the release gate).
+name: "sdlc · release-prep (Claude)"
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write          # commit changelog/version bump to the PR's feature branch
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    if: |
+      github.event.label.name == 'agent:release' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+      - name: Claude release prep
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          # Subscription token (no API credits); for a pay-per-use key use:
+          #   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          prompt: |
+            You are **Releaser** (agent:release) in an autonomous SDLC pipeline, preparing a
+            release on PR #${{ github.event.pull_request.number }}'s branch.
+
+            Do release PREP only:
+            - Add a new version section to CHANGELOG.md summarizing this PR's user-facing changes
+              (follow the file's existing format and SemVer).
+            - Bump the version in the repo's conventional location if one exists
+              (package.json, Cargo.toml, pyproject.toml, a VERSION file, etc.).
+            Commit the changes — the action pushes them to this PR branch.
+
+            Do NOT tag, do NOT publish, do NOT merge, do NOT deploy, do NOT touch protected
+            branches. A human performs those steps after merge. Report what you changed.
+          claude_args: |
+            --model sonnet
+            --max-turns 12
+            --max-budget-usd 3.00
+            --allowedTools "Read,Edit,Write,Grep,Glob,Bash(git add:*),Bash(git commit:*),Bash(git log:*),Bash(git diff:*)"

@@ -1,0 +1,67 @@
+# Builder (Claude) — implements on demand. Triggered by @claude in an issue/PR comment.
+# Can edit code and push to a `claude/`-prefixed branch + open a PR. NEVER merges.
+# Needs the Claude GitHub App installed + secret ANTHROPIC_API_KEY.
+name: "sdlc · implement (Claude)"
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write          # push to a feature branch (not protected branches)
+  pull-requests: write
+  issues: write
+  id-token: write          # claude-code-action fetches an OIDC token
+
+jobs:
+  implement:
+    # Act on an explicit @claude. Write-permission is enforced by the Authorize step
+    # below — author_association (COLLABORATOR) does NOT distinguish a maintainer from a
+    # read/triage collaborator, so it must not be the gate for a code-writing agent.
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authorize — require repo WRITE permission
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          SENDER: ${{ github.event.comment.user.login }}
+        run: |
+          set -uo pipefail
+          perm="$(gh api "repos/$GH_REPO/collaborators/$SENDER/permission" --jq '.permission' 2>/dev/null || echo none)"
+          echo "commenter=$SENDER permission=$perm"
+          case "$perm" in
+            admin|maintain|write) echo "authorized" ;;
+            *) echo "::error::@$SENDER lacks write access — @claude implement is maintainers-only"; exit 1 ;;
+          esac
+      # Org-wide bot identity (optional): a GitHub App on the org mints the token whose push
+      # triggers the Reviewer. Falls back to SDLC_BOT_TOKEN, then the default token.
+      - name: Mint GitHub App token
+        id: apptoken
+        if: ${{ vars.SDLC_APP_ID != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.SDLC_APP_ID }}
+          private-key: ${{ secrets.SDLC_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Claude implement
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
+        with:
+          # Uses your Claude SUBSCRIPTION (no API credits). For a pay-per-use key, replace with:
+          #   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The App token (or SDLC_BOT_TOKEN) so the resulting push triggers the Reviewer.
+          # Falls back to the default token, in which case the review won't auto-run (see docs/09).
+          github_token: ${{ steps.apptoken.outputs.token || secrets.SDLC_BOT_TOKEN || github.token }}
+          branch_prefix: "claude/"
+          claude_args: |
+            --model sonnet
+            --max-turns 25
+            --max-budget-usd 5.00
+          # Interactive mode: Claude reads the @claude request, implements on a
+          # claude/ branch, opens/updates a PR, and reports back. It does not merge —
+          # branch protection + required reviews are the human gate.
