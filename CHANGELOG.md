@@ -5,6 +5,47 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Added — dynamic workflows (parallel, adversarially-verified subagent orchestration)
+- **Three workflow commands** in `claude/workflows/` (Claude Code's new dynamic-workflows
+  primitive, research preview, `v2.1.154+`) — each routes stages to compass's **own
+  cost-tiered subagents** via `agentType`, so cost follows risk:
+  - `/compass-review` — reviews the branch diff on 5 dimensions **in parallel**, a skeptic
+    **adversarially refutes** each finding, synthesizes one Blocking/Should-fix/Nit verdict.
+  - `/compass-audit` — whole-codebase bug & security sweep: 6 multi-modal finders, **loop
+    until two dry rounds**, each finding confirmed by a **2-of-3 perspective-diverse vote**.
+  - `/compass-plan` — drafts a plan from MVP-/risk-/simplicity angles, a judge panel scores
+    them, synthesizes one plan from the winner grafting the runners-up's best ideas.
+- `scripts/check-workflows.sh` — structural + JS-syntax lint for workflow scripts; wired into
+  `doctor` and CI. Symlinked into `~/.claude/workflows/` by `install.sh`. Docs:
+  [`docs/13-workflows.md`](docs/13-workflows.md).
+
+### Added — router eval harness (autoroute is now measured, not a guess)
+- `scripts/route-evalset.tsv` — labeled ground truth; `compass route --eval` scores the
+  deterministic tier-picker (per-tier recall + accuracy) and **CI gates** on an accuracy floor
+  (`COMPASS_ROUTE_MIN_ACCURACY`, default 90%). Closes the long-standing "no evals yet" caveat
+  on `SDLC_AUTOROUTE`. Router internals refactored into a single reusable `route_one()`.
+
+### Added — policy hook + prompt-caching guidance (roadmap §8 / §10)
+- `claude/hooks/require-tests.sh` — **opt-in** `PostToolUse` policy hook: nudges when a source
+  file changes with **no test diff**; silent once any test file is touched. Advisory, never
+  blocks. Tested in `scripts/test-cli.sh`.
+- **Prompt caching** documented in [`docs/02`](docs/02-cost-and-models.md): it's automatic; compass
+  maximizes the hit rate with stable system prefixes and byte-identical converge-loop prompts.
+
+### Added — one-command quickstart
+- `quickstart.sh` (+ `make quickstart` + `compass quickstart`) — preview → install → validate →
+  60-second on-ramp, in one idempotent command. Re-run to repair. No `curl | sh`.
+
+### Added — live ROI in the status line
+- The 🧭 compass-today segment gains `💡` policy nudges and **`📉~$` estimated saved today** vs
+  all-Opus (same method as `compass impact`). Fixture-tested in CI.
+
+### Changed — day-one adoption of the 2026-05-28 release
+- Deep tier bumped to **Opus 4.8** (`claude-opus-4-8`): `architect`, `debugger`,
+  `security-auditor`, and the driver. `/effort ultracode` documented.
+- Architecture diagram (Mermaid) + `assets/explainer.svg` updated to show dynamic workflows and
+  the one-command quickstart; README statusline section corrected to the real glyphs + new segments.
+
 ## [0.8.0] — 2026-05-27
 
 ### Added — the `compass` CLI (local engineering tools)

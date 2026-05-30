@@ -1,0 +1,44 @@
+# compass router eval set — the labeled ground truth for scripts/compass-route.sh.
+# Format: <expected-tier><TAB><task description>   ('#' lines and blanks ignored)
+#
+# This is the missing piece that lets SDLC_AUTOROUTE be more than a guess: a held-out
+# set we score the deterministic router against, so a routing change that regresses
+# accuracy fails CI. Tiers: haiku (trivial) · sonnet (default feature work) · opus
+# (high-stakes reasoning). Add cases as real mis-routes surface — that's how the set
+# earns its keep. Keep it honest: label by the cheapest tier that does the job WELL.
+#
+# ── haiku: mechanical, low-reasoning ──────────────────────────────────────────
+haiku	fix a typo in the README
+haiku	rename the variable userId to accountId across the file
+haiku	bump the eslint version in package.json
+haiku	reformat this file with the project formatter
+haiku	add a docstring to the parse() function
+haiku	fix the lint warnings in utils.go
+haiku	update the copyright year in the license header
+haiku	remove trailing whitespace from the changed files
+haiku	add a one-liner log statement to trace the request id
+haiku	correct a comment that no longer matches the code
+# ── sonnet: ordinary feature/fix/refactor/test/docs work ──────────────────────
+sonnet	add a rate limiter with tests
+sonnet	refactor the parser module to reduce duplication
+sonnet	implement pagination on the list endpoint
+sonnet	write unit tests for the retry helper
+sonnet	add a --dry-run flag to the CLI
+sonnet	fix the bug where empty input returns a 500
+sonnet	convert the callback API to async/await
+sonnet	add a new GET endpoint that returns user preferences
+sonnet	document the configuration options in the README
+sonnet	cache the results of the expensive lookup in memory
+sonnet	wire up structured logging in the worker
+sonnet	extract the validation logic into its own function
+# ── opus: architecture, security, concurrency, migrations, protocol design ────
+opus	redesign the auth trust model for multi-tenant isolation
+opus	plan a database migration with zero downtime and tenant isolation
+opus	review the encryption scheme for the secrets store
+opus	debug the intermittent race condition in the scheduler
+opus	design the cross-service protocol for the new event bus
+opus	threat-model the new public API surface
+opus	fix the authz bypass where a user can read another tenant's data
+opus	architect the sharding strategy for the write-heavy table
+opus	resolve the deadlock between the cache and the connection pool
+opus	design the backward-compatible schema change for the proto contract

@@ -9,7 +9,8 @@ habits that make you fast and cheap. If you read one doc, read this one.
 
 | You want… | One command | What it touches |
 |---|---|---|
-| It everywhere on my machine | `git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && make install` | symlinks `~/.claude` + `~/.codex` (backs up first) |
+| It everywhere on my machine (**simplest**) | `git clone https://github.com/dshakes/compass ~/compass && cd ~/compass && ./quickstart.sh` | preview → symlink `~/.claude` + `~/.codex` → validate → on-ramp (one command; re-run to repair) |
+| It everywhere, steps by hand | `… && make dry-run && make install && make doctor` | same, three explicit steps |
 | Just the machinery, no global config | `/plugin marketplace add dshakes/compass && /plugin install core@compass` | per-session plugin (no memory/permissions) |
 | Committed config in **one** repo | `make new-repo DIR=~/code/my-repo` | starter `CLAUDE.md` + `AGENTS.md` symlink |
 | Committed config across **many** repos | `make apply-many DIRS="~/code/*"` *(or `scripts/apply-repos.sh --git-only ~/code/*`)* | the per-repo pieces, in every repo at once |
@@ -54,12 +55,17 @@ extension point for new tools. Add your own — drop a markdown file in `agents/
    intent + acceptance criteria the build and review then verify *against*. (Skip for one-liners.)
 4. **Pre-ship:** `/ship` runs tests + a fresh-context review and prepares a clean commit. Or
    `/review` for just a review, `/tdd` to write the failing test first, `/triage` on a failure.
+   For a **deeper** pass, `/compass-review` fans the review out across five dimensions in
+   parallel and has a skeptic refute each finding before it's reported (research preview; see
+   [dynamic workflows](13-workflows.md)). `/compass-audit` does the same for a whole-repo sweep;
+   `/compass-plan` drafts a hard plan from several angles and picks the best.
 5. **Raise the PR.** The [autonomous loop](09-sdlc.md) takes over: review · security · tests ·
    Codex audit → if Blocking, the Builder fixes on the branch and re-reviews until green. **You
    merge.**
 
 The commands you'll actually reach for: **`/spec` `/ship` `/review` `/tdd` `/triage` `/pr`
-`/adr` `/cost`** — and **`/route`** to send a diff to the right specialist.
+`/adr` `/cost`** — and **`/route`** to send a diff to the right specialist. Going deep?
+**`/compass-review` `/compass-audit` `/compass-plan`** fan out many verified subagents at once.
 
 ---
 

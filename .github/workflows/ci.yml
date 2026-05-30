@@ -22,7 +22,7 @@ jobs:
         run: make doctor
 
       - name: shellcheck (errors fail the build)
-        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh bin/compass install.sh claude/skills/*/*.sh sdlc/*.sh
+        run: shellcheck -S error claude/hooks/*.sh claude/hooks/lib/*.sh claude/statusline.sh scripts/*.sh bin/compass install.sh quickstart.sh claude/skills/*/*.sh sdlc/*.sh
 
       - name: shellcheck (style — informational)
         run: shellcheck -S style claude/hooks/*.sh scripts/*.sh install.sh || true
@@ -39,6 +39,12 @@ jobs:
 
       - name: compass CLI tests (route · spend · impact · metric logger)
         run: bash scripts/test-cli.sh
+
+      - name: Workflow scripts (shape + JS syntax)
+        run: bash scripts/check-workflows.sh
+
+      - name: Router eval (accuracy floor gates autoroute)
+        run: bash scripts/compass-route.sh --eval
 
       - name: SDLC loop self-test (round cap + verdict parsing)
         run: bash sdlc/selftest.sh

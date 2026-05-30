@@ -23,6 +23,8 @@ compass — local engineering tools
 
 usage: compass <command> [args]
 
+  quickstart [flags]       Install + validate + the 60-second on-ramp (idempotent;
+                           re-run to repair). Pass-through: --mcp --gemini --copy --yes.
   status  [DIR]            Is compass enabled here? Global config + this-repo extras.
   onboard [DIR] | --all <glob>
                            Onboard into a repo: detect stack, deps, build+test green,
@@ -44,6 +46,7 @@ EOF
 run() { local s="$SCRIPTS/compass-$1.sh"; shift; [ -x "$s" ] || { echo "compass: missing $s" >&2; exit 1; }; exec "$s" "$@"; }
 
 case "$cmd" in
+  quickstart) exec "$ROOT/quickstart.sh" "$@" ;;
   status)   run status "$@" ;;
   onboard)  run onboard "$@" ;;
   impact)   run impact "$@" ;;

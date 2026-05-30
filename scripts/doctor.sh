@@ -49,9 +49,15 @@ for d in agents commands; do
 done
 [ -f "$REPO"/claude/skills/bootstrap-agent-config/SKILL.md ] && pass "skill present: bootstrap-agent-config"
 
+# Dynamic-workflow scripts (research preview): validate shape + JS syntax.
+if [ -d "$REPO"/claude/workflows ]; then
+  if "$REPO"/scripts/check-workflows.sh >/dev/null 2>&1; then pass "workflow scripts valid (claude/workflows)"
+  else fail "workflow scripts invalid — run: scripts/check-workflows.sh"; fi
+fi
+
 # Installed symlinks
 echo "Installed state (~/.claude):"
-for n in settings.json CLAUDE.md statusline.sh agents commands skills hooks output-styles; do
+for n in settings.json CLAUDE.md statusline.sh agents commands skills workflows hooks output-styles; do
   t="$HOME/.claude/$n"
   if [ -L "$t" ]; then pass "linked: ~/.claude/$n -> $(readlink "$t")"
   elif [ -e "$t" ]; then note "exists but not our symlink: ~/.claude/$n"

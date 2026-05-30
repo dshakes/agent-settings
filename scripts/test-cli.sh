@@ -23,6 +23,16 @@ eq "feature → sonnet"  "$("$COMPASS" route 'add a rate limiter with tests')" s
 eq "refactor → sonnet" "$("$COMPASS" route 'refactor the parser module')" sonnet
 eq "security → opus"   "$("$COMPASS" route 'redesign the auth trust model')" opus
 eq "migration → opus"  "$("$COMPASS" route 'plan a database migration with tenant isolation')" opus
+# --explain must print the reason AND exit 0 (regression guard: route_one sets globals,
+# so it must be called in-process, not via a subshell that swallows REASON under set -u).
+EX="$("$COMPASS" route --explain 'redesign the auth trust model' 2>&1)"; EXRC=$?
+eq  "--explain exit 0"        "$EXRC" 0
+has "--explain prints reason" "$EX" 'route: opus (matched opus keyword)'
+
+echo "route — eval harness (scores the router vs the labeled set):"
+if "$ROOT/scripts/compass-route.sh" --eval >/dev/null 2>&1; then ok "eval meets accuracy floor"; else no "eval below accuracy floor"; fi
+# a deliberately tiny set passes; a floor of 101 must fail (proves the gate bites)
+if COMPASS_ROUTE_MIN_ACCURACY=101 "$ROOT/scripts/compass-route.sh" --eval >/dev/null 2>&1; then no "floor=101 should fail"; else ok "accuracy floor actually gates"; fi
 
 echo "spend — aggregation + budget:"
 printf '%s\trepoA\tt\thaiku\t0.01\n%s\trepoA\tt\tsonnet\t0.04\n%s\trepoB\tt\topus\t0.30\n' "$TS" "$TS" "$TS" > "$TMP/spend.tsv"
@@ -48,6 +58,52 @@ rm -f "$TMP/metrics.tsv"
 ( . "$ROOT/claude/hooks/lib/common.sh"; compass_log_metric block "a reason"; compass_log_metric format py )
 eq "logged 2 rows" "$(wc -l < "$TMP/metrics.tsv" | tr -d ' ')" 2
 has "tab-separated block row" "$(head -1 "$TMP/metrics.tsv")" "$(printf 'block')"
+
+echo "require-tests — policy hook (nudge on source change with no test diff):"
+if command -v git >/dev/null 2>&1; then
+  G="$(mktemp -d)"
+  (
+    cd "$G" || exit 1
+    git init -q; git config user.email t@t; git config user.name t
+    echo "x" > base.txt; git add base.txt; git commit -qm base
+    printf 'package main\nfunc Add(a,b int) int { return a+b }\n' > calc.go
+    out_src="$(printf '{"tool_input":{"file_path":"%s/calc.go"}}' "$G" | "$ROOT/claude/hooks/require-tests.sh")"
+    printf 'package main\nfunc TestAdd(t *testing.T){}\n' > calc_test.go
+    out_test="$(printf '{"tool_input":{"file_path":"%s/calc.go"}}' "$G" | "$ROOT/claude/hooks/require-tests.sh")"
+    printf '%s\n--SEP--\n%s' "$out_src" "$out_test"
+  ) > "$TMP/rt.out"
+  rt_src="$(sed '/--SEP--/,$d' "$TMP/rt.out")"
+  rt_test="$(sed '1,/--SEP--/d' "$TMP/rt.out")"
+  has "nudges on untested source" "$rt_src" "require-tests"
+  if [ -z "$rt_test" ]; then ok "silent once a test file is dirty"; else no "should be silent when test touched (got '$rt_test')"; fi
+  rm -rf "$G"
+else no "git not available — cannot test require-tests hook"; fi
+
+echo "statusline — compass activity + live \$-saved-today segment:"
+TODAY="$(date -u +%Y-%m-%d)"
+printf '%sT10:00:00Z\tblock\tr\trm\n%sT10:01:00Z\tformat\tr\tgo\n%sT10:02:00Z\tpolicy\tr\ttest-gap\n' "$TODAY" "$TODAY" "$TODAY" > "$TMP/metrics.tsv"
+printf '%sT10:00:00Z\tr\tt\tsonnet\t0.20\n%sT10:01:00Z\tr\tt\thaiku\t0.05\n' "$TODAY" "$TODAY" > "$TMP/spend.tsv"
+SL="$(printf '{"model":{"display_name":"Opus 4.8"},"workspace":{"current_dir":"%s"}}' "$ROOT" | bash "$ROOT/claude/statusline.sh")"
+has "footgun + policy segments" "$SL" "🛡1"
+has "policy nudge segment"      "$SL" "💡1"
+has "live \$-saved today (.20*4 + .05*17 = 1.65)" "$SL" '$1.65'
+# 📉 must be ABSENT when there's no spend ledger (guards the threshold/empty path).
+SL2="$(printf '{"model":{"display_name":"x"},"workspace":{"current_dir":"%s"}}' "$ROOT" | COMPASS_HOME="$(mktemp -d)" bash "$ROOT/claude/statusline.sh")"
+case "$SL2" in *📉*) no "📉 should be absent with no spend.tsv" ;; *) ok "no 📉 segment without spend data" ;; esac
+
+echo "check-workflows — the gate actually bites:"
+if bash "$ROOT/scripts/check-workflows.sh" >/dev/null 2>&1; then ok "shipped workflows pass"; else no "shipped workflows should pass"; fi
+WF="$(mktemp -d)"
+printf 'const x = 1\n' > "$WF/bad.js"                     # no meta, no orchestration
+if bash "$ROOT/scripts/check-workflows.sh" "$WF" >/dev/null 2>&1; then no "malformed workflow should FAIL"; else ok "malformed workflow rejected"; fi
+printf "export const meta = { name: 'mismatch', description: 'x' }\nawait agent('hi')\n" > "$WF/named.js"
+if bash "$ROOT/scripts/check-workflows.sh" "$WF" >/dev/null 2>&1; then no "name!=filename should FAIL"; else ok "name/filename mismatch rejected"; fi
+rm -rf "$WF"
+
+echo "quickstart — non-interactive dry-run is side-effect-free:"
+QS="$("$ROOT/quickstart.sh" --dry-run --yes 2>&1)"; QSRC=$?
+eq  "quickstart --dry-run --yes exit 0" "$QSRC" 0
+has "quickstart reaches the on-ramp"    "$QS" "next 60 seconds"
 
 echo
 printf 'cli tests: %d passed, %d failed\n' "$pass" "$fail"

@@ -3,8 +3,9 @@
 #
 # Reads the statusline JSON on stdin and prints one line:
 #   <model> · <dir> · <git branch +dirty> · <ctx%> · <session cost> · 🧭 <compass today>
-# The 🧭 segment shows today's compass activity — 🛡N footguns blocked, 🧹N files auto-formatted
-# (from ~/.compass/metrics.tsv). Omitted when there's nothing to show. Full benefit view: `compass impact`.
+# The 🧭 segment shows today's compass activity — 🛡N footguns blocked · 🧹N files auto-formatted ·
+# 💡N policy nudges · 📉~$X estimated saved vs all-Opus (from ~/.compass metrics + spend ledgers).
+# Omitted when there's nothing to show. Full benefit view: `compass impact`.
 #
 # Degrades gracefully: any missing field is simply omitted. No hard deps
 # beyond a JSON reader (jq preferred, python3 fallback).
@@ -78,19 +79,32 @@ case "$mode" in
   bypassPermissions) mode_seg="${C_DIRTY}[bypass]${C_RST}" ;;
 esac
 
-# compass activity today: footguns blocked + files auto-formatted (from the metrics log).
-# Proof compass is working for you, at a glance. Best-effort; omitted if nothing logged.
+# compass activity today, at a glance — proof it's working for you. Best-effort; each
+# piece is omitted if there's nothing to show. Full benefit view: `compass impact`.
+#   🛡N footguns blocked · 🧹N files auto-formatted · 💡N policy nudges  (~/.compass/metrics.tsv)
+#   📉~$X estimated saved today vs running it all on Opus  (~/.compass/spend.tsv)
 compass_seg=""
-mfile="${COMPASS_HOME:-$HOME/.compass}/metrics.tsv"
+chome="${COMPASS_HOME:-$HOME/.compass}"
+today="$(date -u +%Y-%m-%d)"
+seg=""
+mfile="$chome/metrics.tsv"
 if [ -f "$mfile" ]; then
-  today="$(date -u +%Y-%m-%d)"
-  counts="$(awk -F'\t' -v d="$today" 'index($1,d)==1{if($2=="block")b++;else if($2=="format")f++} END{printf "%d\t%d",b+0,f+0}' "$mfile" 2>/dev/null)"
-  blk="${counts%%	*}"; fmtn="${counts##*	}"
-  seg=""
+  counts="$(awk -F'\t' -v d="$today" 'index($1,d)==1{if($2=="block")b++;else if($2=="format")f++;else if($2=="policy")p++} END{printf "%d\t%d\t%d",b+0,f+0,p+0}' "$mfile" 2>/dev/null)"
+  blk="${counts%%	*}"; rest="${counts#*	}"; fmtn="${rest%%	*}"; pol="${rest##*	}"
   [ "${blk:-0}" -gt 0 ] 2>/dev/null && seg="🛡${blk}"
   [ "${fmtn:-0}" -gt 0 ] 2>/dev/null && seg="${seg:+$seg }🧹${fmtn}"
-  [ -n "$seg" ] && compass_seg="${C_MODEL}🧭${C_RST} ${seg}"
+  [ "${pol:-0}" -gt 0 ] 2>/dev/null && seg="${seg:+$seg }💡${pol}"
 fi
+# Estimated $ saved today — same method as `compass impact`: vs all-Opus, Sonnet spend ×4
+# + Haiku spend ×17 (rough price-ratio deltas). Shown only once it rounds to a cent.
+sfile="$chome/spend.tsv"
+if [ -f "$sfile" ]; then
+  # Single awk does the sum AND the threshold (emit only when it rounds to ≥ $0.01,
+  # i.e. raw ≥ 0.005) — no extra fork on the render hot path.
+  saved="$(awk -F'\t' -v d="$today" 'index($1,d)==1{if($4=="sonnet")s+=$5;else if($4=="haiku")h+=$5} END{v=s*4+h*17; if(v>=0.005) printf "%.2f", v}' "$sfile" 2>/dev/null)"
+  [ -n "$saved" ] && seg="${seg:+$seg }${C_COST}📉~\$${saved}${C_RST}"
+fi
+[ -n "$seg" ] && compass_seg="${C_MODEL}🧭${C_RST} ${seg}"
 
 # Assemble, skipping empty segments.
 out="${C_MODEL}${model:-Claude}${C_RST}${SEP}${C_DIR}${dir_short}${C_RST}"

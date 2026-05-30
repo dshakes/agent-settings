@@ -14,7 +14,7 @@
 </div>
 
 <p align="center">
-  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Under the hood, all opt-in: guardrails · cost-tiered (local/router) · subagents/commands/MCP · scheduled agents · spec-driven · cross-model audit · human merge gate." width="900">
+  <img src="assets/explainer.svg" alt="compass in three beats: ONE CONFIG (install once) → EVERY AGENT (Claude Code · Codex · Gemini · Cursor, one AGENTS.md, no drift) → AUTONOMOUS PRs (reviews · fixes itself · you merge). Under the hood, all opt-in: guardrails · cost-tiered (local/router) · subagents/commands/MCP · scheduled agents · spec-driven · dynamic workflows · cross-model audit · human merge gate." width="900">
 </p>
 
 <sub>▶ <a href="demo/preview.gif">terminal demo</a> · 📐 <a href="assets/hero.svg">architecture diagram</a> · 🔁 <a href="#autonomous-sdlc">the autonomous PR loop</a></sub>
@@ -38,7 +38,8 @@ You already code with an AI assistant — **Claude Code, Codex, Gemini CLI, Curs
 - **Every agent, one config.** Claude Code, Codex, and Gemini — plus Cursor/Windsurf via the open `AGENTS.md` standard — follow the same senior-engineer playbook in *every* repo: understand first, stay in scope, verify before "done."
 - **It stops the disasters.** Hard-blocks `rm -rf /`, secret writes, `curl | sh`, and force-push to `main`; auto-formats every edit — silently, before anything runs.
 - **It costs less.** Grunt work goes to cheap models, Opus is saved for the hard calls, and the status line shows live `$` spend.
-- **It brings a crew.** 9 specialist subagents and 12 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model.
+- **It brings a crew.** 9 specialist subagents and 12 commands (`/ship` `/review` `/tdd` …), each pinned to the right-sized model — deep tier now on **Opus 4.8**.
+- **It fans out when it pays.** Three **dynamic-workflow** commands (`/compass-review` `/compass-audit` `/compass-plan`) orchestrate many subagents *in parallel* and **adversarially verify** each other's findings — a deep review or whole-repo audit that's faster *and* more trustworthy than a single pass. (Research preview; opt-in.)
 - **It can run your PRs.** An optional autonomous loop reviews, security-checks, tests, cross-audits, and **auto-fixes its own findings** — you keep the merge gate. Turn on as little or as much as you want; nothing you don't enable ever runs.
 - **It sets you up, and proves it.** `compass onboard` makes you productive in a new repo in minutes; `compass impact` shows what it saved you (footguns blocked, `$` saved) — and the status line shows it working live.
 
@@ -56,12 +57,10 @@ Pick **one** path (running both double-fires the hooks):
 
 ```bash
 git clone https://github.com/dshakes/compass ~/compass && cd ~/compass
-make dry-run     # preview every change
-make install     # symlink into ~/.claude + ~/.codex + the `compass` CLI (backs up first)
-make doctor      # validate everything
+./quickstart.sh     # one command: preview → install → validate → 60-second on-ramp
 ```
 
-Open a new shell (or `source` your rc) and the **`compass`** command is available — `compass impact`, `compass onboard`, … (see [Local tools & impact](#local-tools--impact)).
+`quickstart.sh` shows you exactly what it will change and asks before doing it (no `curl | sh`), then installs, runs `doctor`, and prints what to try first. Prefer the steps by hand? `make dry-run` → `make install` → `make doctor` does the same. Either way, open a new shell (or `source` your rc) and the **`compass`** command is on PATH — `compass impact`, `compass onboard`, `compass quickstart` (re-run to repair). See [Local tools & impact](#local-tools--impact).
 
 **B · Plugin only** — *a team, or you'd rather not touch your global config.* The machinery, without your personal memory/permissions. Paste inside Claude Code — no terminal:
 
@@ -87,6 +86,7 @@ Open a new shell (or `source` your rc) and the **`compass`** command is availabl
 - [How it fits together](#how-it-fits-together)
 - [What's inside](#whats-inside)
 - [The hooks](#the-hooks)
+- [Dynamic workflows](#dynamic-workflows)
 - [Cost model](#cost-model)
 - [Local tools & impact](#local-tools--impact)
 - [MCP servers](#mcp-servers)
@@ -128,25 +128,27 @@ After `make install`, a normal session — nothing extra to invoke:
 
 ## How it fits together
 
-One repo is the source of truth; `make install` **symlinks** it into your tools, so editing the repo edits your live config — and `git pull` updates everything. The same manual (via the `AGENTS.md` standard) reaches every major agent.
+One repo is the source of truth; **one command** (`./quickstart.sh`) **symlinks** it into your tools, so editing the repo edits your live config — and `git pull` updates everything. The same manual (via the `AGENTS.md` standard) reaches every major agent.
 
 ```mermaid
 flowchart LR
   repo["compass repo<br/>one source of truth<br/>(CLAUDE.md ≙ AGENTS.md)"]
-  repo -->|"make install"| claude["Claude Code<br/>~/.claude"]
-  repo -->|"make install"| codex["Codex<br/>~/.codex"]
-  repo -->|"install.sh --gemini"| gemini["Gemini CLI<br/>~/.gemini"]
+  repo -->|"quickstart.sh"| claude["Claude Code<br/>~/.claude"]
+  repo -->|"quickstart.sh"| codex["Codex<br/>~/.codex"]
+  repo -->|"--gemini"| gemini["Gemini CLI<br/>~/.gemini"]
   repo -. "per-repo AGENTS.md<br/>(Linux Foundation standard)" .-> ides["Cursor · Windsurf<br/>Copilot · Amp · Devin"]
 
-  repo -->|"make install"| cli["compass CLI · ~/.local/bin<br/>status · onboard · impact · spend · schedule"]
+  repo -->|"on PATH"| cli["compass CLI · ~/.local/bin<br/>quickstart · onboard · impact · spend · route"]
 
-  claude --> bundle["manual · guardrail + format hooks<br/>9 cost-tiered subagents · commands<br/>status line · MCP (context7/fetch/git)"]
+  claude --> bundle["manual · guardrail + format hooks<br/>9 subagents (deep tier: Opus 4.8) · commands<br/>status line · MCP (context7/fetch/git)"]
   codex --> tiers["tiers: deep / standard / cheap<br/>+ local (Ollama) · router (OpenRouter)"]
 
+  claude --> wf["dynamic workflows (parallel + verified)<br/>/compass-review · /compass-audit · /compass-plan"]
   claude --> loop["autonomous PR loop<br/>intake → review ⇄ fix → human merge"]
   codex --> loop
 
   bundle -. "blocks · formats · cost" .-> obs["~/.compass ledgers"]
+  wf -. "spend" .-> obs
   loop -. "spend" .-> obs
   obs --> impact["compass impact + 🧭 status line<br/>footguns blocked · \$ saved"]
 ```
@@ -161,10 +163,11 @@ flowchart LR
 |---|---|---|
 | **Operating manual** | `CLAUDE.md` (≙ `AGENTS.md`), loaded every session | `claude/CLAUDE.md` |
 | **Guardrail + quality hooks** | protect-paths · format-on-edit · inject-context · notify | `claude/hooks/` |
-| **Specialist subagents** (9) | cost-tiered across Haiku / Sonnet / Opus | `claude/agents/` |
+| **Specialist subagents** (9) | cost-tiered across Haiku / Sonnet / Opus 4.8 | `claude/agents/` |
 | **Workflow commands** (11) | `/ship` `/review` `/tdd` `/spec` `/pr` `/adr` `/triage` `/scaffold` `/cost` `/sdlc` `/team-review` | `claude/commands/` |
+| **Dynamic workflows** (3) | `/compass-review` `/compass-audit` `/compass-plan` — parallel, adversarially verified | `claude/workflows/` |
 | **Skill** | bootstrap a grounded project `CLAUDE.md` | `claude/skills/` |
-| **Status line** | model · dir · git · context · `$cost` | `claude/statusline.sh` |
+| **Status line** | model · dir · git · context · `$cost` · 🧭 today (blocked · formatted · nudges · ~`$`saved) | `claude/statusline.sh` |
 | **Codex parity** | `AGENTS.md` + cost profiles | `codex/` |
 | **MCP (single source)** | context7 · fetch · git | `mcp/servers.json` |
 | **Plugins + marketplace** | `core`, `core-lsp` | `plugins/`, `.claude-plugin/` |
@@ -179,7 +182,7 @@ compass/
 │   ├── CLAUDE.md            # global operating manual
 │   ├── statusline.sh        # model · dir · git · context · $cost
 │   ├── output-styles/       # "Concise" terse tone
-│   ├── agents/  commands/  skills/  hooks/
+│   ├── agents/  commands/  skills/  hooks/  workflows/
 ├── codex/                   # → symlinked/merged into ~/.codex (config.toml + AGENTS.md)
 ├── mcp/servers.json         # single-source MCP manifest → both tools
 ├── plugins/                 # core, core-lsp (self-contained)
@@ -207,21 +210,39 @@ Balanced posture: stop accidents, stay invisible otherwise. Dependency-light (jq
 | `inject-context` | SessionStart | Hands the agent branch, dirty state, recent commits up front. |
 | `notify` | Stop / Notification | Desktop notification when a turn finishes or needs input (macOS/Linux). |
 
+Three more ship **opt-in** (advisory, never block; wire them in `settings.json` when you want them): `route-intent` (nudges toward an ADR/spec/security pass on load-bearing prompts), `require-tests` (nudges when source changes land with **no test diff**), and `checkpoint-wip` (snapshots uncommitted work to a scratch ref). See [roadmap §8](docs/10-roadmap.md).
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## Dynamic workflows
+
+Claude Code's newest primitive (research preview, **v2.1.154+**): a workflow is a small JS script the runtime executes, fanning out **many subagents in parallel** while the orchestration — loops, branching, intermediate results — lives in the script, not the chat context. compass ships three, and each routes stages to its **own cost-tiered subagents**, so cost follows risk the same way the rest of the repo does.
+
+| Command | Pattern | What it does |
+|---|---|---|
+| `/compass-review` | parallel dimensions → adversarial verify → synthesize | Reviews the branch diff on 5 dimensions at once; a skeptic refutes each finding before it's reported; one Blocking/Should-fix/Nit verdict. |
+| `/compass-audit` | multi-modal finders → loop-until-dry → 3-lens vote | Whole-codebase bug & security sweep; six blind finders repeated until two dry rounds; a finding ships only if 2-of-3 lenses confirm it. |
+| `/compass-plan` | N angles → judge panel → grafted synthesis | Drafts a plan MVP-/risk-/simplicity-first, scores them, synthesizes one from the winner keeping the best of the rest. |
+
+They're **readable** — audit exactly what fans out before you trust it — and validated in CI (`scripts/check-workflows.sh`). Don't have the preview on your build? Everything else works regardless. → [Dynamic workflows](docs/13-workflows.md)
+
 <div align="right"><a href="#contents">↑ top</a></div>
 
 ---
 
 ## Cost model
 
-The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**.
+The driver runs **Opus 4.8 / high effort**; the savings come from **delegation**.
 
 | Tier | Model | Used by | For |
 |---|---|---|---|
 | Cheap | Haiku 4.5 | `test-runner` | test runs, log triage, mechanical sweeps |
 | Standard | Sonnet 4.6 | `code-reviewer`, `go/rust-engineer`, `docs-writer`, `k8s-operator` | most coding & review |
-| Deep | Opus 4.7 | `architect`, `security-auditor`, `debugger`, driver | architecture, security, subtle bugs |
+| Deep | Opus 4.8 | `architect`, `security-auditor`, `debugger`, driver | architecture, security, subtle bugs |
 
-`/cost` re-plans any task to the cheapest-correct mix. → [Cost & models](docs/02-cost-and-models.md)
+`/cost` re-plans any task to the cheapest-correct mix; `compass route "<task>"` picks a tier deterministically — now **measured** against a labeled eval set (`compass-route.sh --eval`, gated in CI) so `SDLC_AUTOROUTE` is a checked claim, not a guess. → [Cost & models](docs/02-cost-and-models.md)
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -238,9 +259,16 @@ The driver runs **Opus 4.7 / high effort**; the savings come from **delegation**
 | `compass impact` | **How compass benefits you** — footguns blocked, files auto-formatted, spend by model, and estimated `$` saved vs running everything on Opus. |
 | `compass spend [--week\|--month]` | Aggregate agent cost by model/repo + budget (`COMPASS_BUDGET_USD`). |
 | `compass schedule add\|list\|run <routine>` | Run routines (dep-refresh · flaky-triage · doc-freshness · pr-babysit) locally on cron — no CI needed. |
-| `compass route "<task>"` | Cheapest-correct model tier. SDLC auto-routing is opt-in (`SDLC_AUTOROUTE=1`) and **experimental** — no evals yet. |
+| `compass route "<task>"` · `--eval` | Cheapest-correct model tier (haiku/sonnet/opus). `--eval` scores it against a labeled set; auto-routing (`SDLC_AUTOROUTE=1`) is opt-in but now **measured + CI-gated**. |
+| `compass quickstart [flags]` | The one command — install + validate + on-ramp; re-run to repair. |
 
-The **status line** also shows live activity — `🧭 ⛊3 ⌗12` = 3 footguns blocked, 12 files auto-formatted today. Blocks/formats/spend log best-effort to `~/.compass`; nothing leaves your machine. → [Cost & models](docs/02-cost-and-models.md)
+The **status line** turns into a live ROI counter. A normal line:
+
+```text
+Opus 4.8 · myrepo · main* · 45k ctx · $1.23 · 🧭 🛡1 🧹2 💡1 📉~$1.65
+```
+
+`model · dir · git±dirty · context · session $` then the **🧭 compass-today** segment: `🛡` footguns blocked · `🧹` files auto-formatted · `💡` policy nudges · `📉~$` estimated saved vs all-Opus (same method as `compass impact`). Each piece appears only when there's something to show; everything logs best-effort to `~/.compass` and nothing leaves your machine. → [Cost & models](docs/02-cost-and-models.md)
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -473,6 +501,7 @@ A starting point, not scripture — fork it. The global `CLAUDE.md` has a clearl
 | [10 · Roadmap](docs/10-roadmap.md) | agentic directions — review-routing, scheduled agents, agent teams, cross-repo memory (grounded in real harness primitives) |
 | [11 · Using compass](docs/11-using-compass.md) | **start here** — install in one command, the pieces, daily workflow, cost-effective + productive habits |
 | [12 · Every agent](docs/12-every-agent.md) | LLM/IDE-agnostic — one manual for Claude Code, Codex, Gemini CLI, Cursor, Windsurf, Copilot (AGENTS.md standard) |
+| [13 · Dynamic workflows](docs/13-workflows.md) | parallel, adversarially-verified subagent orchestration — `/compass-review` `/compass-audit` `/compass-plan` (research preview) |
 | [ADRs](docs/adr/) | load-bearing decisions (cross-repo memory; autonomous-loop trust boundary) |
 | [Alpha](docs/alpha.md) | onboarding guide for alpha users |
 | [Demo](demo/README.md) | render the terminal GIF with vhs |

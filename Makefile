@@ -5,6 +5,9 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
+quickstart: ## One command: install + validate + the 60-second on-ramp
+	@./quickstart.sh
+
 install: ## Symlink config into ~/.claude and ~/.codex (backs up existing)
 	@./install.sh
 
@@ -42,4 +45,4 @@ apply-many: ## Apply per-repo config to many repos at once (usage: make apply-ma
 update: ## Pull latest and re-run install (for symlink installs this is just a pull)
 	@git pull --ff-only && ./install.sh
 
-.PHONY: help install install-copy dry-run uninstall doctor demo new-repo update mcp mcp-dry sync-plugin
+.PHONY: help quickstart install install-copy dry-run uninstall doctor demo new-repo update mcp mcp-dry sync-plugin

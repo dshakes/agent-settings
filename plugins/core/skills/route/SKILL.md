@@ -28,3 +28,7 @@ reviewers. This skill does the same locally: classify, then dispatch.
 ## Notes
 - Bias to *more* review when uncertain — misclassifying down is the only costly error.
 - This is advisory routing; it does not gate anything. The human still reviews and merges.
+- **Model tiering** (separate from domain routing): `compass route "<task>"` picks the
+  cheapest-correct model (haiku/sonnet/opus). It's **measured** — `compass route --eval`
+  scores it against `scripts/route-evalset.tsv` and CI gates on an accuracy floor, so the
+  heuristic can't silently regress. Add real mis-routes to the set as they surface.
