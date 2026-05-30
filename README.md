@@ -27,6 +27,21 @@ It reads before it changes, stays in scope, and verifies before it says "done." 
 
 ---
 
+<div align="center">
+
+### ⭐ The part people screenshot: it fixes its own PRs.
+
+Open a pull request and compass **reviews it, security-checks it, runs the tests, cross-audits it with a second model — then pushes its own fixes until it's green.** You just merge. *(Try it locally in 30 seconds, no tokens — [jump to it ↓](#autonomous-sdlc).)*
+
+</div>
+
+<p align="center">
+  <a href="#autonomous-sdlc"><img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="820"></a>
+</p>
+<p align="center"><sub>A real run (PR #4): Reviewer flagged the bug → Builder pushed the fix → re-review went green → you merge.</sub></p>
+
+---
+
 ## Why compass?
 
 > **The 60-second pitch.** AI agents can finally write real code — but they ship like a brilliant intern with no judgment: no taste, no guardrails, no sense of cost. Everyone has the same models, so that's not where the edge is. **The edge is configuration** — what the agent knows by default, what it's allowed to do, and which model does which job. compass *is* that configuration: one install, every agent, every repo. The work it can't safely own, it hands back to you — **you keep the merge.**
@@ -176,10 +191,7 @@ Opus 4.8 · myrepo · main* · 45k ctx · $1.23 · 🧭 🛡1 🧹2 💡1 📉~$
   <img src="assets/sdlc-loop.svg" alt="Autonomous SDLC loop: you push a PR → Reviewer, Auditor (Codex), Security, and QA run automatically in parallel → the Reviewer verdict flips between BLOCKING and CLEAN. BLOCKING labels agent:needs-fix → the Builder fixes on the PR branch and pushes via SDLC_BOT_TOKEN → re-review (round cap ×3 → sdlc:needs-human). CLEAN → checks green → human merge gate (1 code-owner) → you merge & deploy." width="900">
 </p>
 
-<p align="center">
-  <img src="assets/loop.gif" alt="The autonomous loop on a real PR: Reviewer flags a bug as Blocking + QA red → the Builder pushes a fix commit → re-review goes CLEAN, QA green → mergeable, awaiting a code-owner approval (you merge)." width="780">
-</p>
-<p align="center"><sub>↑ a real run: the Reviewer flagged a bug → the Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it</a>)</sub></p>
+<p align="center"><sub>↑ the architecture. The same loop running on a <b>real PR</b> is the animation at the top of this page — Reviewer flagged a bug → Builder pushed the fix → re-review went green → you merge. (<a href="sdlc/SMOKETEST.md">reproduce it yourself</a>)</sub></p>
 
 **Three ways to kick it off — only the merge is ever yours:**
 
