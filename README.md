@@ -272,7 +272,14 @@ flowchart TD
 
 ## The autonomous fleet
 
-**Beyond a single PR: a fleet of governed agents that keep *all* your repos healthy — and a phone you can run them from.** Each is opt-in, scheduled or event-driven, and stops at the PR. The same rule holds: **agents prepare, you merge.**
+**One self-fixing PR loop is table stakes. The fleet runs your *entire* org.** Scheduled, governed agents scan, security-patch, test, and de-flake **every repo you own** — each change forced through a **test gate** before it can move, then rolled up into one pinned panel that pings your phone *only* when a human is actually needed. Every loop is opt-in and event-driven, and every one stops at the PR. **Agents prepare. You merge — from anywhere.**
+
+<p align="center">
+  <img src="assets/fleet.svg" alt="The autonomous fleet: a schedule (or manual dispatch) wakes the fleet agents running in GitHub Actions — vuln-remediate (nightly), issue-poller (~30 min), and dep/flaky/doc/babysit (weekly). They act across every repo in fleet/repos.txt, opening test-gated PRs. Each change must pass the safety gate — review, QA, and the test-architect that generates and runs unit + e2e tests; no tests means no merge — before you merge (the gate is always yours). Below, the control plane: fleet/mission-digest rolls up every PR's state into a pinned fleet panel that pings your phone only when something newly needs you, where you /approve, /hold, or /build from GitHub Mobile, Slack/Telegram, or iMessage/WhatsApp — approving from anywhere loops back to the same human merge gate." width="900">
+</p>
+<p align="center"><sub>↑ the whole fleet on one canvas — production pipeline up top, your mobile control plane below. <b>Every fix passes the <a href="#the-autonomous-fleet">test-architect gate</a>; the merge is always yours.</b></sub></p>
+
+**The roster — each opt-in, each stops at the PR:**
 
 | Agent / loop | What it does | Cadence |
 |---|---|---|
@@ -282,28 +289,6 @@ flowchart TD
 | 🩹 **dep-refresh · flaky-triage · doc-freshness · babysit-prs** | Bump deps, cluster flaky tests, fix doc drift, nudge stalled PRs — each opens a PR or issue, never merges. | weekly / nightly |
 | ✅ **auto-approve** *(off by default)* | Marks a green, allowlisted, *tested* PR as fast-track-eligible — comment + label only, **never** a bot approval or merge. Governed by [ADR-0003](docs/adr/0003-auto-approve-trust-boundary.md). | on review-clean |
 | 🧭 **mission-digest / fleet-digest** | One pinned **"fleet panel"** of every PR's state across every repo; pings you only when something *newly* needs a human. | ~30 min |
-
-```mermaid
-flowchart LR
-  cron(["⏰ schedule · or dispatch"]) --> agents
-  subgraph agents["🤖 fleet agents · GitHub Actions"]
-    vuln["vuln-remediate"]
-    poll["issue-poller"]
-    dig["mission · fleet-digest"]
-  end
-  subgraph repos["your repos · fleet/repos.txt"]
-    rA["repo A"]; rB["repo B"]; rC["repo C"]
-  end
-  agents --> repos
-  vuln -->|"test-gated PR · issue"| loop
-  poll -->|"agent:autofix → build"| loop
-  loop["🟢 review · QA · test-architect"] --> merge["👤 you merge"]
-  dig --> panel["📌 fleet panel · 🔔 needs-you"] --> phone["📱 your phone"]
-  class vuln,poll,dig,loop agent
-  class merge,phone human
-  classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
-  classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
-```
 
 **The safety gate — why autonomy is safe here:** every fix passes `test-architect` before it can advance, and auto-approve only ever *signals*; the human approval + merge never move.
 
