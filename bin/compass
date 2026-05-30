@@ -40,6 +40,8 @@ usage: compass <command> [args]
   route   "<task>"         Print the cheapest-correct model tier (experimental).
   notify  "<message>"      DM your phone via lantern's iMessage/WhatsApp bridge
                            (set COMPASS_NOTIFY_URL/_TOKEN; --dry-run to preview).
+  listen                   Run the command listener: act on /status /approve /hold /build
+                           sent from your iMessage/WhatsApp DM (long-running; needs gh + bridge).
   doctor                   Validate the compass install (make doctor).
   help                     This message.
 
@@ -58,6 +60,7 @@ case "$cmd" in
   schedule) run schedule "$@" ;;
   route)    run route "$@" ;;
   notify)   run notify "$@" ;;
+  listen)   command -v node >/dev/null || { echo "compass listen: node required" >&2; exit 1; }; exec node "$SCRIPTS/compass-listen.mjs" "$@" ;;
   doctor)   exec make -C "$ROOT" doctor ;;
   -h|--help|help) usage ;;
   *) echo "compass: unknown command '$cmd'" >&2; echo; usage; exit 2 ;;

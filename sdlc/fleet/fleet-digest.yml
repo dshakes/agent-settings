@@ -1,0 +1,91 @@
+# Fleet orchestrator: cross-repo mission-digest. Runs in ONE control repo, loops fleet/repos.txt,
+# and maintains a single pinned "fleet panel" issue covering EVERY repo's open PRs. gh-only (no
+# model), idempotent (reconciles full state each run — GitHub cron is best-effort). @mentions the
+# maintainer on a NEW needs-human anywhere in the fleet. Needs FLEET_TOKEN (multi-repo read+issues).
+# Install into your control repo's .github/workflows/ (sdlc/setup.sh --fleet).
+name: "fleet · digest (cross-repo)"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # best-effort; also dispatchable
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write              # writes the panel issue in THIS (control) repo
+
+concurrency:
+  group: fleet-digest
+  cancel-in-progress: true
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    env:
+      # FLEET_TOKEN: fine-grained PAT or GitHub App token, scoped to the repos in repos.txt
+      # (Pull requests: read, Issues: read on targets; Issues: write on this control repo).
+      GH_TOKEN: ${{ secrets.FLEET_TOKEN }}
+      CONTROL_REPO: ${{ github.repository }}
+      MAINTAINER: ${{ vars.FLEET_MAINTAINER }}
+      REPOS_FILE: ${{ vars.FLEET_REPOS_FILE || 'fleet/repos.txt' }}
+      MARKER: "<!-- compass-fleet-panel -->"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Aggregate fleet PR state → one panel
+        run: |
+          set -uo pipefail
+          [ -n "$GH_TOKEN" ] || { echo "::error::FLEET_TOKEN not set — see docs/14-fleet.md"; exit 1; }
+          [ -f "$REPOS_FILE" ] || { echo "::error::$REPOS_FILE missing (copy sdlc/fleet/repos.txt.example)"; exit 1; }
+          tmp="$(mktemp)"; nh=""
+
+          {
+            echo "$MARKER"
+            echo "### 🧭 compass · fleet panel"
+            printf '_Updated %s UTC · live across the fleet._\n\n' "$(date -u '+%Y-%m-%d %H:%M')"
+            echo "| Repo | PR | State | Title |"
+            echo "|---|---|---|---|"
+          } > "$tmp"
+
+          while IFS= read -r repo; do
+            repo="${repo%%#*}"; repo="$(echo "$repo" | xargs || true)"
+            [ -n "$repo" ] || continue
+            prs="$(gh pr list -R "$repo" --state open --json number,title,labels --limit 50 2>/dev/null || echo '[]')"
+            n="$(printf '%s' "$prs" | jq 'length')"
+            for i in $(seq 0 $((n - 1))); do
+              num="$(printf '%s' "$prs" | jq -r ".[$i].number")"
+              t="$(printf '%s' "$prs" | jq -r ".[$i].title" | cut -c1-44)"
+              labs="$(printf '%s' "$prs" | jq -r ".[$i].labels[].name" 2>/dev/null | tr '\n' ' ')"
+              st="🔵 reviewing"
+              case " $labs " in *" agent:reviewed-clean "*) st="🟢 clean" ;; esac
+              case " $labs " in *" agent:approve-eligible "*) st="🟢 approve-eligible" ;; esac
+              case " $labs " in *" agent:needs-fix "*) st="🔴 needs-fix" ;; esac
+              case " $labs " in *" sdlc:hold "*) st="⏸️ hold" ;; esac
+              case " $labs " in *" sdlc:approved "*) st="✅ approved" ;; esac
+              case " $labs " in *" sdlc:needs-human "*) st="🟠 needs-human"; nh="$nh ${repo}#${num}" ;; esac
+              printf '| %s | #%s | %s | %s |\n' "${repo#*/}" "$num" "$st" "$t" >> "$tmp"
+            done
+          done < "$REPOS_FILE"
+
+          nh="$(echo "$nh" | xargs || true)"
+          {
+            echo
+            [ -n "$nh" ] && printf '**Needs you:** %s\n\n' "$nh" || echo '**Needs you:** none right now ✓'
+            echo "<sub>Steer per-PR from your phone in each repo (\`/hold\` \`/approve\` \`/status\`). Panel by compass fleet-digest.</sub>"
+            printf '\n<!-- needs-human: %s -->\n' "$nh"
+          } >> "$tmp"
+
+          # Upsert the panel issue in the control repo (by hidden marker).
+          pid="$(gh issue list -R "$CONTROL_REPO" --state open --search "in:body $MARKER" --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -z "$pid" ] || [ "$pid" = "null" ]; then
+            gh issue create -R "$CONTROL_REPO" --title "🧭 compass · fleet panel" --body-file "$tmp" && echo "created fleet panel" && exit 0
+          fi
+          prev="$(gh issue view -R "$CONTROL_REPO" "$pid" --json body --jq '.body' | sed -n 's/.*<!-- needs-human: \(.*\) -->.*/\1/p' | tr -d '\r')"
+          gh issue edit -R "$CONTROL_REPO" "$pid" --body-file "$tmp" >/dev/null && echo "fleet panel #$pid updated"
+
+          # Page only on FRESH needs-human (reliable push), comparing against the prior panel state.
+          if [ -n "$nh" ] && [ -n "$MAINTAINER" ]; then
+            fresh=""
+            for item in $nh; do case " $prev " in *" $item "*) : ;; *) fresh="$fresh $item" ;; esac; done
+            fresh="$(echo "$fresh" | xargs || true)"
+            [ -n "$fresh" ] && gh issue comment -R "$CONTROL_REPO" "$pid" --body "@${MAINTAINER} 🟠 needs you across the fleet: ${fresh}" && echo "paged @$MAINTAINER"
+          fi

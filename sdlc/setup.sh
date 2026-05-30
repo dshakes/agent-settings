@@ -15,11 +15,12 @@
 # Secrets: export them first for zero prompts:  export ANTHROPIC_API_KEY=… OPENAI_API_KEY=…
 set -euo pipefail
 SDLC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WF=0 COMMIT=0 SECRETS=0 PROTECT=0 SELF=0 ROUTINES=0
+WF=0 COMMIT=0 SECRETS=0 PROTECT=0 SELF=0 ROUTINES=0 FLEET=0
 for a in "$@"; do case "$a" in
   --workflows) WF=1 ;; --commit) COMMIT=1 ;; --secrets) SECRETS=1 ;; --protect) PROTECT=1 ;;
   --self-hosted) WF=1; SELF=1 ;;          # keyless: claude -p / codex exec on a self-hosted runner
   --routines) ROUTINES=1 ;;               # scheduled cron agents (sdlc/routines/) — opt-in
+  --fleet) FLEET=1 ;;                      # cross-repo orchestrators (this repo = control repo) — needs FLEET_TOKEN
   --all) WF=1; COMMIT=1; SECRETS=1; PROTECT=1 ;;
   *) echo "unknown flag: $a"; exit 2 ;;
 esac; done
@@ -54,6 +55,15 @@ if [ "$ROUTINES" = 1 ]; then
   echo "==> Scheduled routines (cron agents — open PRs/issues, never merge)"
   mkdir -p .github/workflows
   cp "$SDLC_DIR"/routines/*.yml .github/workflows/ && echo "  ✓ .github/workflows/routine-*.yml (run one from the Actions tab first)"
+fi
+
+if [ "$FLEET" = 1 ]; then
+  echo "==> Fleet orchestrators (this repo = control plane; cross-repo over fleet/repos.txt)"
+  mkdir -p .github/workflows fleet
+  cp "$SDLC_DIR"/fleet/*.yml .github/workflows/ && echo "  ✓ .github/workflows/fleet-*.yml"
+  [ -f fleet/repos.txt ] || { cp "$SDLC_DIR/fleet/repos.txt.example" fleet/repos.txt && echo "  ✓ fleet/repos.txt (edit: one owner/name per line)"; }
+  echo "  → set secret FLEET_TOKEN (fine-grained PAT / GitHub App scoped to those repos) and repo var FLEET_MAINTAINER."
+  echo "    See docs/14-fleet.md. Without FLEET_TOKEN the fleet workflows no-op with a clear error."
 fi
 
 if [ "$COMMIT" = 1 ]; then

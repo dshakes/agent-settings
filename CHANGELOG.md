@@ -29,6 +29,25 @@ All notable changes to this project are documented here. Format loosely follows
   graceful no-op.
 - **`sdlc/fleet/` scaffolding** — `repos.txt.example` for cross-repo orchestration (Phase 1;
   needs `FLEET_TOKEN` fine-grained PAT scoped to those repos).
+- **`fleet-digest` workflow** (`sdlc/fleet/fleet-digest.yml`, Phase 1 — shipped) — `*/30` +
+  dispatch; `gh`-only; loops `fleet/repos.txt`, aggregates open-PR state across ALL fleet repos
+  into ONE pinned panel issue in the control repo; @mentions `FLEET_MAINTAINER` on new
+  `needs-human`. Needs `FLEET_TOKEN` (multi-repo read + issues:write on control repo). Idempotent.
+- **`issue-poller` workflow** (`sdlc/fleet/issue-poller.yml`, Phase 1 — shipped) — `*/30` +
+  dispatch; `gh`-only; scans each repo for issues labeled `agent:autofix` by a maintainer; swaps
+  to `agent:build` to trigger that repo's own zero-touch intake loop. Never edits code or merges;
+  `max_per_run` cost guard (default 5); idempotent. Needs `FLEET_TOKEN` (issues:write on targets).
+- **`agent:autofix` label** — maintainer applies this to an issue to opt it into cross-repo
+  autonomous dispatch via `issue-poller`; the poller swaps it to `agent:build` so each issue
+  dispatches exactly once.
+- **`compass listen` daemon** (`scripts/compass-listen.mjs`, Phase 2 — shipped) — long-running
+  local Node 22 process (zero npm deps); subscribes to lantern's bridge WebSocket and relays
+  your iMessage/WhatsApp slash-commands (`/status`, `/approve|/hold|/resume #N`, `/build #N`)
+  to GitHub. Posts PR comments (enforced by the existing governed `sdlc-control.yml`) — never
+  approves or merges directly. Config: `COMPASS_NOTIFY_URL/_TOKEN/_TENANT`,
+  `COMPASS_FLEET_REPO`, `COMPASS_CMD_PREFIX`. Requires `gh` authenticated locally + reachable
+  bridge. **UNVERIFIED end-to-end** (needs a live bridge); lantern's bridge may auto-reply on
+  self-chat — pause the bot if needed.
 - **ADR-0003** (`docs/adr/0003-auto-approve-trust-boundary.md`) — records the governance
   decision for the auto-approve trust boundary.
 

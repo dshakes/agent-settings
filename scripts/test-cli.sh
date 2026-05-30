@@ -113,12 +113,16 @@ eq  "notify exits 0 on hostile input" "$NRC" 0
 if [ -f "$TMP/pwned" ]; then no "notify.sh executed injected payload"; else ok "no injection executed"; fi
 if grep -q 'osascript /dev/stdin' "$ROOT/claude/hooks/notify.sh"; then ok "uses osascript argv form"; else no "notify.sh regressed to -e string interpolation"; fi
 
-echo "notify — lantern mobile bridge (dry-run + graceful no-op):"
-DN="$(COMPASS_NOTIFY_URL='http://127.0.0.1:3100,http://127.0.0.1:3200' COMPASS_NOTIFY_TOKEN=tok "$COMPASS" notify --dry-run 'PR #1 green' 2>&1)"
-has "dry-run hits both bridges" "$DN" '/session/00000000-0000-0000-0000-000000000001/send-self'
-has "dry-run encodes message"   "$DN" '"message":"PR #1 green"'
-if env -u COMPASS_NOTIFY_URL -u LANTERN_BRIDGE_URL "$COMPASS" notify 'hi' >/dev/null 2>&1; then ok "unconfigured = graceful no-op (exit 0)"; else no "unconfigured notify should exit 0"; fi
-if env -u COMPASS_NOTIFY_URL -u LANTERN_BRIDGE_URL "$COMPASS" notify --require 'hi' >/dev/null 2>&1; then no "--require should fail when unconfigured"; else ok "--require errors when unconfigured"; fi
+echo "notify — channel-agnostic backends (dry-run + graceful no-op):"
+LAN="$(COMPASS_NOTIFY_URL='http://127.0.0.1:3100,http://127.0.0.1:3200' COMPASS_NOTIFY_TOKEN=tok "$COMPASS" notify --dry-run 'PR #1 green' 2>&1)"
+has "lantern dry-run hits both bridges" "$LAN" '/session/00000000-0000-0000-0000-000000000001/send-self'
+has "lantern encodes message"           "$LAN" '"message":"PR #1 green"'
+SLK="$(COMPASS_NOTIFY_SLACK='https://hooks.slack.test/x' COMPASS_NOTIFY_TELEGRAM_TOKEN=t COMPASS_NOTIFY_TELEGRAM_CHAT=99 "$COMPASS" notify --dry-run 'hi' 2>&1)"
+has "slack backend (no lantern needed)" "$SLK" 'slack: POST https://hooks.slack.test/x'
+has "telegram backend"                  "$SLK" 'api.telegram.org/bott/sendMessage'
+CLEANENV() { env -u COMPASS_NOTIFY_URL -u LANTERN_BRIDGE_URL -u COMPASS_NOTIFY_SLACK -u COMPASS_NOTIFY_DISCORD -u COMPASS_NOTIFY_WEBHOOK -u COMPASS_NOTIFY_NTFY -u COMPASS_NOTIFY_TELEGRAM_TOKEN "$@"; }
+if CLEANENV "$COMPASS" notify 'hi' >/dev/null 2>&1; then ok "no backend = graceful no-op (exit 0)"; else no "unconfigured notify should exit 0"; fi
+if CLEANENV "$COMPASS" notify --require 'hi' >/dev/null 2>&1; then no "--require should fail when unconfigured"; else ok "--require errors when unconfigured"; fi
 
 echo "compass-schedule — unattended cron run is bounded:"
 if grep -q -- '--max-turns' "$ROOT/scripts/compass-schedule.sh" && grep -q -- '--max-budget-usd' "$ROOT/scripts/compass-schedule.sh"; then

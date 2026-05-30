@@ -1,0 +1,61 @@
+# Fleet orchestrator: issue-poller. Every ~30 min, scans each repo in fleet/repos.txt for issues
+# a maintainer labeled `agent:autofix` and kicks off that repo's OWN zero-touch intake (by adding
+# `agent:build`, which fires sdlc-implement-on-label there → build → test-gate → PR → review loop).
+# It NEVER edits code or merges itself — it only triggers the governed per-repo loop. Idempotent:
+# it swaps the trigger label so an issue is dispatched once. Needs FLEET_TOKEN. Opt-in.
+name: "fleet · issue-poller (cross-repo)"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # best-effort cadence — the user's "watch issues, fix on a timer" loop
+  workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: "Max issues to dispatch this run (cost guard)"
+        type: string
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-issue-poller
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    env:
+      # FLEET_TOKEN must have Issues: write on the target repos (to swap labels, which fires intake).
+      GH_TOKEN: ${{ secrets.FLEET_TOKEN }}
+      REPOS_FILE: ${{ vars.FLEET_REPOS_FILE || 'fleet/repos.txt' }}
+      MAX_PER_RUN: ${{ inputs.max_per_run || '5' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Dispatch agent:autofix issues into each repo's build loop
+        run: |
+          set -uo pipefail
+          [ -n "$GH_TOKEN" ] || { echo "::error::FLEET_TOKEN not set — see docs/14-fleet.md"; exit 1; }
+          [ -f "$REPOS_FILE" ] || { echo "::error::$REPOS_FILE missing"; exit 1; }
+          dispatched=0
+          while IFS= read -r repo; do
+            repo="${repo%%#*}"; repo="$(echo "$repo" | xargs || true)"
+            [ -n "$repo" ] || continue
+            [ "$dispatched" -lt "$MAX_PER_RUN" ] || { echo "hit max_per_run=$MAX_PER_RUN"; break; }
+            # Maintainer-applied label only (GitHub restricts labeling to triage/write users); the
+            # repo's sdlc-implement-on-label re-checks labeler write-permission fail-closed (ADR-0002).
+            issues="$(gh issue list -R "$repo" --label agent:autofix --state open --json number --jq '.[].number' 2>/dev/null || true)"
+            for num in $issues; do
+              [ "$dispatched" -lt "$MAX_PER_RUN" ] || break
+              # Swap autofix → build: fires zero-touch intake in that repo (build → test-gate → PR).
+              # Remove autofix FIRST so a failed add can't loop-dispatch the same issue.
+              if gh issue edit -R "$repo" "$num" --remove-label agent:autofix --add-label agent:build >/dev/null 2>&1; then
+                gh issue comment -R "$repo" "$num" --body "🤖 fleet issue-poller dispatched this to the build loop (build → tests → PR). Track it on the PR." >/dev/null 2>&1 || true
+                echo "dispatched $repo#$num"
+                dispatched=$((dispatched + 1))
+              else
+                echo "::warning::could not dispatch $repo#$num (label/permission?) — skipping"
+              fi
+            done
+          done < "$REPOS_FILE"
+          echo "fleet issue-poller: dispatched $dispatched issue(s) this run."

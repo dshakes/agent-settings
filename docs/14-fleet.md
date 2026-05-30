@@ -7,8 +7,9 @@ every merge and deploy; that gate is fixed by ADR-0002 and enforced by GitHub
 branch protection, not by trust.
 
 This document covers what is shipped now (single-repo, config-only — Phase 0),
-what cross-repo orchestration needs (Phase 1, one token), and the one remaining
-piece for native iMessage/WhatsApp reply-to-command (Phase 2).
+the cross-repo orchestration layer (Phase 1, shipped — needs `FLEET_TOKEN`), and
+native iMessage/WhatsApp reply-to-command (Phase 2, shipped — local daemon, needs
+a reachable bridge).
 
 ---
 
@@ -134,6 +135,8 @@ label is an advisory signal, not a bypass of the branch-protection gate.
 | `flaky-triage.yml` | nightly | clusters recent CI failures, opens an issue |
 | `doc-freshness.yml` | weekly Mon | fixes docs that drifted from code, opens a PR |
 | `babysit-prs.yml` | every 6h | nudges PRs stuck in `sdlc:needs-human` / red checks |
+| `fleet-digest.yml` | `*/30` + dispatch | cross-repo: aggregates open-PR state across all fleet repos into ONE pinned panel issue in the control repo; needs `FLEET_TOKEN` |
+| `issue-poller.yml` | `*/30` + dispatch | cross-repo: scans fleet repos for `agent:autofix`-labeled issues; swaps to `agent:build` to trigger that repo's zero-touch intake loop; needs `FLEET_TOKEN` |
 
 All four install with `setup.sh --routines`; all have `workflow_dispatch:`.
 Details: [`sdlc/routines/README.md`](../sdlc/routines/README.md).
@@ -142,7 +145,17 @@ Details: [`sdlc/routines/README.md`](../sdlc/routines/README.md).
 
 ## Mobile mission-control
 
-Two surfaces, with honest constraints on each.
+> **No lantern? No problem.** The mobile layer is deliberately decoupled — compass never
+> hard-depends on any one service, so it open-sources cleanly. There are three tiers:
+> 1. **GitHub Mobile** — the universal baseline. Watch, approve, merge, and trigger workflows
+>    from your phone with **zero extra setup**. This alone covers most of the "control from my
+>    phone" need for everyone.
+> 2. **Any chat backend** — `compass notify` pushes digests/alerts to **Slack, Discord, Telegram,
+>    ntfy, or a generic webhook** (config-only, free, 2-minute setup; Telegram is two-way). Set
+>    whichever you use; it sends to all configured backends and no-ops if none. This is the
+>    recommended path for open-source users.
+> 3. **lantern iMessage/WhatsApp** — the premium native-DM surface (iMessage/WhatsApp + the
+>    `compass listen` reply→command loop), for those who run lantern. Entirely optional.
 
 ### GitHub Mobile (works today, zero infra)
 
@@ -209,17 +222,63 @@ today without extra setup:
    (or can reach it on the LAN), set the `COMPASS_NOTIFY_*` env vars in the
    runner's environment.
 
-**Phase 2 (not yet free):** native iMessage/WhatsApp *reply-to-command* — acting on
-your reply as an instruction — needs a small lantern-side webhook addition that
-bridges incoming messages to the `sdlc-control.yml` dispatch endpoint. That piece
-is not in the current lantern bridge. Flag it as a one-step addition, not a rework.
+### Native phone control (Phase 2)
+
+**File:** `scripts/compass-listen.mjs`
+**Invoked as:** `compass listen` (long-running local daemon; Node 22, zero npm deps)
+
+The listener subscribes to lantern's bridge WebSocket (`/ws?tenantId=&token=`),
+which broadcasts inbound DMs as `{type:"message",data:{from,text,isGroup}}`. When
+you send a slash-command in your own iMessage or WhatsApp DM, it relays the action
+to GitHub and replies in-thread:
+
+| Command | What it does |
+|---|---|
+| `/status [owner/repo]` | Posts one-line open-PR state |
+| `/approve #N [owner/repo]` | Posts `/approve` as a PR comment → `sdlc-control.yml` enforces the gate |
+| `/hold #N [owner/repo]` | Posts `/hold` as a PR comment |
+| `/resume #N [owner/repo]` | Posts `/resume` as a PR comment |
+| `/build #N [owner/repo]` | Labels the issue `agent:build` to trigger zero-touch intake |
+
+The listener **never approves or merges directly.** It relays to PR comments, which
+the existing governed `sdlc-control.yml` workflow (ADR-0003) then executes.
+
+**Config env vars:**
+
+| Variable | Purpose |
+|---|---|
+| `COMPASS_NOTIFY_URL` | lantern bridge base URL (the WebSocket origin) |
+| `COMPASS_NOTIFY_TOKEN` | bridge bearer token |
+| `COMPASS_NOTIFY_TENANT` | tenant ID |
+| `COMPASS_FLEET_REPO` | default `owner/repo` when not specified in command |
+| `COMPASS_CMD_PREFIX` | command prefix character (default `/`) |
+
+**Honest constraints:**
+
+- Requires `gh` authenticated locally and a reachable bridge.
+- lantern's bridge may also auto-reply with its own assistant on your self-chat.
+  Pause the bot or use a dedicated DM thread if that collides.
+- The daemon is verified for JS syntax and design but **UNVERIFIED end-to-end** —
+  a live bridge and authenticated `gh` are needed to confirm the full path.
 
 ---
 
-## Cross-repo fleet (Phase 1)
+## Cross-repo fleet (Phase 1 — shipped)
 
-The orchestration plane lives in **one control repo** and loops `sdlc/fleet/repos.txt`
-(copy from `sdlc/fleet/repos.txt.example`) with `gh`:
+The cross-repo orchestration plane is shipped and lives in **one control repo**.
+Two workflows loop `sdlc/fleet/repos.txt` (copy from `sdlc/fleet/repos.txt.example`):
+
+**`sdlc/fleet/fleet-digest.yml`** — `*/30` + dispatch; `gh`-only (no model).
+Loops every repo in `repos.txt`, reads its open-PR state, and aggregates it into
+ONE pinned panel issue in the control repo. @mentions `FLEET_MAINTAINER` when any
+repo has a new `needs-human`. Idempotent — reconciles full state each run.
+
+**`sdlc/fleet/issue-poller.yml`** — `*/30` + dispatch; `gh`-only (no model).
+Scans each repo in `repos.txt` for issues a maintainer labeled `agent:autofix`.
+Swaps the label to `agent:build`, which triggers that repo's own zero-touch intake
+loop (build → test-gate → PR → review). The poller never edits code or merges;
+it only swaps the label (so each issue dispatches exactly once — idempotent).
+`max_per_run` defaults to 5 as a cost guard.
 
 ```
 # sdlc/fleet/repos.txt — one owner/name per line
@@ -228,21 +287,19 @@ dshakes/compass
 # dshakes/syntax
 ```
 
-Each loop iteration dispatches the target routine into the target repo via the GitHub
-API. This requires **`FLEET_TOKEN`** — a fine-grained PAT or GitHub App scoped to
-exactly those repos with these permissions:
+Both workflows require **`FLEET_TOKEN`** — a fine-grained PAT or GitHub App scoped
+to exactly those repos with these permissions:
 
-- **Contents: read** — to read the repo state
-- **Actions: write** — to trigger `workflow_dispatch` events
-- **Issues: write** — so the digest can update the panel issue in each repo
+- **Contents: read** — to read repo state
+- **Issues: write** — to update the panel issue in the control repo and swap labels on targets
+- `fleet-digest` only needs Issues: write on the control repo; `issue-poller` needs Issues: write on the target repos
 
 `FLEET_TOKEN` is a real credential and the **single external prerequisite for
 cross-repo operation**. Everything single-repo needs only the existing
 `SDLC_BOT_TOKEN`. Scope the PAT to exactly the repos in `repos.txt` — least
 privilege.
 
-The loops themselves are idempotent (the digest reconciles full state; vuln-remediate
-de-dupes the issue). A missed cron tick is recovered by the next run.
+Missed cron ticks are recovered by the next run (both workflows are idempotent).
 
 ---
 
@@ -307,7 +364,7 @@ existing SDLC pipeline already uses.
 - `mission-digest` routine — `*/30` fleet panel, @mention on needs-human
 - `auto-approve` workflow — off by default; opt in with `SDLC_AUTOAPPROVE=on`
 - `compass notify` — lantern iMessage/WhatsApp bridge (graceful no-op if unconfigured)
-- `sdlc/fleet/` scaffolding — `repos.txt.example` ready; control-repo loop pending
+- `sdlc/fleet/` — `repos.txt.example` + `fleet-digest.yml` + `issue-poller.yml` shipped (Phase 1; needs `FLEET_TOKEN`)
 
 **Turn it on:**
 
@@ -323,16 +380,32 @@ gh variable set FLEET_MAINTAINER --body "your-github-username"
 export COMPASS_NOTIFY_URL="http://127.0.0.1:3200"   # iMessage bridge, or :3100 for WhatsApp
 export COMPASS_NOTIFY_TOKEN="your-bridge-token"
 export COMPASS_NOTIFY_TENANT="your-tenant-id"
+
+# Phase 1 — cross-repo fleet (in the control repo):
+cp ~/compass/sdlc/fleet/repos.txt.example sdlc/fleet/repos.txt
+# edit repos.txt to list your repos
+gh secret set FLEET_TOKEN --body "ghp_..."          # fine-grained PAT: multi-repo read + issues:write
+~/compass/sdlc/setup.sh --fleet                     # installs fleet-digest + issue-poller
+
+# Phase 2 — iMessage/WhatsApp reply-to-command (run on the machine with the bridge):
+export COMPASS_NOTIFY_URL="http://127.0.0.1:3200"
+export COMPASS_NOTIFY_TOKEN="your-bridge-token"
+export COMPASS_NOTIFY_TENANT="your-tenant-id"
+export COMPASS_FLEET_REPO="owner/your-default-repo"
+compass listen                                       # long-running daemon; Ctrl-C to stop
 ```
 
-### Phase 1 — cross-repo orchestration (needs `FLEET_TOKEN`)
+### Phase 1 — cross-repo orchestration (shipped; needs `FLEET_TOKEN`)
 
+`sdlc/fleet/fleet-digest.yml` and `sdlc/fleet/issue-poller.yml` are in the repo.
 Copy `sdlc/fleet/repos.txt.example` to `repos.txt` in your control repo, populate
-it, create and store a `FLEET_TOKEN` fine-grained PAT, and enable the cross-repo
-dispatch loops. No code changes; the scaffolding is in place.
+it, create and store a `FLEET_TOKEN` fine-grained PAT, and install the fleet
+workflows with `sdlc/setup.sh --fleet`.
 
-### Phase 2 — native iMessage/WhatsApp reply-to-command (needs one lantern change)
+### Phase 2 — native iMessage/WhatsApp reply-to-command (shipped; local daemon)
 
-A small webhook addition to the lantern bridge that receives your iMessage/WhatsApp
-reply and dispatches the corresponding `sdlc-control.yml` command. One change in
-lantern, no changes in compass.
+`scripts/compass-listen.mjs` is in the repo. Run `compass listen` as a persistent
+local daemon on the machine where the lantern bridge is reachable. Set the
+`COMPASS_NOTIFY_*` env vars and ensure `gh` is authenticated. See the
+[Native phone control](#native-phone-control-phase-2) section above for the full
+command grammar and constraints.
