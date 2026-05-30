@@ -23,8 +23,7 @@ All notable changes to this project are documented here. Format loosely follows
   fail-closed allowlist (trusted author, green checks, allowlisted paths default docs/+*.md,
   150-line cap, tests present) and marks it `agent:approve-eligible` with a comment. Comment +
   label only — never calls `gh pr review --approve`, never merges.
-- **`compass notify` / lantern bridge** (`scripts/compass-notify.sh`) — POSTs to lantern's
-  `/session/<tenant>/send-self` endpoint to DM you via iMessage or WhatsApp. Config:
+- **`compass notify`** (`scripts/compass-notify.sh`) — POSTs to a local iMessage/WhatsApp bridge `/session/<tenant>/send-self` to DM you via iMessage or WhatsApp. Config:
   `COMPASS_NOTIFY_URL`, `COMPASS_NOTIFY_TOKEN`, `COMPASS_NOTIFY_TENANT`. Unconfigured =
   graceful no-op.
 - **`sdlc/fleet/` scaffolding** — `repos.txt.example` for cross-repo orchestration (Phase 1;
@@ -42,13 +41,13 @@ All notable changes to this project are documented here. Format loosely follows
   dispatches exactly once.
 - **`compass listen` daemon** (`scripts/compass-listen.mjs`, Phase 2 — shipped) — long-running
   local Node 22 process (zero npm deps) with **two transports, one command grammar**:
-  **Telegram** (universal, free, no lantern — `COMPASS_NOTIFY_TELEGRAM_TOKEN`+`_CHAT`, long-polls
-  getUpdates on your authorized chat) **or lantern** (iMessage/WhatsApp bridge WebSocket). Relays
+  **Telegram** (universal, free — `COMPASS_NOTIFY_TELEGRAM_TOKEN`+`_CHAT`, long-polls
+  getUpdates on your authorized chat) **or an iMessage/WhatsApp bridge** (local WebSocket). Relays
   your DM slash-commands (`/status`, `/approve|/hold|/resume #N`, `/build #N`)
   to GitHub. Posts PR comments (enforced by the existing governed `sdlc-control.yml`) — never
   approves or merges directly. Config: transport env + `COMPASS_FLEET_REPO`,
   `COMPASS_CMD_PREFIX`. Requires `gh` authenticated locally + reachable
-  bridge. **UNVERIFIED end-to-end** (needs a live bridge); lantern's bridge may auto-reply on
+  bridge. **UNVERIFIED end-to-end** (needs a live bridge); a chat bot on that thread may auto-reply on
   self-chat — pause the bot if needed.
 - **ADR-0003** (`docs/adr/0003-auto-approve-trust-boundary.md`) — records the governance
   decision for the auto-approve trust boundary.
@@ -295,7 +294,7 @@ All notable changes to this project are documented here. Format loosely follows
 
 ### Security / hardening
 - SHA-pin all GitHub Actions (`actions/checkout`, `claude-code-action`, `codex-action`) and add Dependabot to keep them current.
-- Add `docs/alpha.md` (alpha onboarding); bump lantern + default marketplace pins to v0.6.0.
+- Add `docs/alpha.md` (alpha onboarding); bump an internal repo + default marketplace pins to v0.6.0.
 
 ## [0.6.0] — 2026-05-25
 
@@ -329,7 +328,7 @@ All notable changes to this project are documented here. Format loosely follows
 ## [0.4.0] — 2026-05-25
 
 ### Changed
-- **Renamed the project to `compass`** (repo, marketplace id, install paths, lantern pin);
+- **Renamed the project to `compass`** (repo, marketplace id, install paths, internal-repo pin);
   plugins now install as `core@compass` / `core-lsp@compass`. Added an SVG hero + animated
   demo GIF, a navigable README (clickable TOC, collapsibles, back-to-top), and open-source
   polish (Code of Conduct, Security policy, issue/PR templates). Fixed a `protect-paths`
@@ -359,7 +358,7 @@ All notable changes to this project are documented here. Format loosely follows
   needs the language-server binaries on `PATH`. See `docs/06-lsp.md`.
 - **Team-rollout pattern** — pin the marketplace to a tag and auto-enable the
   plugin from a shared repo's `.claude/settings.json`; per-user opt-out via
-  `.claude/settings.local.json`. Documented and applied to the lantern repo.
+  `.claude/settings.local.json`. Documented and applied to an internal repo.
 
 ### Notes
 - LSP is Claude-only — Codex has no native LSP config, so no LSP parity is claimed.

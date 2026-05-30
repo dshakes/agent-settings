@@ -45,7 +45,7 @@ satisfies branch protection, and it never merges.** Concretely:
 5. **Kill switches (any disables it).** Repo var **`SDLC_AUTOAPPROVE=off` is the default**; an
    `sdlc:hold` label on the PR disables it; a fleet-wide `/hold all` disables it.
 6. **Mobile veto window is real.** The eligibility comment + label land on the PR, so the maintainer
-   gets a GitHub Mobile push (and a lantern iMessage/WhatsApp DM) and can `/hold #N` before approving.
+   gets a GitHub Mobile push (and an iMessage/WhatsApp DM) and can `/hold #N` before approving.
    Because the **GitHub Approval is still human**, there is always a human in the loop on the
    approval transition.
 

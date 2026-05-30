@@ -13,11 +13,11 @@
 #   COMPASS_NOTIFY_TELEGRAM_TOKEN + COMPASS_NOTIFY_TELEGRAM_CHAT      → Telegram sendMessage (free, two-way)
 #   COMPASS_NOTIFY_NTFY         an ntfy.sh topic URL                  → plain-text body
 #   COMPASS_NOTIFY_WEBHOOK      any URL                               → {"text": msg, "content": msg, "message": msg}
-#   COMPASS_NOTIFY_URL+_TOKEN   lantern bridge (iMessage/WhatsApp)    → /session/<tenant>/send-self  (optional, premium)
+#   COMPASS_NOTIFY_URL+_TOKEN   a local iMessage/WhatsApp bridge      → /session/<tenant>/send-self  (optional)
 #                               (+ COMPASS_NOTIFY_TENANT)
 #
-# No backend configured → no-op (exit 0). For most open-source users, Slack/Discord/Telegram is the
-# 2-minute path; GitHub Mobile already covers approve/merge/trigger natively (see docs/14-fleet.md).
+# No backend configured → no-op (exit 0). For most users, Slack/Discord/Telegram is the 2-minute
+# path; GitHub Mobile already covers approve/merge/trigger natively (see docs/14-fleet.md).
 set -uo pipefail
 
 DRY=0; REQUIRE=0; MSG=""
@@ -57,21 +57,21 @@ post() {  # post <label> <url> <content-type> <body>
 if [ -n "${COMPASS_NOTIFY_TELEGRAM_TOKEN:-}" ] && [ -n "${COMPASS_NOTIFY_TELEGRAM_CHAT:-}" ]; then
   post telegram "https://api.telegram.org/bot${COMPASS_NOTIFY_TELEGRAM_TOKEN}/sendMessage" "application/json" "{\"chat_id\":\"${COMPASS_NOTIFY_TELEGRAM_CHAT}\",\"text\":$M}"
 fi
-# lantern bridge (iMessage/WhatsApp) — optional, premium. One or more comma/space-separated base URLs.
-LURLS="${COMPASS_NOTIFY_URL:-${LANTERN_BRIDGE_URL:-}}"; LTOK="${COMPASS_NOTIFY_TOKEN:-${LANTERN_BRIDGE_TOKEN:-}}"
-LTEN="${COMPASS_NOTIFY_TENANT:-${LANTERN_DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}}"
+# A local iMessage/WhatsApp bridge (optional). One or more comma/space-separated base URLs.
+LURLS="${COMPASS_NOTIFY_URL:-}"; LTOK="${COMPASS_NOTIFY_TOKEN:-}"
+LTEN="${COMPASS_NOTIFY_TENANT:-00000000-0000-0000-0000-000000000001}"
 if [ -n "$LURLS" ] && [ -n "$LTOK" ]; then
   for base in ${LURLS//,/ }; do
     base="${base%/}"; configured=1
-    if [ "$DRY" = 1 ]; then printf '→ lantern: POST %s\n  {"message":%s}\n' "$base/session/$LTEN/send-self" "$M"; sent=1; continue; fi
+    if [ "$DRY" = 1 ]; then printf '→ bridge: POST %s\n  {"message":%s}\n' "$base/session/$LTEN/send-self" "$M"; sent=1; continue; fi
     if curl -fsS -m 15 -X POST "$base/session/$LTEN/send-self" -H "Authorization: Bearer $LTOK" -H "Content-Type: application/json" --data-binary "{\"message\":$M}" >/dev/null 2>&1; then
-      echo "compass notify: sent via lantern ($base)" >&2; sent=1
-    else echo "compass notify: send failed (lantern $base)" >&2; rc=1; fi
+      echo "compass notify: sent via imessage/whatsapp bridge ($base)" >&2; sent=1
+    else echo "compass notify: send failed (bridge $base)" >&2; rc=1; fi
   done
 fi
 
 if [ "$configured" = 0 ]; then
-  [ "$REQUIRE" = 1 ] && { echo "compass notify: no backend configured (set COMPASS_NOTIFY_SLACK/_DISCORD/_TELEGRAM_*/_WEBHOOK/_NTFY or the lantern bridge)" >&2; exit 1; }
+  [ "$REQUIRE" = 1 ] && { echo "compass notify: no backend configured (set COMPASS_NOTIFY_SLACK/_DISCORD/_TELEGRAM_*/_WEBHOOK/_NTFY or an iMessage/WhatsApp bridge)" >&2; exit 1; }
   echo "compass notify: no backend configured — skipping (see compass notify --help)" >&2; exit 0
 fi
 exit "$rc"

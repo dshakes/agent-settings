@@ -38,10 +38,10 @@ usage: compass <command> [args]
                            Local scheduled agents (cron + claude -p): dep-refresh,
                            flaky-triage, doc-freshness, pr-babysit.
   route   "<task>"         Print the cheapest-correct model tier (experimental).
-  notify  "<message>"      DM your phone via lantern's iMessage/WhatsApp bridge
+  notify  "<message>"      DM your phone: Slack·Discord·Telegram·iMessage/WhatsApp
                            (set COMPASS_NOTIFY_URL/_TOKEN; --dry-run to preview).
   listen                   Run the command listener: act on /status /approve /hold /build
-                           from your phone DM via Telegram (free) or lantern iMessage/WhatsApp
+                           from your phone DM via Telegram (free) or an iMessage/WhatsApp bridge
                            (long-running daemon; needs gh + a configured transport).
   doctor                   Validate the compass install (make doctor).
   help                     This message.

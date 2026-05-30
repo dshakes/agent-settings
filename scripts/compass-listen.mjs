@@ -2,8 +2,8 @@
 // compass-listen — turn a phone DM into a control surface for the fleet. Two transports,
 // one command grammar. Pick by which env you set:
 //
-//   Telegram (universal, free, no lantern) — COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT
-//   lantern  (iMessage/WhatsApp, premium)  — COMPASS_NOTIFY_URL + _TOKEN (+ _TENANT)
+//   Telegram (universal, free)            — COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT
+//   iMessage/WhatsApp bridge (local HTTP) — COMPASS_NOTIFY_URL + _TOKEN (+ _TENANT)
 //
 // When YOU send a slash-command in your DM, it relays to GitHub and replies in-thread:
 //   /status [owner/repo]            → one-line open-PR state
@@ -29,9 +29,9 @@ const PREFIX = process.env.COMPASS_CMD_PREFIX || "/";
 
 const TG_TOKEN = process.env.COMPASS_NOTIFY_TELEGRAM_TOKEN || "";
 const TG_CHAT = process.env.COMPASS_NOTIFY_TELEGRAM_CHAT || "";
-const L_URLS = (process.env.COMPASS_NOTIFY_URL || process.env.LANTERN_BRIDGE_URL || "").split(/[, ]+/).filter(Boolean);
-const L_TOKEN = process.env.COMPASS_NOTIFY_TOKEN || process.env.LANTERN_BRIDGE_TOKEN || "";
-const L_TENANT = process.env.COMPASS_NOTIFY_TENANT || process.env.LANTERN_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
+const L_URLS = (process.env.COMPASS_NOTIFY_URL || "").split(/[, ]+/).filter(Boolean);
+const L_TOKEN = process.env.COMPASS_NOTIFY_TOKEN || "";
+const L_TENANT = process.env.COMPASS_NOTIFY_TENANT || "00000000-0000-0000-0000-000000000001";
 
 const gh = (args) => new Promise((res) =>
   execFile("gh", args, { timeout: 30000, maxBuffer: 1 << 20 }, (e, out, err) =>
@@ -108,15 +108,15 @@ async function runTelegram() {
   }
 }
 
-// ── lantern transport (bridge WebSocket) ──────────────────────────────────────
-function runLantern() {
+// ── iMessage/WhatsApp bridge transport (local HTTP + WebSocket) ───────────────
+function runBridge() {
   const base = L_URLS[0].replace(/\/$/, "");
   const wsUrl = `${base.replace(/^http/, "ws")}/ws?tenantId=${encodeURIComponent(L_TENANT)}&token=${encodeURIComponent(L_TOKEN)}`;
   const send = (t) => fetch(`${base}/session/${L_TENANT}/send-self`, { method: "POST", headers: { Authorization: `Bearer ${L_TOKEN}`, "content-type": "application/json" }, body: JSON.stringify({ message: t }) }).catch(() => {});
   let backoff = 1000;
   const connect = () => {
     const ws = new WebSocket(wsUrl);
-    ws.addEventListener("open", () => { backoff = 1000; console.error(`compass listen: lantern bridge ${base} (tenant ${L_TENANT})`); });
+    ws.addEventListener("open", () => { backoff = 1000; console.error(`compass listen: iMessage/WhatsApp bridge ${base} (tenant ${L_TENANT})`); });
     ws.addEventListener("message", (ev) => {
       let m; try { m = JSON.parse(String(ev.data)); } catch { return; }
       if (m?.type !== "message") return;
@@ -131,8 +131,8 @@ function runLantern() {
 }
 
 if (TG_TOKEN && TG_CHAT) runTelegram();
-else if (L_URLS.length && L_TOKEN) runLantern();
+else if (L_URLS.length && L_TOKEN) runBridge();
 else {
-  console.error("compass listen: configure a transport — Telegram (COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT) or lantern (COMPASS_NOTIFY_URL + _TOKEN).");
+  console.error("compass listen: configure a transport — Telegram (COMPASS_NOTIFY_TELEGRAM_TOKEN + _CHAT) or an iMessage/WhatsApp bridge (COMPASS_NOTIFY_URL + _TOKEN).");
   process.exit(1);
 }

@@ -45,7 +45,7 @@ from CLAUDE.md, which lives in the working tree.)
 Claude Code's. To avoid drift, keep **one file**:
 - **Global:** `~/.codex/AGENTS.md` is a symlink to `~/.claude/CLAUDE.md` — byte-identical.
 - **Per-repo:** `AGENTS.md` → `CLAUDE.md` symlink (the scaffolder and the bootstrap
-  skill do this; lantern is set up this way).
+  skill do this; an internal repo is set up this way).
 
 Edit the manual once; both tools pick it up. See `docs/07-practices.md` for why
 this is convention rather than a spec requirement.

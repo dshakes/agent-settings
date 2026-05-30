@@ -11,7 +11,7 @@ guard() {  # guard '<command>' -> red BLOCKED / green allowed (no JSON)
 }
 
 statusline() {
-  printf '{"model":{"display_name":"Claude Opus 4.7"},"workspace":{"current_dir":"/Users/you/lantern"},"permission_mode":"acceptEdits","cost":{"estimated_cost_cents":37,"total_input_tokens":42000}}' \
+  printf '{"model":{"display_name":"Claude Opus 4.7"},"workspace":{"current_dir":"/Users/you/myrepo"},"permission_mode":"acceptEdits","cost":{"estimated_cost_cents":37,"total_input_tokens":42000}}' \
     | claude/statusline.sh; echo
 }
 

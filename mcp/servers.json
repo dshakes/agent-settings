@@ -47,10 +47,10 @@
       "claude": true,
       "codex": true,
       "scopeHint": "project",
-      "description": "Read-only SQL over a Postgres database (schema introspection + SELECT). Best as a PROJECT server (e.g. lantern), gated on ${LANTERN_DATABASE_URL}.",
+      "description": "Read-only SQL over a Postgres database (schema introspection + SELECT). Best as a PROJECT server (e.g. project), gated on ${PROJECT_DATABASE_URL}.",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "${LANTERN_DATABASE_URL}"],
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${PROJECT_DATABASE_URL}"],
       "env": {},
       "note": "Point at a read-replica or a read-only role. Never a write-capable prod credential."
     },

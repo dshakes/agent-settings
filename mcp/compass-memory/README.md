@@ -24,7 +24,7 @@ cross-repo memory). **Never** a hard dependency of compass.
 - `memory_search(query, repo?)` — return learnings, scoped to repos the caller may read.
 
 ## Trust tiers (default: deny)
-Set `COMPASS_MEMORY_TRUST="lantern:read-write,syntax:read-only"`. A repo not listed is **deny**.
+Set `COMPASS_MEMORY_TRUST="repo-a:read-write,repo-b:read-only"`. A repo not listed is **deny**.
 
 ## Try it (local, single user)
 ```bash

@@ -20,11 +20,11 @@ def check(name, got, want):
         print(f"  FAIL {name} — got {got!r} want {want!r}")
 
 
-TRUST = "lantern:read-write,syntax:read-only,evil:deny"
+TRUST = "repo-a:read-write,repo-b:read-only,evil:deny"
 
 # trust tiers
-check("read-write tier", store.trust_tier("lantern", TRUST), "read-write")
-check("read-only tier", store.trust_tier("syntax", TRUST), "read-only")
+check("read-write tier", store.trust_tier("repo-a", TRUST), "read-write")
+check("read-only tier", store.trust_tier("repo-b", TRUST), "read-only")
 check("unlisted → deny", store.trust_tier("unknown", TRUST), "deny")
 check("explicit deny", store.trust_tier("evil", TRUST), "deny")
 
@@ -50,13 +50,13 @@ check(
 conn = store.connect(":memory:")
 check(
     "record denied for read-only",
-    store.record(conn, "x", "syntax", trust_env=TRUST),
-    "denied: 'syntax' is not read-write (set COMPASS_MEMORY_TRUST)",
+    store.record(conn, "x", "repo-b", trust_env=TRUST),
+    "denied: 'repo-b' is not read-write (set COMPASS_MEMORY_TRUST)",
 )
 check(
     "record refuses secret",
     store.record(
-        conn, "token = ghp_0123456789abcdefghijABCDEFG", "lantern", trust_env=TRUST
+        conn, "token = ghp_0123456789abcdefghijABCDEFG", "repo-a", trust_env=TRUST
     ),
     "rejected: looks like a secret — not stored (scrubbing is best-effort, never paste creds)",
 )
@@ -65,7 +65,7 @@ check(
     store.record(
         conn,
         "flaky test X fixed by seeding rng",
-        "lantern",
+        "repo-a",
         tags="testing",
         trust_env=TRUST,
     ),
@@ -74,10 +74,10 @@ check(
 
 hits = store.search(conn, "flaky", trust_env=TRUST)
 check("search finds the note", len(hits), 1)
-check("search returns repo", hits[0]["repo"] if hits else None, "lantern")
+check("search returns repo", hits[0]["repo"] if hits else None, "repo-a")
 
 # deny-tier rows never leak in search
-store.record(conn, "secret-ish ops note", "lantern", trust_env=TRUST)
+store.record(conn, "secret-ish ops note", "repo-a", trust_env=TRUST)
 conn.execute("INSERT INTO mem(text,repo,tags,ts) VALUES('leak me','evil','',1.0)")
 conn.commit()
 leak = [h for h in store.search(conn, "leak", trust_env=TRUST) if h["repo"] == "evil"]
@@ -102,7 +102,7 @@ check(
     store.record(
         conn,
         "ok note",
-        "lantern",
+        "repo-a",
         tags="ghp_0123456789abcdefghijABCDEFG",
         trust_env=TRUST,
     ),
@@ -122,7 +122,7 @@ check("wildcard query is literal", store.search(conn, "%", trust_env=TRUST), [])
 c2 = store.connect(":memory:")
 for i in range(3):  # readable, older
     c2.execute(
-        "INSERT INTO mem(text,repo,tags,ts) VALUES('widget note', 'lantern', '', ?)",
+        "INSERT INTO mem(text,repo,tags,ts) VALUES('widget note', 'repo-a', '', ?)",
         (float(i),),
     )
 for i in range(5):  # deny-tier, NEWER (would win ORDER BY ts DESC + LIMIT)

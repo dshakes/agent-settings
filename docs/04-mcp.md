@@ -37,10 +37,9 @@ claude mcp add --transport http github https://api.githubcopilot.com/mcp/
 # completes OAuth in-app; preferred over the deprecated npm reference server
 ```
 
-**Postgres (read-only)** — best as a *project* server. Already wired for lantern
-via `lantern/.mcp.json`; it activates when you set:
+**Postgres (read-only)** — best as a *project* server. Wired for a project Postgres via a per-repo `.mcp.json`; it activates when you set:
 ```bash
-export LANTERN_DATABASE_URL='postgres://readonly_user:…@host:5432/lantern'
+export PROJECT_DATABASE_URL='postgres://readonly_user:…@host:5432/yourdb'
 ```
 > Point it at a **read replica or read-only role**, never a write-capable prod
 > credential. For another repo, copy `templates/mcp.project.json.tmpl` to

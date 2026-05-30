@@ -55,7 +55,7 @@ No app. No service. No `curl | sh`. Just files you can read, audit, and `git pul
 
 <div id="contents"></div>
 
-**Contents** &nbsp;·&nbsp; [Why compass?](#why-compass) &nbsp;·&nbsp; [What you get](#what-you-get) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [See it work](#see-it-work) &nbsp;·&nbsp; [Autonomous SDLC](#autonomous-sdlc) &nbsp;·&nbsp; [How it fits together](#how-it-fits-together) &nbsp;·&nbsp; [The crew](#the-crew-9-subagents-12-commands-3-workflows) &nbsp;·&nbsp; [Guardrails](#guardrails-and-automation) &nbsp;·&nbsp; [The compass CLI](#the-compass-cli) &nbsp;·&nbsp; [Connected & extensible](#connected-and-extensible) &nbsp;·&nbsp; [Cost model](#cost-model) &nbsp;·&nbsp; [Safety & status](#safety-honesty-and-status) &nbsp;·&nbsp; [Docs](#docs)
+**Contents** &nbsp;·&nbsp; [Why compass?](#why-compass) &nbsp;·&nbsp; [What you get](#what-you-get) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [See it work](#see-it-work) &nbsp;·&nbsp; [Autonomous SDLC](#autonomous-sdlc) &nbsp;·&nbsp; [The fleet](#the-autonomous-fleet) &nbsp;·&nbsp; [How it fits together](#how-it-fits-together) &nbsp;·&nbsp; [The crew](#the-crew-9-subagents-12-commands-3-workflows) &nbsp;·&nbsp; [Guardrails](#guardrails-and-automation) &nbsp;·&nbsp; [The compass CLI](#the-compass-cli) &nbsp;·&nbsp; [Connected & extensible](#connected-and-extensible) &nbsp;·&nbsp; [Cost model](#cost-model) &nbsp;·&nbsp; [Safety & status](#safety-honesty-and-status) &nbsp;·&nbsp; [Docs](#docs)
 
 ---
 
@@ -78,6 +78,7 @@ Everything above is on after a single install. Here's what's in the box, each li
 
 - ⭐ **It runs your PRs — and fixes its own review comments.** The headline: an optional [autonomous pipeline](#autonomous-sdlc) reviews, security-checks, tests, and cross-audits every change, then pushes its *own* fixes until it's green. You just merge. (Try it locally in 30 seconds, no tokens.) [→](#autonomous-sdlc)
 - ✅ **A senior crew on call.** 9 cost-tiered specialist subagents, 12 slash-commands, and 3 parallel "dynamic workflows" that review and audit in parallel and fact-check each other. [→](#the-crew-9-subagents-12-commands-3-workflows)
+- ✅ **A fleet that runs your repos — from your phone.** Scheduled, governed agents scan, security-fix, and test across *all* your repos; watch and approve from **GitHub Mobile, Slack/Telegram, or iMessage/WhatsApp**. You still merge. [→](#the-autonomous-fleet)
 - ✅ **Every agent, one source.** Claude Code, Codex, Gemini — plus Cursor / Windsurf / Copilot via the open [`AGENTS.md`](https://agents.md/) standard — read the *same* playbook. Switch or mix vendors without rewriting a thing. [→](#connected-and-extensible)
 - ✅ **Guardrails that stay out of your way.** 4 hooks block disasters, format edits, and orient the agent — silently. [→](#guardrails-and-automation)
 - ✅ **It onboards you and proves its value.** `compass onboard` gets you productive in a new repo in minutes; `compass impact` shows what it saved. [→](#the-compass-cli)
@@ -264,6 +265,33 @@ flowchart TD
   classDef agent fill:#241a3a,stroke:#8A63D2,color:#e6edf3
   classDef human fill:#10243f,stroke:#58a6ff,color:#e6edf3
 ```
+
+<div align="right"><a href="#contents">↑ top</a></div>
+
+---
+
+## The autonomous fleet
+
+**Beyond a single PR: a fleet of governed agents that keep *all* your repos healthy — and a phone you can run them from.** Each is opt-in, scheduled or event-driven, and stops at the PR. The same rule holds: **agents prepare, you merge.**
+
+| Agent / loop | What it does | Cadence |
+|---|---|---|
+| 🧪 **test-architect** | The **safety gate** — generates unit + e2e tests, runs and validates them. *No adequate tests → no approve, no merge.* It's what makes the rest safe to automate. | on every fix |
+| 🛡️ **vuln-remediate** | Scans dependencies + GitHub security alerts → auto-fixes the *safe* ones into a **test-gated PR**, files an issue for the rest. Never merges. | nightly |
+| 🔁 **issue-poller** | Watches your repos for issues you tag `agent:autofix` → kicks off that repo's build → test → PR loop. The "fix my backlog on a timer." | ~30 min |
+| 🩹 **dep-refresh · flaky-triage · doc-freshness · babysit-prs** | Bump deps, cluster flaky tests, fix doc drift, nudge stalled PRs — each opens a PR or issue, never merges. | weekly / nightly |
+| ✅ **auto-approve** *(off by default)* | Marks a green, allowlisted, *tested* PR as fast-track-eligible — comment + label only, **never** a bot approval or merge. Governed by [ADR-0003](docs/adr/0003-auto-approve-trust-boundary.md). | on review-clean |
+| 🧭 **mission-digest / fleet-digest** | One pinned **"fleet panel"** of every PR's state across every repo; pings you only when something *newly* needs a human. | ~30 min |
+
+### Run it from your phone
+
+The fleet's control plane is GitHub itself, so you steer it from anywhere — three tiers, **none required, no lock-in:**
+
+- **GitHub Mobile** *(zero setup, universal)* — push when you're needed, view runs/logs, **approve · merge · comment**, trigger any workflow, and `/hold` · `/approve` from a comment.
+- **Any chat app** — `compass notify` pushes digests + "needs you" alerts to **Slack, Discord, Telegram, ntfy, or a webhook** (free, 2-minute setup).
+- **Two-way DM control** — `compass listen` lets you reply `/status` · `/approve #42` · `/build #7` from **Telegram** (free) or a local **iMessage/WhatsApp** bridge; it relays to GitHub where the same governed gates apply.
+
+Every action is still a commit, label, or comment — fully auditable, and the merge gate never moves. → **[Fleet & mobile mission-control](docs/14-fleet.md)**
 
 <div align="right"><a href="#contents">↑ top</a></div>
 
@@ -461,7 +489,7 @@ compass is built to be **trusted before it's run** — and honest about its limi
 | [10 · Roadmap](docs/10-roadmap.md) | where it's going, grounded in real harness primitives |
 | [12 · Every agent](docs/12-every-agent.md) | one manual for Claude Code, Codex, Gemini, Cursor, Copilot |
 | [13 · Dynamic workflows](docs/13-workflows.md) | parallel, adversarially-verified subagent orchestration |
-| [14 · Fleet](docs/14-fleet.md) | autonomous agent fleet + mobile mission-control (lantern iMessage/WhatsApp · GitHub Mobile) |
+| [14 · Fleet](docs/14-fleet.md) | autonomous agent fleet + mobile mission-control (iMessage/WhatsApp · Telegram · GitHub Mobile) |
 | [ADRs](docs/adr/) | load-bearing decisions (cross-repo memory; autonomous-loop trust boundary) |
 
 <div align="center"><br><sub>MIT · built to be shared · contributions welcome</sub></div>

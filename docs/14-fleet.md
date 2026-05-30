@@ -145,7 +145,7 @@ Details: [`sdlc/routines/README.md`](../sdlc/routines/README.md).
 
 ## Mobile mission-control
 
-> **No lantern? No problem.** The mobile layer is deliberately decoupled — compass never
+> **No local bridge? No problem.** The mobile layer is deliberately decoupled — compass never
 > hard-depends on any one service, so it open-sources cleanly. There are three tiers:
 > 1. **GitHub Mobile** — the universal baseline. Watch, approve, merge, and trigger workflows
 >    from your phone with **zero extra setup**. This alone covers most of the "control from my
@@ -154,8 +154,8 @@ Details: [`sdlc/routines/README.md`](../sdlc/routines/README.md).
 >    ntfy, or a generic webhook** (config-only, free, 2-minute setup; Telegram is two-way). Set
 >    whichever you use; it sends to all configured backends and no-ops if none. This is the
 >    recommended path for open-source users.
-> 3. **lantern iMessage/WhatsApp** — the premium native-DM surface (iMessage/WhatsApp + the
->    `compass listen` reply→command loop), for those who run lantern. Entirely optional.
+> 3. **iMessage/WhatsApp bridge** — the premium native-DM surface (iMessage/WhatsApp + the
+>    `compass listen` reply→command loop), for those who run a local message bridge. Entirely optional.
 
 ### GitHub Mobile (works today, zero infra)
 
@@ -181,7 +181,7 @@ infrastructure:
 Slash-commands are handled by `sdlc/workflows/sdlc-control.yml`; no extra
 configuration beyond what the SDLC pipeline already sets up.
 
-### lantern iMessage/WhatsApp DM bridge
+### iMessage/WhatsApp DM bridge
 
 For consumer-grade push delivery — a DM to your own iMessage or WhatsApp thread
 rather than a GitHub notification.
@@ -189,7 +189,7 @@ rather than a GitHub notification.
 **Script:** `scripts/compass-notify.sh`
 **Invoked as:** `compass notify "<message>"`
 
-The script POSTs to lantern's bridge endpoint `POST /session/<tenant>/send-self`,
+The script POSTs to the bridge endpoint `POST /session/<tenant>/send-self`,
 which delivers the message to your own iMessage or WhatsApp thread. You can send to
 both bridges in one call by comma-separating the URLs.
 
@@ -203,15 +203,15 @@ compass notify --dry-run "test"    # prints the request, sends nothing
 
 | Variable | Purpose |
 |---|---|
-| `COMPASS_NOTIFY_URL` | lantern bridge base URL(s), space- or comma-separated. e.g. `http://127.0.0.1:3100` (WhatsApp), `http://127.0.0.1:3200` (iMessage). Also falls back to `LANTERN_BRIDGE_URL`. |
-| `COMPASS_NOTIFY_TOKEN` | bridge bearer token. Falls back to `LANTERN_BRIDGE_TOKEN`. |
-| `COMPASS_NOTIFY_TENANT` | tenant ID. Falls back to `LANTERN_DEFAULT_TENANT_ID`, then the dev default UUID. |
+| `COMPASS_NOTIFY_URL` | iMessage/WhatsApp bridge base URL(s), space- or comma-separated. e.g. `http://127.0.0.1:3100` (WhatsApp), `http://127.0.0.1:3200` (iMessage). |
+| `COMPASS_NOTIFY_TOKEN` | bridge bearer token. |
+| `COMPASS_NOTIFY_TENANT` | tenant ID. Defaults to the dev UUID. |
 
 **Unconfigured = graceful no-op (exit 0).** A digest or routine must never fail
 because the phone bridge isn't wired up. Pass `--require` if you want a missing
 config to be an error.
 
-**Honest constraint:** the lantern bridge runs on your machine or LAN, not in the
+**Honest constraint:** the bridge runs on your machine or LAN, not in the
 cloud. DM delivery from a GitHub-hosted Actions runner needs the bridge to be
 reachable from the runner — which it isn't by default. The two paths where it works
 today without extra setup:
@@ -228,14 +228,14 @@ today without extra setup:
 **Invoked as:** `compass listen` (long-running local daemon; Node 22, zero npm deps)
 
 The listener has **two transports — pick by which env you set** — sharing one command
-grammar, so every user gets native DM control whether or not they run lantern:
+grammar, so every user gets native DM control whether or not they run a local bridge:
 
-- **Telegram (universal, free, no lantern):** set `COMPASS_NOTIFY_TELEGRAM_TOKEN` + `_CHAT`.
+- **Telegram (universal, free, no bridge needed):** set `COMPASS_NOTIFY_TELEGRAM_TOKEN` + `_CHAT`.
   Make a bot via `@BotFather`, DM it once, read your chat id from
   `https://api.telegram.org/bot<token>/getUpdates`. The listener long-polls `getUpdates`
   and only acts on messages from your authorized chat. **This is the recommended open-source
   path.**
-- **lantern (premium, iMessage/WhatsApp):** set `COMPASS_NOTIFY_URL` + `_TOKEN`. The listener
+- **iMessage/WhatsApp bridge (premium):** set `COMPASS_NOTIFY_URL` + `_TOKEN`. The listener
   subscribes to the bridge WebSocket (`/ws?tenantId=&token=`), which broadcasts inbound DMs as
   `{type:"message",data:{from,text,isGroup}}`.
 
@@ -257,15 +257,15 @@ the existing governed `sdlc-control.yml` workflow (ADR-0003) then executes.
 | Variable | Purpose |
 |---|---|
 | `COMPASS_NOTIFY_TELEGRAM_TOKEN` + `_CHAT` | Telegram transport (universal, free) |
-| `COMPASS_NOTIFY_URL` + `_TOKEN` (+ `_TENANT`) | lantern bridge transport (iMessage/WhatsApp) |
+| `COMPASS_NOTIFY_URL` + `_TOKEN` (+ `_TENANT`) | iMessage/WhatsApp bridge transport (iMessage/WhatsApp) |
 | `COMPASS_FLEET_REPO` | default `owner/repo` when not specified in command |
 | `COMPASS_CMD_PREFIX` | command prefix character (default `/`) |
 
 **Honest constraints:**
 
 - Requires `gh` authenticated locally and a reachable transport (Telegram needs only outbound
-  HTTPS; lantern needs the bridge on your machine/LAN).
-- lantern's bridge may also auto-reply with its own assistant on your self-chat — pause the bot
+  HTTPS; the bridge needs to be on your machine/LAN).
+- the bridge may also auto-reply with its own assistant on your self-chat — pause the bot
   or use a dedicated thread if that collides. (Telegram has no such conflict.)
 - The daemon is verified for JS syntax and design but **UNVERIFIED end-to-end** — a live
   transport and authenticated `gh` are needed to confirm the full path.
@@ -291,7 +291,7 @@ it only swaps the label (so each issue dispatches exactly once — idempotent).
 
 ```
 # sdlc/fleet/repos.txt — one owner/name per line
-dshakes/lantern
+your-org/another-repo
 dshakes/compass
 # dshakes/syntax
 ```
@@ -372,7 +372,7 @@ existing SDLC pipeline already uses.
 - `vuln-remediate` routine — nightly dep scan + auto-fix PR + issue
 - `mission-digest` routine — `*/30` fleet panel, @mention on needs-human
 - `auto-approve` workflow — off by default; opt in with `SDLC_AUTOAPPROVE=on`
-- `compass notify` — lantern iMessage/WhatsApp bridge (graceful no-op if unconfigured)
+- `compass notify` — iMessage/WhatsApp bridge (graceful no-op if unconfigured)
 - `sdlc/fleet/` — `repos.txt.example` + `fleet-digest.yml` + `issue-poller.yml` shipped (Phase 1; needs `FLEET_TOKEN`)
 
 **Turn it on:**
@@ -385,7 +385,7 @@ cd <your-repo>
 gh variable set FLEET_MAINTAINER --body "your-github-username"
 # gh variable set SDLC_AUTOAPPROVE --body "on"    # opt in to the approve-eligible signal
 
-# For lantern DM (where the digest runs):
+# For the iMessage/WhatsApp bridge (where the digest runs):
 export COMPASS_NOTIFY_URL="http://127.0.0.1:3200"   # iMessage bridge, or :3100 for WhatsApp
 export COMPASS_NOTIFY_TOKEN="your-bridge-token"
 export COMPASS_NOTIFY_TENANT="your-tenant-id"
@@ -414,7 +414,7 @@ workflows with `sdlc/setup.sh --fleet`.
 ### Phase 2 — native iMessage/WhatsApp reply-to-command (shipped; local daemon)
 
 `scripts/compass-listen.mjs` is in the repo. Run `compass listen` as a persistent
-local daemon on the machine where the lantern bridge is reachable. Set the
+local daemon on the machine where the bridge is reachable. Set the
 `COMPASS_NOTIFY_*` env vars and ensure `gh` is authenticated. See the
 [Native phone control](#native-phone-control-phase-2) section above for the full
 command grammar and constraints.
